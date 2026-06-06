@@ -18,7 +18,7 @@ COPY . .
 
 RUN SECRET_KEY=collectstatic-build-only DATABASE_URL=sqlite:////tmp/build.db python manage.py collectstatic --noinput
 
-EXPOSE 8000
+EXPOSE 8080
 
 # Автоматически применяем миграции при каждом старте, затем запускаем сервер
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python -m gunicorn config.wsgi:application --bind 0.0.0.0:8080 --workers 1 --timeout 120"]
