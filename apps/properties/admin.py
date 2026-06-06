@@ -16,7 +16,6 @@ class PropertyAdmin(admin.ModelAdmin):
     list_display = ['name', 'city', 'organization', 'is_active']
     list_filter = ['city', 'is_active', 'organization']
     search_fields = ['name', 'address']
-    inlines = [RoomInline]
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
