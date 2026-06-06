@@ -1,0 +1,45 @@
+from rest_framework import serializers
+from .models import Payment, Expense
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    method_display = serializers.CharField(source='get_method_display', read_only=True)
+    received_by_name = serializers.CharField(
+        source='received_by.get_full_name', read_only=True
+    )
+
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'stay', 'amount', 'payment_date',
+            'method', 'method_display',
+            'period_from', 'period_to',
+            'received_by', 'received_by_name', 'notes',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class ExpenseSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+
+    class Meta:
+        model = Expense
+        fields = [
+            'id', 'property', 'category', 'category_display',
+            'amount', 'date', 'description', 'created_by', 'created_at',
+        ]
+        read_only_fields = ['id', 'created_by', 'created_at']
+
+
+class FinanceSummarySerializer(serializers.Serializer):
+    """P&L за период — для дашборда."""
+    period_start = serializers.DateField()
+    period_end = serializers.DateField()
+    income = serializers.DecimalField(max_digits=12, decimal_places=2)
+    expenses = serializers.DecimalField(max_digits=12, decimal_places=2)
+    net_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_debt = serializers.DecimalField(max_digits=12, decimal_places=2)
+    payments_count = serializers.IntegerField()
+    income_by_method = serializers.DictField()
+    expenses_by_category = serializers.DictField()

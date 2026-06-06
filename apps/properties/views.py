@@ -1,0 +1,64 @@
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from apps.core.mixins import OrganizationMixin
+from apps.core.permissions import IsOwnerOrManager, IsReception
+from .models import Property, Room, Unit
+from .serializers import (
+    PropertySerializer, RoomSerializer, UnitSerializer,
+    UnitStatusSerializer, OccupancySerializer
+)
+
+
+class PropertyViewSet(OrganizationMixin, viewsets.ModelViewSet):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsOwnerOrManager()]
+        return [IsAuthenticated()]
+
+    @action(detail=True, methods=['get'])
+    def occupancy(self, request, pk=None):
+        """Карта занятости объекта — для главного экрана."""
+        prop = self.get_object()
+        return Response(OccupancySerializer(prop).data)
+
+
+class RoomViewSet(OrganizationMixin, viewsets.ModelViewSet):
+    queryset = Room.objects.prefetch_related('units').all()
+    serializer_class = RoomSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['property', 'room_type', 'floor']
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsOwnerOrManager()]
+        return [IsAuthenticated()]
+
+
+class UnitViewSet(OrganizationMixin, viewsets.ModelViewSet):
+    queryset = Unit.objects.select_related('room__property').prefetch_related(
+        'stays__guest'
+    ).all()
+    serializer_class = UnitSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['room', 'status', 'unit_type']
+
+    def get_permissions(self):
+        if self.action in ('create', 'destroy'):
+            return [IsAuthenticated(), IsOwnerOrManager()]
+        return [IsAuthenticated()]
+
+    @action(detail=True, methods=['patch'])
+    def set_status(self, request, pk=None):
+        """Быстрое обновление статуса койки (доступно ресепшн и выше)."""
+        unit = self.get_object()
+        serializer = UnitStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        unit.status = serializer.validated_data['status']
+        unit.save(update_fields=['status'])
+        return Response(UnitSerializer(unit).data)

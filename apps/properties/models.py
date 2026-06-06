@@ -1,0 +1,101 @@
+from django.db import models
+from apps.core.models import OrganizationScopedModel
+
+
+class Property(OrganizationScopedModel):
+    """
+    Объект размещения (хостел, мотель, апарт-отель).
+    Один Organization может иметь несколько Property (multi-property).
+    """
+    name = models.CharField(max_length=255, verbose_name='Название')
+    address = models.TextField(verbose_name='Адрес')
+    city = models.CharField(max_length=100, verbose_name='Город')
+    description = models.TextField(blank=True, verbose_name='Описание')
+    is_active = models.BooleanField(default=True, verbose_name='Активен')
+
+    class Meta:
+        verbose_name = 'Объект размещения'
+        verbose_name_plural = 'Объекты размещения'
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.name} ({self.city})'
+
+
+class Room(OrganizationScopedModel):
+    """
+    Комната внутри объекта размещения.
+    Может быть дормом (несколько коек) или приватной.
+    """
+    ROOM_TYPES = [
+        ('dorm', 'Дормитори'),
+        ('private', 'Приватная'),
+    ]
+
+    property = models.ForeignKey(
+        Property, on_delete=models.CASCADE, related_name='rooms', verbose_name='Объект'
+    )
+    name = models.CharField(max_length=100, verbose_name='Название комнаты')
+    number = models.CharField(max_length=20, blank=True, verbose_name='Номер')
+    room_type = models.CharField(
+        max_length=20, choices=ROOM_TYPES, default='dorm', verbose_name='Тип'
+    )
+    floor = models.PositiveSmallIntegerField(default=1, verbose_name='Этаж')
+    max_capacity = models.PositiveSmallIntegerField(default=4, verbose_name='Вместимость')
+    description = models.TextField(blank=True, verbose_name='Описание')
+
+    class Meta:
+        verbose_name = 'Комната'
+        verbose_name_plural = 'Комнаты'
+        ordering = ['floor', 'name']
+
+    def __str__(self):
+        return f'{self.name} (этаж {self.floor})'
+
+
+class Unit(OrganizationScopedModel):
+    """
+    Единица размещения — койко-место, кровать, комната, апартамент.
+    Это то, что реально сдаётся гостю.
+    """
+    UNIT_TYPES = [
+        ('bed', 'Койко-место'),
+        ('private_room', 'Отдельная комната'),
+        ('apartment', 'Апартамент'),
+        ('studio', 'Студия'),
+        ('family_room', 'Семейный номер'),
+    ]
+
+    STATUSES = [
+        ('available', 'Свободно'),
+        ('occupied', 'Занято'),
+        ('reserved', 'Забронировано'),
+        ('dirty', 'Требует уборки'),
+        ('maintenance', 'Техобслуживание'),
+        ('out_of_order', 'Выведено из эксплуатации'),
+    ]
+
+    room = models.ForeignKey(
+        Room, on_delete=models.CASCADE, related_name='units', verbose_name='Комната'
+    )
+    name = models.CharField(max_length=100, verbose_name='Название')  # "Кровать 1", "Место А"
+    unit_type = models.CharField(
+        max_length=20, choices=UNIT_TYPES, default='bed', verbose_name='Тип'
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUSES, default='available', verbose_name='Статус'
+    )
+    description = models.TextField(blank=True, verbose_name='Описание')
+    sort_order = models.PositiveSmallIntegerField(default=0, verbose_name='Порядок сортировки')
+
+    class Meta:
+        verbose_name = 'Юнит (место размещения)'
+        verbose_name_plural = 'Юниты (места размещения)'
+        ordering = ['room', 'sort_order', 'name']
+
+    def __str__(self):
+        return f'{self.name} / {self.room.name}'
+
+    @property
+    def is_available(self):
+        return self.status == 'available'
