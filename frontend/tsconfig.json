@@ -22,4 +22,5 @@
     }
   },
   "include": ["src"],
-  "references": [{ "path"
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
