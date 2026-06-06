@@ -4,6 +4,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+admin.site.site_header = 'Sheber PMS'
+admin.site.site_title = 'Sheber PMS'
+admin.site.index_title = 'Управление системой'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
