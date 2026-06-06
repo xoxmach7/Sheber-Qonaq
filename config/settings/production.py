@@ -20,7 +20,7 @@ if DATABASE_URL:
 
 # ── Статика — WhiteNoise (раздаёт сам Django без nginx) ──────────────────────
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ── CORS — разрешаем с фронтенда Railway ──────────────────────────────────────
@@ -51,6 +51,9 @@ else:
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
     }
+    # Отключаем Celery broker чтобы не пытался подключиться к redis://localhost
+    CELERY_BROKER_URL = 'memory://'
+    CELERY_RESULT_BACKEND = 'cache+memory://'
 
 # ── Безопасность ──────────────────────────────────────────────────────────────
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
