@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { propertiesApi } from '../../api'
 import type { Unit, UnitStatus } from '../../types'
-import { Wrench, Moon, CheckCircle2, Clock, Ban, Sparkles, ChevronDown } from 'lucide-react'
+import { Wrench, Moon, CheckCircle2, Clock, Ban, Sparkles } from 'lucide-react'
+import { PageHeader, FilterPills } from '../../components/ui'
 
-// ── Конфиг статусов ───────────────────────────────────────────────────────────
-
+// ── Status config ──
 interface StatusCfg {
   label: string
   dot: string
@@ -17,73 +17,50 @@ interface StatusCfg {
 
 const STATUS: Record<UnitStatus, StatusCfg> = {
   available: {
-    label:  'Свободно',
-    dot:    'bg-emerald-400',
-    bg:     'bg-emerald-50',
-    text:   'text-emerald-700',
-    border: 'border-emerald-300',
-    icon:   <CheckCircle2 size={12} className="text-emerald-500" />,
+    label: 'Свободно', dot: 'bg-emerald-400',
+    bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200',
+    icon: <CheckCircle2 size={12} className="text-emerald-500" />,
   },
   occupied: {
-    label:  'Занято',
-    dot:    'bg-sky-500',
-    bg:     'bg-sky-50',
-    text:   'text-sky-700',
-    border: 'border-sky-300',
-    icon:   <Moon size={12} className="text-sky-500" />,
+    label: 'Занято', dot: 'bg-primary-500',
+    bg: 'bg-primary-50', text: 'text-primary-700', border: 'border-primary-200',
+    icon: <Moon size={12} className="text-primary-500" />,
   },
   reserved: {
-    label:  'Бронь',
-    dot:    'bg-violet-400',
-    bg:     'bg-violet-50',
-    text:   'text-violet-700',
-    border: 'border-violet-300',
-    icon:   <Clock size={12} className="text-violet-500" />,
+    label: 'Бронь', dot: 'bg-violet-400',
+    bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200',
+    icon: <Clock size={12} className="text-violet-500" />,
   },
   dirty: {
-    label:  'Уборка',
-    dot:    'bg-amber-400',
-    bg:     'bg-amber-50',
-    text:   'text-amber-700',
-    border: 'border-amber-300',
-    icon:   <Sparkles size={12} className="text-amber-500" />,
+    label: 'Уборка', dot: 'bg-amber-400',
+    bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200',
+    icon: <Sparkles size={12} className="text-amber-500" />,
   },
   maintenance: {
-    label:  'Ремонт',
-    dot:    'bg-orange-400',
-    bg:     'bg-orange-50',
-    text:   'text-orange-700',
-    border: 'border-orange-300',
-    icon:   <Wrench size={12} className="text-orange-500" />,
+    label: 'Ремонт', dot: 'bg-orange-400',
+    bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200',
+    icon: <Wrench size={12} className="text-orange-500" />,
   },
   out_of_order: {
-    label:  'Закрыто',
-    dot:    'bg-gray-400',
-    bg:     'bg-gray-100',
-    text:   'text-gray-500',
-    border: 'border-gray-300',
-    icon:   <Ban size={12} className="text-gray-400" />,
+    label: 'Закрыто', dot: 'bg-gray-400',
+    bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200',
+    icon: <Ban size={12} className="text-gray-400" />,
   },
 }
 
-// ── Попап смены статуса ───────────────────────────────────────────────────────
-
-interface StatusPickerProps {
-  unit: Unit
-  onSelect: (status: UnitStatus) => void
-  onClose: () => void
-}
-
-function StatusPicker({ unit, onSelect, onClose }: StatusPickerProps) {
+// ── Status picker sheet ──
+function StatusPicker({ unit, onSelect, onClose }: {
+  unit: Unit; onSelect: (s: UnitStatus) => void; onClose: () => void
+}) {
   const clickable: UnitStatus[] = ['available', 'dirty', 'maintenance', 'out_of_order']
-
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/30" />
-      <div
-        className="relative w-full bg-white rounded-t-2xl p-4 shadow-2xl"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="absolute inset-0 bg-black/30 animate-fade-in" />
+      <div className="relative w-full bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex justify-center mb-3">
+          <div className="w-9 h-1 rounded-full bg-gray-300" />
+        </div>
         <p className="text-xs font-semibold text-gray-400 uppercase mb-3">
           {unit.name} — изменить статус
         </p>
@@ -92,17 +69,14 @@ function StatusPicker({ unit, onSelect, onClose }: StatusPickerProps) {
             const cfg = STATUS[s]
             const isCurrent = unit.status === s
             return (
-              <button
-                key={s}
+              <button key={s}
                 onClick={() => { onSelect(s); onClose() }}
                 disabled={isCurrent}
-                className={`
-                  flex items-center gap-2.5 px-3 py-3 rounded-xl border text-sm font-medium transition
-                  ${isCurrent
-                    ? `${cfg.bg} ${cfg.border} ${cfg.text} opacity-60 cursor-default`
-                    : `bg-white border-gray-200 text-gray-700 hover:${cfg.bg} active:scale-95`
-                  }
-                `}
+                className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition tap-card ${
+                  isCurrent
+                    ? `${cfg.bg} ${cfg.border} ${cfg.text} opacity-50 cursor-default`
+                    : `bg-white border-gray-200 text-gray-700 hover:${cfg.bg}`
+                }`}
               >
                 <span className={`w-2.5 h-2.5 rounded-full ${cfg.dot} shrink-0`} />
                 {cfg.label}
@@ -116,51 +90,25 @@ function StatusPicker({ unit, onSelect, onClose }: StatusPickerProps) {
   )
 }
 
-// ── Одна ячейка кровати ───────────────────────────────────────────────────────
-
-function BedCell({
-  unit,
-  position,
-  onClick,
-}: {
-  unit: Unit
-  position: 'lower' | 'upper'
-  onClick: () => void
+// ── Bed cell ──
+function BedCell({ unit, position, onClick }: {
+  unit: Unit; position: 'lower' | 'upper'; onClick: () => void
 }) {
   const cfg = STATUS[unit.status]
   const posLabel = position === 'lower' ? '↓ Нижн.' : '↑ Верхн.'
-  const posColor = position === 'lower' ? 'text-gray-400' : 'text-indigo-400'
-
-  // Вытаскиваем короткое имя (К1-М3 → М3, или просто name)
+  const posColor = position === 'lower' ? 'text-gray-400' : 'text-primary-400'
   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
 
   return (
-    <button
-      onClick={onClick}
-      className={`
-        relative flex flex-col w-full rounded-xl border p-2 text-left
-        transition active:scale-95 touch-manipulation
-        ${cfg.bg} ${cfg.border}
-      `}
-      style={{ minHeight: 72 }}
-    >
-      {/* Status dot */}
+    <button onClick={onClick}
+      className={`relative flex flex-col w-full rounded-xl border p-2 text-left transition tap-card ${cfg.bg} ${cfg.border}`}
+      style={{ minHeight: 72 }}>
       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
-
-      {/* Position label */}
-      <span className={`text-[9px] font-semibold ${posColor} leading-none mb-1`}>
-        {posLabel}
-      </span>
-
-      {/* Bed name */}
+      <span className={`text-[9px] font-semibold ${posColor} leading-none mb-1`}>{posLabel}</span>
       <span className={`text-xs font-bold ${cfg.text} leading-none`}>{shortName}</span>
-
-      {/* Status icon */}
       <div className="mt-1">{cfg.icon}</div>
-
-      {/* Guest name for occupied */}
       {unit.status === 'occupied' && unit.current_guest && (
-        <p className="text-[9px] text-sky-600 font-medium mt-0.5 leading-tight truncate w-full">
+        <p className="text-[9px] text-primary-600 font-medium mt-0.5 leading-tight truncate w-full">
           {unit.current_guest.split(' ').slice(0, 2).join(' ')}
         </p>
       )}
@@ -168,41 +116,26 @@ function BedCell({
   )
 }
 
-// ── Группировка ───────────────────────────────────────────────────────────────
-
-interface RoomGroup {
-  roomId: number
-  roomName: string
-  roomType: string
-  units: Unit[]
-}
+// ── Room grouping ──
+interface RoomGroup { roomId: number; roomName: string; units: Unit[] }
 
 function groupByRoom(units: Unit[]): RoomGroup[] {
   const map = new Map<number, RoomGroup>()
   for (const u of units) {
     if (!map.has(u.room)) {
-      map.set(u.room, {
-        roomId:   u.room,
-        roomName: u.room_name ?? `Комната ${u.room}`,
-        roomType: u.unit_type === 'bed' ? 'dorm' : 'private',
-        units:    [],
-      })
+      map.set(u.room, { roomId: u.room, roomName: u.room_name ?? `Комната ${u.room}`, units: [] })
     }
     map.get(u.room)!.units.push(u)
   }
   return Array.from(map.values())
 }
 
-// ── Легенда ───────────────────────────────────────────────────────────────────
-
+// ── Legend ──
 function Legend({ units }: { units: Unit[] }) {
   const counts = units.reduce((acc, u) => {
-    acc[u.status] = (acc[u.status] ?? 0) + 1
-    return acc
+    acc[u.status] = (acc[u.status] ?? 0) + 1; return acc
   }, {} as Record<UnitStatus, number>)
-
   const order: UnitStatus[] = ['occupied', 'available', 'reserved', 'dirty', 'maintenance', 'out_of_order']
-
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-1">
       {order.map(s => {
@@ -221,15 +154,15 @@ function Legend({ units }: { units: Unit[] }) {
   )
 }
 
-// ── Главная страница ──────────────────────────────────────────────────────────
-
+// ── Page ──
 export default function OccupancyPage() {
   const qc = useQueryClient()
   const [picker, setPicker] = useState<Unit | null>(null)
+  const [filter, setFilter] = useState('all')
 
   const { data: units = [], isLoading } = useQuery({
-    queryKey:  ['units'],
-    queryFn:   propertiesApi.allUnits,
+    queryKey: ['units'],
+    queryFn: propertiesApi.allUnits,
     staleTime: 30_000,
   })
 
@@ -239,11 +172,28 @@ export default function OccupancyPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['units'] }),
   })
 
-  const rooms    = groupByRoom(units)
-  const occupied  = units.filter(u => u.status === 'occupied').length
+  const rooms = groupByRoom(units)
+  const occupied = units.filter(u => u.status === 'occupied').length
   const available = units.filter(u => u.status === 'available').length
-  const total     = units.length
-  const pct       = total > 0 ? Math.round((occupied / total) * 100) : 0
+  const total = units.length
+  const pct = total > 0 ? Math.round((occupied / total) * 100) : 0
+
+  const counts: Record<string, number> = {
+    all: total,
+    available: units.filter(u => u.status === 'available').length,
+    occupied: units.filter(u => u.status === 'occupied').length,
+    maintenance: units.filter(u => u.status === 'maintenance' || u.status === 'dirty').length,
+  }
+
+  // Filter rooms/units
+  const filteredRooms = filter === 'all'
+    ? rooms
+    : rooms.map(r => ({
+        ...r,
+        units: r.units.filter(u =>
+          filter === 'maintenance' ? (u.status === 'maintenance' || u.status === 'dirty') : u.status === filter
+        ),
+      })).filter(r => r.units.length > 0)
 
   if (isLoading) {
     return (
@@ -254,40 +204,40 @@ export default function OccupancyPage() {
   }
 
   return (
-    <div className="px-4 py-4 space-y-4">
-      {/* Header */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-900">Карта размещения</h2>
-        <p className="text-xs text-gray-400 mt-0.5">Нажмите на место чтобы изменить статус</p>
-      </div>
+    <div className="px-4 py-4 space-y-3">
+      <PageHeader title="Карта размещения" subtitle={`${occupied} из ${total} мест занято`} />
+
+      <FilterPills value={filter} onChange={setFilter} options={[
+        { value: 'all', label: 'Все', count: counts.all },
+        { value: 'available', label: 'Свободно', count: counts.available },
+        { value: 'occupied', label: 'Занято', count: counts.occupied },
+        { value: 'maintenance', label: 'Обслуж.', count: counts.maintenance },
+      ]} />
 
       {/* Occupancy bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+      <div className="bg-white rounded-2xl shadow-card px-4 py-3">
         <div className="flex items-end justify-between mb-2">
           <div>
-            <span className="text-3xl font-bold text-gray-900">{pct}%</span>
+            <span className="text-3xl font-extrabold text-gray-900">{pct}%</span>
             <span className="text-sm text-gray-400 ml-1.5">заполнено</span>
           </div>
           <span className="text-xs text-gray-500 text-right leading-relaxed">
-            {occupied} занято<br />{available} своб. · {total} всего
+            {occupied} занято<br />{available} своб.
           </span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden mb-2.5">
-          <div
-            className="h-full bg-sky-500 rounded-full transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
+          <div className="h-full bg-primary-500 rounded-full transition-all duration-500"
+            style={{ width: `${pct}%` }} />
         </div>
         <Legend units={units} />
       </div>
 
       {/* Rooms */}
-      {rooms.map(room => {
+      {filteredRooms.map(room => {
         const isDorm = room.units.some(u => u.unit_type === 'bed')
-        const roomOccupied  = room.units.filter(u => u.status === 'occupied').length
-        const roomAvailable = room.units.filter(u => u.status === 'available').length
+        const roomOcc = room.units.filter(u => u.status === 'occupied').length
+        const roomAvail = room.units.filter(u => u.status === 'available').length
 
-        // Парное разбиение для дормитория: [0,1], [2,3], [4,5]...
         const bunks: Array<[Unit, Unit | undefined]> = []
         if (isDorm) {
           for (let i = 0; i < room.units.length; i += 2) {
@@ -296,8 +246,7 @@ export default function OccupancyPage() {
         }
 
         return (
-          <div key={room.roomId} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {/* Room header */}
+          <div key={room.roomId} className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center shrink-0">
@@ -308,72 +257,51 @@ export default function OccupancyPage() {
                 <span className="font-semibold text-sm text-gray-800">{room.roomName}</span>
                 {isDorm && (
                   <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">
-                    {room.units.length / 2} кровати
+                    {Math.ceil(room.units.length / 2)} кровати
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs">
-                {roomOccupied > 0 && (
-                  <span className="flex items-center gap-1 text-sky-600 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-                    {roomOccupied} зан.
+                {roomOcc > 0 && (
+                  <span className="flex items-center gap-1 text-primary-600 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary-400" /> {roomOcc} зан.
                   </span>
                 )}
-                {roomAvailable > 0 && (
+                {roomAvail > 0 && (
                   <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    {roomAvailable} св.
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {roomAvail} св.
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Dorm — bunk pairs */}
             {isDorm ? (
               <div className="p-3 grid grid-cols-3 gap-2">
                 {bunks.map(([lower, upper], idx) => (
                   <div key={idx} className="flex flex-col gap-1.5">
-                    {/* Верхняя (upper) */}
                     {upper ? (
-                      <BedCell
-                        unit={upper}
-                        position="upper"
-                        onClick={() => setPicker(upper)}
-                      />
+                      <BedCell unit={upper} position="upper" onClick={() => setPicker(upper)} />
                     ) : (
                       <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50" style={{ minHeight: 72 }} />
                     )}
-                    {/* Нижняя (lower) */}
-                    <BedCell
-                      unit={lower}
-                      position="lower"
-                      onClick={() => setPicker(lower)}
-                    />
+                    <BedCell unit={lower} position="lower" onClick={() => setPicker(lower)} />
                   </div>
                 ))}
               </div>
             ) : (
-              /* Private rooms — simple grid */
               <div className="p-3 grid grid-cols-3 gap-2">
                 {room.units.map(unit => {
                   const cfg = STATUS[unit.status]
                   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
                   return (
-                    <button
-                      key={unit.id}
-                      onClick={() => setPicker(unit)}
-                      className={`
-                        relative flex flex-col items-center justify-center
-                        rounded-xl border p-2 transition active:scale-95 touch-manipulation
-                        ${cfg.bg} ${cfg.border}
-                      `}
-                      style={{ minHeight: 72 }}
-                    >
+                    <button key={unit.id} onClick={() => setPicker(unit)}
+                      className={`relative flex flex-col items-center justify-center rounded-xl border p-2 transition tap-card ${cfg.bg} ${cfg.border}`}
+                      style={{ minHeight: 72 }}>
                       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
                       <p className={`text-xs font-bold ${cfg.text}`}>{shortName}</p>
                       <div className="mt-1">{cfg.icon}</div>
                       {unit.status === 'occupied' && unit.current_guest && (
-                        <p className="text-[9px] text-sky-600 font-medium mt-1 text-center leading-tight truncate w-full px-1">
+                        <p className="text-[9px] text-primary-600 font-medium mt-1 text-center leading-tight truncate w-full px-1">
                           {unit.current_guest.split(' ')[0]}
                         </p>
                       )}
@@ -386,11 +314,17 @@ export default function OccupancyPage() {
         )
       })}
 
-      {/* Status picker popup */}
+      {filteredRooms.length === 0 && (
+        <div className="text-center py-12 text-gray-400">
+          <p className="text-base font-semibold text-gray-500">Нет мест</p>
+          <p className="text-sm mt-1">Попробуйте другой фильтр</p>
+        </div>
+      )}
+
       {picker && (
         <StatusPicker
           unit={picker}
-          onSelect={(newStatus) => changeStatus({ id: picker.id, status: newStatus })}
+          onSelect={(s) => changeStatus({ id: picker.id, status: s })}
           onClose={() => setPicker(null)}
         />
       )}

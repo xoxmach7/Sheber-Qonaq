@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth'
+import { Building2 } from 'lucide-react'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -23,32 +24,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-primary-700 flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen min-h-dvh flex flex-col items-center justify-center px-6"
+      style={{ background: 'linear-gradient(160deg, #EEF2FF 0%, #fff 50%, #EEF2FF 100%)' }}>
+
       {/* Logo */}
-      <div className="mb-8 text-center">
-        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-          <span className="text-3xl">🏠</span>
+      <div className="text-center mb-10">
+        <div className="w-[72px] h-[72px] rounded-2xl bg-primary-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/30">
+          <Building2 size={36} className="text-white" />
         </div>
-        <h1 className="text-white text-2xl font-bold">Sheber PMS</h1>
-        <p className="text-primary-200 text-sm mt-1">Система управления хостелом</p>
+        <h1 className="text-[28px] font-extrabold text-gray-900">Sheber PMS</h1>
+        <p className="text-[15px] text-gray-500 mt-1">Управление хостелом</p>
       </div>
 
       {/* Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4"
-      >
-        <h2 className="text-gray-800 text-xl font-semibold text-center">Вход</h2>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-            {error}
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Логин
+      <form onSubmit={handleSubmit} className="w-full max-w-[320px]">
+        <div className="mb-3.5">
+          <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">
+            Логин <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -56,14 +48,14 @@ export default function LoginPage() {
             onChange={e => setUsername(e.target.value)}
             autoComplete="username"
             required
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="input-field"
             placeholder="admin"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Пароль
+        <div className="mb-3.5">
+          <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">
+            Пароль <span className="text-red-500">*</span>
           </label>
           <input
             type="password"
@@ -71,18 +63,26 @@ export default function LoginPage() {
             onChange={e => setPassword(e.target.value)}
             autoComplete="current-password"
             required
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            placeholder="••••••••"
+            className="input-field"
+            placeholder="••••••"
           />
         </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 px-3.5 py-2.5 rounded-xl text-[13px] font-medium mb-3.5">
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-semibold py-3 rounded-xl transition-colors"
+          className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-3.5 rounded-xl transition-colors text-[15px] shadow-sm"
         >
-          {isLoading ? 'Входим...' : 'Войти'}
+          {isLoading ? 'Вход...' : 'Войти'}
         </button>
+
+        <p className="text-xs text-gray-400 text-center mt-4">Демо: admin / admin</p>
       </form>
     </div>
   )

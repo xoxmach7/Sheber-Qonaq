@@ -7,19 +7,30 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-gray-50 text-gray-900 font-sans;
+    @apply bg-gray-100 text-gray-900 font-sans antialiased;
     overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+  h1, h2, h3 {
+    text-wrap: pretty;
+  }
+  ::-webkit-scrollbar { width: 0; height: 0; }
 }
 
 @layer utilities {
   .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 }
 
 @layer components {
   .input-field {
-    @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white transition;
+    @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-gray-50/80
+           focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 focus:bg-white
+           transition placeholder:text-gray-400;
+  }
+  .tap-card {
+    @apply transition-transform active:scale-[0.97] touch-manipulation;
   }
 }

@@ -1,24 +1,33 @@
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { dashboardApi } from '../../api'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import {
-  TrendingUp, TrendingDown, AlertCircle, CalendarCheck,
-  LogIn, LogOut, Users, Wallet, Globe
+  BedDouble, CheckCircle2, ArrowDownCircle, ArrowUpCircle,
+  Banknote, AlertCircle, Globe, Plus, LogOut, User, CreditCard,
 } from 'lucide-react'
+import { KPICard, Avatar } from '../../components/ui'
+import { useAuthStore } from '../../store/auth'
 
 function fmt(n: number | string) {
   return Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
+  const user = useAuthStore(s => s.user)
+
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: dashboardApi.get,
     refetchInterval: 60_000,
   })
 
-  const today = format(new Date(), 'd MMMM yyyy', { locale: ru })
+  const today = format(new Date(), 'd MMMM', { locale: ru })
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер'
+  const userName = user?.first_name || 'Администратор'
 
   if (isLoading) {
     return (
@@ -34,168 +43,139 @@ export default function DashboardPage() {
   const alerts = data?.alerts
 
   return (
-    <div className="px-4 py-4 space-y-5">
-      {/* Date */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-900">Сегодня</h2>
-        <p className="text-sm text-gray-500 capitalize">{today}</p>
+    <div className="px-4 py-4 space-y-4">
+      {/* Greeting */}
+      <div className="pb-1">
+        <p className="text-sm text-gray-400">{greeting}, {userName}</p>
+        <h1 className="text-2xl font-extrabold text-gray-900 mt-0.5">Sheber PMS</h1>
+        <p className="text-[13px] text-gray-500 mt-0.5">Сегодня, {today}</p>
       </div>
 
-      {/* Occupancy */}
-      <section>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          Заполняемость
-        </h3>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex justify-between items-end mb-2">
-            <span className="text-3xl font-bold text-gray-900">
-              {((occ?.rate ?? 0)).toFixed(0)}%
-            </span>
-            <span className="text-sm text-gray-500">
-              {occ?.occupied ?? 0} / {occ?.total ?? 0} мест
-            </span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-            <div
-              className="h-full bg-primary-500 rounded-full transition-all"
-              style={{ width: `${occ?.rate ?? 0}%` }}
-            />
-          </div>
-          <div className="flex gap-3 mt-3 text-xs text-gray-500 flex-wrap">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              Свободно: {occ?.available ?? 0}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
-              Бронь: {occ?.reserved ?? 0}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />
-              Уборка: {occ?.dirty ?? 0}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-sky-600 inline-block" />
-              Занято: {occ?.occupied ?? 0}
-            </span>
-          </div>
-        </div>
-      </section>
+      {/* KPI Grid */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <KPICard
+          icon={BedDouble}
+          label="Занято мест"
+          value={`${occ?.occupied ?? 0}/${occ?.total ?? 0}`}
+          sub={`${(occ?.rate ?? 0).toFixed(0)}% загрузка`}
+          color="primary"
+          onClick={() => navigate('/occupancy')}
+        />
+        <KPICard
+          icon={CheckCircle2}
+          label="Свободно"
+          value={occ?.available ?? 0}
+          sub={`${occ?.maintenance ?? 0} на ремонте`}
+          color="emerald"
+          onClick={() => navigate('/occupancy')}
+        />
+        <KPICard
+          icon={ArrowDownCircle}
+          label="Заезды сегодня"
+          value={todayData?.checkins?.length ?? 0}
+          color="blue"
+          onClick={() => navigate('/stays')}
+        />
+        <KPICard
+          icon={ArrowUpCircle}
+          label="Выезды сегодня"
+          value={todayData?.checkouts?.length ?? 0}
+          color="red"
+          onClick={() => navigate('/stays')}
+        />
+      </div>
 
-      {/* Finance */}
-      <section>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          Финансы (месяц)
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          {/* Доход */}
-          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center shrink-0">
-              <TrendingUp size={20} className="text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500">Доход</p>
-              <p className="text-base font-bold text-gray-900 leading-tight truncate">
-                {fmt(fin?.income_this_month ?? 0)}
-              </p>
-            </div>
-          </div>
-          {/* Расходы */}
-          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-400 flex items-center justify-center shrink-0">
-              <TrendingDown size={20} className="text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500">Расходы</p>
-              <p className="text-base font-bold text-gray-900 leading-tight truncate">
-                {fmt(fin?.expenses_this_month ?? 0)}
-              </p>
-            </div>
-          </div>
-          {/* Прибыль */}
-          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center shrink-0">
-              <Wallet size={20} className="text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500">Прибыль</p>
-              <p className={`text-base font-bold leading-tight truncate ${
-                Number(fin?.net_profit ?? 0) >= 0 ? 'text-gray-900' : 'text-orange-600'
-              }`}>
-                {fmt(fin?.net_profit ?? 0)}
-              </p>
-            </div>
-          </div>
-          {/* Долги */}
-          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-400 flex items-center justify-center shrink-0">
-              <AlertCircle size={20} className="text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500">Долги</p>
-              <p className="text-base font-bold text-gray-900 leading-tight truncate">
-                {fmt(fin?.total_active_debt ?? 0)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Revenue card */}
+      <KPICard
+        icon={Banknote}
+        label="Доход за месяц"
+        value={fmt(fin?.income_this_month ?? 0)}
+        sub={Number(fin?.expenses_this_month ?? 0) > 0 ? `Расходы: ${fmt(fin?.expenses_this_month ?? 0)}` : undefined}
+        color="emerald"
+        onClick={() => navigate('/finances')}
+      />
 
-      {/* Today events */}
-      <section>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          На сегодня
-        </h3>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center">
-            <LogIn size={18} className="mx-auto text-green-600 mb-1" />
-            <p className="text-2xl font-bold text-green-700">
-              {todayData?.checkins?.length ?? 0}
-            </p>
-            <p className="text-xs text-green-600">Заездов</p>
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {[
+          { icon: Plus,       label: 'Заселить',    color: 'bg-emerald-500', to: '/stays' },
+          { icon: LogOut,     label: 'Выселить',    color: 'bg-red-500',     to: '/stays' },
+          { icon: User,       label: 'Новый гость', color: 'bg-primary-500', to: '/guests' },
+          { icon: CreditCard, label: 'Платёж',      color: 'bg-amber-500',   to: '/finances' },
+        ].map((a, i) => (
+          <button
+            key={i}
+            onClick={() => navigate(a.to)}
+            className="tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card text-left"
+          >
+            <div className={`w-9 h-9 rounded-xl ${a.color}/10 flex items-center justify-center`}>
+              <a.icon size={18} className={`${a.color.replace('bg-', 'text-')}`} />
+            </div>
+            <span className="text-sm font-semibold text-gray-900">{a.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Today Activity */}
+      {(todayData?.checkins?.length || todayData?.checkouts?.length) ? (
+        <section>
+          <h3 className="text-[15px] font-bold text-gray-900 mb-2.5">Сегодня</h3>
+          <div className="flex flex-col gap-2">
+            {todayData?.checkouts?.map((s, i) => (
+              <div key={`out-${i}`} className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl shadow-card">
+                <Avatar name={`${s.guest__first_name} ${s.guest__last_name}`} size={36} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {s.guest__first_name} {s.guest__last_name}
+                  </p>
+                  <p className="text-xs text-gray-400">{s.unit__name}</p>
+                </div>
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold">
+                  <ArrowUpCircle size={12} />
+                  Выезд
+                </div>
+              </div>
+            ))}
+            {todayData?.checkins?.map((s, i) => (
+              <div key={`in-${i}`} className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl shadow-card">
+                <Avatar name={`${s.guest__first_name} ${s.guest__last_name}`} size={36} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {s.guest__first_name} {s.guest__last_name}
+                  </p>
+                  <p className="text-xs text-gray-400">{s.unit__name}</p>
+                </div>
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold">
+                  <ArrowDownCircle size={12} />
+                  Заезд
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-center">
-            <LogOut size={18} className="mx-auto text-red-500 mb-1" />
-            <p className="text-2xl font-bold text-red-600">
-              {todayData?.checkouts?.length ?? 0}
-            </p>
-            <p className="text-xs text-red-500">Выездов</p>
-          </div>
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-center">
-            <CalendarCheck size={18} className="mx-auto text-indigo-500 mb-1" />
-            <p className="text-2xl font-bold text-indigo-600">
-              {todayData?.viewings?.length ?? 0}
-            </p>
-            <p className="text-xs text-indigo-500">Показов</p>
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* Debtors */}
       {alerts?.debtors && alerts.debtors.length > 0 && (
         <section>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-            <AlertCircle size={14} className="text-orange-400" />
+          <h3 className="text-[15px] font-bold text-gray-900 mb-2.5 flex items-center gap-1.5">
+            <AlertCircle size={15} className="text-amber-500" />
             Должники
           </h3>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             {alerts.debtors.map((d, i) => (
               <div
                 key={i}
                 className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0"
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Users size={14} className="text-gray-500" />
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Avatar name={d.guest_name} size={32} />
                   <div>
-                    <p className="text-sm text-gray-800">{d.guest_name}</p>
+                    <p className="text-sm font-medium text-gray-800">{d.guest_name}</p>
                     <p className="text-xs text-gray-400">{d.unit_name}</p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-red-600">
-                  -{fmt(d.debt)}
-                </span>
+                <span className="text-sm font-bold text-red-600">-{fmt(d.debt)}</span>
               </div>
             ))}
           </div>
@@ -204,14 +184,14 @@ export default function DashboardPage() {
 
       {/* MPIS alert */}
       {(alerts?.mpis_pending_count ?? 0) > 0 && (
-        <div className="bg-orange-50 border border-orange-300 rounded-2xl px-4 py-3 flex items-center gap-3">
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 flex items-center gap-3">
           <Globe size={20} className="text-orange-600 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-orange-800">
               {alerts!.mpis_pending_count} иностранц{alerts!.mpis_pending_count === 1 ? 'а' : 'ев'} без регистрации MPIS
             </p>
             <p className="text-xs text-orange-600 mt-0.5">
-              Зарегистрируйте в eQonaq.kz — обязательно с 1 июля 2026
+              Зарегистрируйте в eQonaq.kz
             </p>
           </div>
         </div>
@@ -219,9 +199,9 @@ export default function DashboardPage() {
 
       {/* Expiring soon */}
       {(alerts?.expiring_soon_count ?? 0) > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <AlertCircle size={20} className="text-yellow-600 shrink-0" />
-          <p className="text-sm text-yellow-800">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <AlertCircle size={20} className="text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-800">
             <strong>{alerts!.expiring_soon_count}</strong> заездов заканчиваются в течение 3 дней
           </p>
         </div>
