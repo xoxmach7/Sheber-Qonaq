@@ -110,6 +110,14 @@ class DashboardView(APIView):
             expected_check_out_date__gt=today,
         ).count()
 
+        # MPIS: иностранцы без подтверждённой регистрации
+        mpis_pending_count = Stay.objects.filter(
+            organization=org,
+            status='active',
+            guest__is_foreigner=True,
+            mpis_status__in=['pending', 'submitted'],
+        ).count()
+
         return Response({
             'date': today,
             'month': today.strftime('%Y-%m'),
@@ -140,6 +148,7 @@ class DashboardView(APIView):
 
             'alerts': {
                 'expiring_soon_count': expiring_count,
+                'mpis_pending_count': mpis_pending_count,
                 'debtors': debtors[:5],   # топ-5 должников
             },
         })

@@ -5,8 +5,8 @@ from .models import Payment, Expense
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['guest_name', 'amount_colored', 'payment_date', 'method', 'received_by', 'organization']
-    list_filter = ['method', 'payment_date', 'organization']
+    list_display = ['guest_name', 'amount_colored', 'payment_date', 'method', 'received_by']
+    list_filter = ['method', 'payment_date']
     search_fields = ['stay__guest__first_name', 'stay__guest__last_name', 'stay__guest__phone']
     date_hierarchy = 'payment_date'
     ordering = ['-payment_date']
@@ -17,7 +17,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
     @admin.display(description='Сумма')
     def amount_colored(self, obj):
-        return format_html('<span style="color:green;font-weight:bold">{} ₸</span>', obj.amount)
+        return format_html('<span style="color:green;font-weight:bold">{} tg</span>', obj.amount)
 
 
 @admin.register(Expense)
@@ -29,4 +29,4 @@ class ExpenseAdmin(admin.ModelAdmin):
 
     @admin.display(description='Сумма')
     def amount_colored(self, obj):
-        return format_html('<span style="color:red;font-weight:bold">−{} ₸</span>', obj.amount)
+        return format_html('<span style="color:red;font-weight:bold">-{} tg</span>', obj.amount)

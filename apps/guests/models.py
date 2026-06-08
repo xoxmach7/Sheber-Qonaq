@@ -40,6 +40,14 @@ class Guest(OrganizationScopedModel):
     )
     date_of_birth = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
     city_of_origin = models.CharField(max_length=100, blank=True, verbose_name='Город')
+    nationality = models.CharField(
+        max_length=100, blank=True, verbose_name='Гражданство',
+        help_text='Страна гражданства, напр. "Казахстан", "Россия", "Германия"'
+    )
+    is_foreigner = models.BooleanField(
+        default=False, verbose_name='Иностранец',
+        help_text='Требуется регистрация в MPIS/eQonaq'
+    )
     notes = models.TextField(blank=True, verbose_name='Заметки')
     is_active = models.BooleanField(default=True, verbose_name='Активен')
 

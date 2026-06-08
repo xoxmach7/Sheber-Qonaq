@@ -90,9 +90,11 @@ export interface Guest {
   full_name: string
   phone: string
   email?: string
-  iin_display?: string  // маскированный: "881***90"
+  iin_display?: string
   notes?: string
   is_blacklisted?: boolean
+  nationality?: string
+  is_foreigner?: boolean
   created_at: string
 }
 
@@ -104,11 +106,14 @@ export interface GuestCreate {
   email?: string
   iin?: string
   notes?: string
+  nationality?: string
+  is_foreigner?: boolean
 }
 
 // ─── Stay ────────────────────────────────────────────────────────────────────
 export type RateType = 'daily' | 'weekly' | 'monthly'
 export type StayStatus = 'active' | 'checked_out' | 'cancelled' | 'no_show'
+export type MpisStatus = 'not_required' | 'pending' | 'submitted' | 'confirmed'
 export type StaySource =
   | 'direct'
   | 'krisha'
@@ -122,6 +127,10 @@ export interface GuestShort {
   id: number
   full_name: string
   phone: string
+  nationality?: string
+  is_foreigner?: boolean
+  document_type?: string
+  document_number?: string
 }
 
 export interface UnitShort {
@@ -144,6 +153,8 @@ export interface Stay {
   deposit_amount: string
   status: StayStatus
   source: StaySource
+  mpis_status: MpisStatus
+  mpis_status_display?: string
   total_paid: string
   total_expected: string
   balance: string
@@ -281,6 +292,7 @@ export interface DashboardData {
   }
   alerts: {
     expiring_soon_count: number
+    mpis_pending_count: number
     debtors: Array<{
       stay_id: number
       guest_name: string

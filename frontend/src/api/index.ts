@@ -3,7 +3,7 @@ import type {
   LoginCredentials, AuthTokens, User,
   Property, Room, Unit,
   Guest, GuestCreate,
-  Stay, StayCreate,
+  Stay, StayCreate, MpisStatus,
   Payment, PaymentCreate, Expense, FinanceSummary,
   Lead, Viewing,
   DashboardData,
@@ -93,6 +93,11 @@ export const staysApi = {
 
   extend: (id: number, newDate: string) =>
     api.post(`/stays/${id}/extend/`, { new_check_out_date: newDate }).then(r => r.data),
+
+  updateMpis: (id: number, mpis_status: MpisStatus) =>
+    api.patch<{ id: number; mpis_status: MpisStatus; mpis_status_display: string }>(
+      `/stays/${id}/mpis/`, { mpis_status }
+    ).then(r => r.data),
 }
 
 // ─── Payments ────────────────────────────────────────────────────────────────

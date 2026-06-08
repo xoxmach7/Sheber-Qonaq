@@ -2,11 +2,16 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from django.db import transaction
 from django.utils import timezone
 from apps.core.mixins import OrganizationMixin
 from apps.core.permissions import IsReception, IsOwnerOrManager
 from .models import Stay
-from .serializers import StaySerializer, CheckOutSerializer, ExtendStaySerializer
+from .serializers import (
+    StaySerializer, CheckOutSerializer, ExtendStaySerializer,
+    MpisStatusSerializer, MpisPendingStaySerializer,
+)
 
 
 class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
@@ -24,8 +29,12 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=['post'])
+    @transaction.atomic
     def checkout(self, request, pk=None):
-        """Выселение гостя. Освобождает юнит."""
+        """
+        Выселение гостя. Освобождает юнит.
+        Атомарно: Stay и Unit обновляются в одной транзакции.
+        """
         stay = self.get_object()
         if stay.status != 'active':
             return Response(
@@ -44,7 +53,8 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
         stay.status = 'checked_out'
         stay.save(update_fields=['status', 'actual_check_out_date', 'notes'])
 
-        # Освобождаем юнит — ставим статус "требует уборки"
+        # Освобождаем юнит — ставим статус "требует уборки".
+        # В той же транзакции: если save() упадёт — Stay тоже откатится.
         stay.unit.status = 'dirty'
         stay.unit.save(update_fields=['status'])
 
@@ -92,3 +102,42 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
             expected_check_out_date__range=[today, week_later]
         ).order_by('expected_check_out_date')
         return Response(StaySerializer(qs, many=True, context={'request': request}).data)
+
+    @action(detail=True, methods=['patch'], url_path='mpis')
+    def update_mpis(self, request, pk=None):
+        """Обновить MPIS-статус заезда."""
+        stay = self.get_object()
+        serializer = MpisStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        stay.mpis_status = serializer.validated_data['mpis_status']
+        stay.save(update_fields=['mpis_status'])
+        return Response({
+            'id': stay.id,
+            'mpis_status': stay.mpis_status,
+            'mpis_status_display': stay.get_mpis_status_display(),
+        })
+
+
+class MpisPendingView(APIView):
+    """
+    GET /api/v1/mpis/pending/
+    Список активных заездов иностранцев с незавершённой регистрацией MPIS.
+    """
+    permission_classes = [IsAuthenticated, IsReception]
+
+    def get(self, request):
+        org = request.user.organization
+        qs = Stay.objects.select_related(
+            'guest', 'unit__room__property'
+        ).filter(
+            organization=org,
+            status='active',
+            guest__is_foreigner=True,
+            mpis_status__in=['pending', 'submitted'],
+        ).order_by('check_in_date')
+
+        serializer = MpisPendingStaySerializer(qs, many=True, context={'request': request})
+        return Response({
+            'count': qs.count(),
+            'results': serializer.data,
+        })

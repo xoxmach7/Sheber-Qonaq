@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import {
   TrendingUp, TrendingDown, AlertCircle, CalendarCheck,
-  LogIn, LogOut, Users, Wallet
+  LogIn, LogOut, Users, Wallet, Globe
 } from 'lucide-react'
 
 function fmt(n: number | string) {
@@ -200,6 +200,21 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* MPIS alert */}
+      {(alerts?.mpis_pending_count ?? 0) > 0 && (
+        <div className="bg-orange-50 border border-orange-300 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <Globe size={20} className="text-orange-600 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-orange-800">
+              {alerts!.mpis_pending_count} иностранц{alerts!.mpis_pending_count === 1 ? 'а' : 'ев'} без регистрации MPIS
+            </p>
+            <p className="text-xs text-orange-600 mt-0.5">
+              Зарегистрируйте в eQonaq.kz — обязательно с 1 июля 2026
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Expiring soon */}

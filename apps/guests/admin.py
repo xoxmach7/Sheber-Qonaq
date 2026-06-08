@@ -6,10 +6,10 @@ from .models import Guest
 @admin.register(Guest)
 class GuestAdmin(admin.ModelAdmin):
     list_display = [
-        'full_name', 'phone', 'document_type', 'city_of_origin',
-        'active_stays', 'is_blacklisted_colored', 'organization',
+        'full_name', 'phone', 'document_type', 'nationality', 'is_foreigner',
+        'city_of_origin', 'active_stays', 'is_blacklisted_colored', 'organization',
     ]
-    list_filter = ['document_type', 'is_active', 'is_blacklisted', 'organization']
+    list_filter = ['document_type', 'is_foreigner', 'is_active', 'organization']
     search_fields = ['first_name', 'last_name', 'phone']
     readonly_fields = ['iin_hash', 'created_at', 'updated_at']
     ordering = ['last_name', 'first_name']
@@ -21,8 +21,11 @@ class GuestAdmin(admin.ModelAdmin):
         ('Документ', {
             'fields': ('document_type', 'document_number', 'iin_hash')
         }),
+        ('Гражданство / MPIS', {
+            'fields': ('nationality', 'is_foreigner')
+        }),
         ('Дополнительно', {
-            'fields': ('city_of_origin', 'notes', 'is_active', 'is_blacklisted', 'blacklist_reason')
+            'fields': ('city_of_origin', 'notes', 'is_active')
         }),
         ('Служебное', {
             'fields': ('created_at', 'updated_at'),
@@ -35,10 +38,11 @@ class GuestAdmin(admin.ModelAdmin):
         count = obj.stays.filter(status='active').count()
         if count:
             return format_html('<span style="color:green;font-weight:bold">{}</span>', count)
-        return '—'
+        return '-'
 
     @admin.display(description='ЧС')
     def is_blacklisted_colored(self, obj):
-        if obj.is_blacklisted:
-            return format_html('<span style="color:red;font-weight:bold">⛔ ЧС</span>')
-        return '—'
+        from apps.blacklist.models import BlacklistEntry
+        if obj.phone and BlacklistEntry.objects.filter(is_active=True, phone=obj.phone).exists():
+            return format_html('<span style="color:red;font-weight:bold">ЧС</span>')
+        return '-'

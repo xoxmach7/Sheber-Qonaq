@@ -13,8 +13,8 @@ class GuestSerializer(serializers.ModelSerializer):
             'id', 'first_name', 'last_name', 'middle_name', 'full_name',
             'phone', 'email', 'iin',
             'document_type', 'document_number', 'document_photo',
-            'date_of_birth', 'city_of_origin', 'notes',
-            'is_active', 'is_blacklisted', 'created_at',
+            'date_of_birth', 'city_of_origin', 'nationality', 'is_foreigner',
+            'notes', 'is_active', 'is_blacklisted', 'created_at',
         ]
         read_only_fields = ['id', 'full_name', 'is_blacklisted', 'created_at']
         extra_kwargs = {
@@ -58,12 +58,17 @@ class GuestSerializer(serializers.ModelSerializer):
 
 
 class GuestShortSerializer(serializers.ModelSerializer):
-    """Краткая версия для использования в Stay и других местах."""
+    """Краткая версия для использования в Stay и других местах.
+    Включает поля для MPIS clipboard bridge."""
     full_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = Guest
-        fields = ['id', 'full_name', 'phone']
+        fields = [
+            'id', 'full_name', 'phone',
+            'nationality', 'is_foreigner',
+            'document_type', 'document_number',
+        ]
 
 
 class BlacklistCheckSerializer(serializers.Serializer):

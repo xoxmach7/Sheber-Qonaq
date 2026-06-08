@@ -1,15 +1,13 @@
+import math
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from decimal import Decimal
 from datetime import date
+from dateutil.relativedelta import relativedelta
 from apps.core.models import OrganizationScopedModel
 
 
 class Stay(OrganizationScopedModel):
-    """
-    Проживание — связь гостя с юнитом на определённый период.
-    Центральная сущность: всё крутится вокруг Stay.
-    """
     RATE_TYPES = [
         ('daily', 'Посуточно'),
         ('weekly', 'Понедельно'),
@@ -31,6 +29,13 @@ class Stay(OrganizationScopedModel):
         ('instagram', 'Instagram'),
         ('referral', 'Рекомендация'),
         ('other', 'Другое'),
+    ]
+
+    MPIS_STATUSES = [
+        ('not_required', 'Не требуется'),
+        ('pending', 'Ожидает регистрации'),
+        ('submitted', 'Отправлено'),
+        ('confirmed', 'Подтверждено'),
     ]
 
     unit = models.ForeignKey(
@@ -65,6 +70,11 @@ class Stay(OrganizationScopedModel):
     source = models.CharField(
         max_length=20, choices=SOURCES, default='direct', verbose_name='Источник'
     )
+    mpis_status = models.CharField(
+        max_length=20, choices=MPIS_STATUSES, default='not_required',
+        verbose_name='Статус MPIS',
+        help_text='Статус регистрации иностранного гостя в системе MPIS/eQonaq'
+    )
     notes = models.TextField(blank=True, verbose_name='Заметки')
     created_by = models.ForeignKey(
         'users.User', on_delete=models.SET_NULL, null=True,
@@ -75,24 +85,38 @@ class Stay(OrganizationScopedModel):
         verbose_name = 'Проживание'
         verbose_name_plural = 'Проживания'
         ordering = ['-check_in_date']
+        constraints = [
+            # Partial unique index: в каждый момент времени у одного юнита
+            # может быть только один активный Stay.
+            # Остальные статусы (checked_out, cancelled, no_show) не попадают
+            # под ограничение — история проживаний не удаляется.
+            # PostgreSQL: CREATE UNIQUE INDEX ON stays_stay (unit_id)
+            # WHERE (status = 'active')
+            models.UniqueConstraint(
+                fields=['unit'],
+                condition=Q(status='active'),
+                name='unique_active_stay_per_unit',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.guest} / {self.unit} / с {self.check_in_date}'
 
-    # ─── Финансовые расчёты ───────────────────────────────────────────────────
+    # --- Финансовые расчёты ---
 
     @property
     def total_paid(self) -> Decimal:
-        """Сумма всех фактически принятых оплат."""
         result = self.payments.aggregate(total=Sum('amount'))['total']
         return result or Decimal('0')
 
     @property
     def total_expected(self) -> Decimal:
-        """
-        Ожидаемая сумма за весь период проживания.
-        Считается на основе rate_type и длительности.
-        """
+        # daily   — rate x количество дней (точно).
+        # weekly  — rate x ceil(дней / 7).
+        # monthly — rate x реальное количество календарных месяцев через
+        #           relativedelta. Неполный месяц округляется вверх до 1.
+        # Исправлен баг: деление delta_days / 30 давало ceil(31/30) = 2
+        # для любого 31-дневного периода, что приводило к двойному начислению.
         end_date = self.actual_check_out_date or self.expected_check_out_date
         if not end_date or not self.check_in_date:
             return Decimal('0')
@@ -101,21 +125,21 @@ class Stay(OrganizationScopedModel):
 
         if self.rate_type == 'daily':
             return self.rate_amount * delta_days
+
         elif self.rate_type == 'weekly':
-            weeks = Decimal(delta_days) / Decimal('7')
-            import math
-            return self.rate_amount * Decimal(math.ceil(float(weeks)))
+            return self.rate_amount * Decimal(math.ceil(delta_days / 7))
+
         elif self.rate_type == 'monthly':
-            # Считаем количество месяцев (округляем вверх)
-            months = Decimal(delta_days) / Decimal('30')
-            import math
-            return self.rate_amount * Decimal(math.ceil(float(months)))
+            diff = relativedelta(end_date, self.check_in_date)
+            whole_months = diff.years * 12 + diff.months
+            if diff.days > 0:
+                whole_months += 1  # неполный месяц -> округление вверх
+            return self.rate_amount * Decimal(max(whole_months, 1))
 
         return Decimal('0')
 
     @property
     def balance(self) -> Decimal:
-        """Долг гостя (отрицательный = переплата)."""
         return self.total_expected - self.total_paid
 
     @property

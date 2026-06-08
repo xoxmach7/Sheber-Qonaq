@@ -133,9 +133,23 @@ REST_FRAMEWORK = {
 # JWT
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    # Access token живёт 30 минут. Если утечёт — окно атаки ограничено.
+    # Фронтенд автоматически обновляет через /auth/refresh/ при 401.
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+
+    # Refresh token живёт 14 дней (сессия без повторного логина).
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
+
+    # Rotate: при каждом /auth/refresh/ выдаётся новый refresh token.
     'ROTATE_REFRESH_TOKENS': True,
+
+    # Blacklist: использованный refresh token немедленно инвалидируется.
+    # Без этого флага старый и новый refresh оба работают до expire.
+    # Требует rest_framework_simplejwt.token_blacklist в INSTALLED_APPS — уже есть.
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    'ALGORITHM': 'HS256',
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # CORS

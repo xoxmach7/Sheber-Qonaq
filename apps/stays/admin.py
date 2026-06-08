@@ -7,9 +7,10 @@ from .models import Stay
 class StayAdmin(admin.ModelAdmin):
     list_display = [
         'guest_name', 'unit_info', 'check_in_date', 'expected_check_out_date',
-        'rate_amount', 'total_paid', 'balance_colored', 'status_colored', 'source',
+        'rate_amount', 'total_paid', 'balance_colored', 'status_colored',
+        'mpis_status_colored', 'source',
     ]
-    list_filter = ['status', 'rate_type', 'source', 'organization']
+    list_filter = ['status', 'mpis_status', 'rate_type', 'source', 'organization']
     search_fields = ['guest__first_name', 'guest__last_name', 'guest__phone']
     date_hierarchy = 'check_in_date'
     readonly_fields = ['total_paid', 'total_expected', 'balance', 'created_at', 'updated_at']
@@ -24,6 +25,9 @@ class StayAdmin(admin.ModelAdmin):
         }),
         ('Тариф и оплата', {
             'fields': ('rate_type', 'rate_amount', 'total_expected', 'total_paid', 'balance')
+        }),
+        ('MPIS / eQonaq', {
+            'fields': ('mpis_status',),
         }),
         ('Дополнительно', {
             'fields': ('notes', 'created_by', 'created_at', 'updated_at'),
@@ -47,8 +51,19 @@ class StayAdmin(admin.ModelAdmin):
 
     @admin.display(description='Статус')
     def status_colored(self, obj):
-        colors = {'active': 'green', 'checked_out': 'gray', 'cancelled': 'red', 'reserved': 'blue'}
-        labels = {'active': 'Активен', 'checked_out': 'Выехал', 'cancelled': 'Отменён', 'reserved': 'Бронь'}
+        colors = {'active': 'green', 'checked_out': 'gray', 'cancelled': 'red', 'no_show': 'orange'}
+        labels = {'active': 'Активен', 'checked_out': 'Выехал', 'cancelled': 'Отменён', 'no_show': 'Не явился'}
         color = colors.get(obj.status, 'black')
         label = labels.get(obj.status, obj.status)
+        return format_html('<span style="color:{}">{}</span>', color, label)
+
+    @admin.display(description='MPIS')
+    def mpis_status_colored(self, obj):
+        icons = {
+            'not_required': ('—', 'gray'),
+            'pending': ('⏳ Ожидает', 'orange'),
+            'submitted': ('📤 Отправлено', 'blue'),
+            'confirmed': ('✅ Подтверждено', 'green'),
+        }
+        label, color = icons.get(obj.mpis_status, (obj.mpis_status, 'black'))
         return format_html('<span style="color:{}">{}</span>', color, label)

@@ -19,4 +19,4 @@ RUN SECRET_KEY=collectstatic-build-only DATABASE_URL=sqlite:////tmp/build.db pyt
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "echo CONTAINE
+CMD ["sh", "-c", "echo CONTAINER_START && python manage.py migrate --noinput && echo MIGRATE_OK && python -m gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 120 --log-level debug"]
