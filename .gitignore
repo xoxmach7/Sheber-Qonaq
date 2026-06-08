@@ -49,3 +49,9 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env
 npm-debug.log*
+
+# Vite timestamps
+frontend/vite.config.ts.timestamp-*.mjs
+
+# Local DB checks
+db_check.sqlite3
