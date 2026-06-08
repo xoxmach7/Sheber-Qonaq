@@ -55,3 +55,8 @@ frontend/vite.config.ts.timestamp-*.mjs
 
 # Local DB checks
 db_check.sqlite3
+
+# Documents
+*.docx
+*.xlsx
+*.pdf
