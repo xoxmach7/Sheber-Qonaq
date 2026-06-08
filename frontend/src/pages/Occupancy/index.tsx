@@ -66,14 +66,6 @@ const STATUS: Record<UnitStatus, StatusCfg> = {
   },
 }
 
-// Цикл смены статуса при нажатии (кроме occupied/reserved — они управляются через заезды)
-const NEXT_STATUS: Partial<Record<UnitStatus, UnitStatus>> = {
-  available:   'maintenance',
-  dirty:       'available',
-  maintenance: 'available',
-  out_of_order:'available',
-}
-
 // ── Попап смены статуса ───────────────────────────────────────────────────────
 
 interface StatusPickerProps {

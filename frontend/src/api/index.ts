@@ -49,7 +49,7 @@ export const propertiesApi = {
     api.get<PaginatedResponse<Unit>>('/units/').then(r => r.data.results),
 
   updateUnitStatus: (id: number, status: Unit['status']) =>
-    api.patch<Unit>(`/units/${id}/`, { status }).then(r => r.data),
+    api.patch<Unit>(`/units/${id}/set_status/`, { status }).then(r => r.data),
 }
 
 // ─── Guests ──────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export const guestsApi = {
     api.patch<Guest>(`/guests/${id}/`, data).then(r => r.data),
 
   checkBlacklist: (iin?: string, phone?: string) =>
-    api.get('/blacklist/check/', { params: { iin, phone } }).then(r => r.data),
+    api.post<BlacklistCheck>('/guests/check_blacklist/', { iin, phone }).then(r => r.data),
 }
 
 // ─── Stays ───────────────────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ export const leadsApi = {
     api.post(`/leads/${leadId}/schedule_viewing/`, { scheduled_at: scheduledAt }).then(r => r.data),
 
   todayViewings: () =>
-    api.get<Viewing[]>('/viewings/today/').then(r => r.data),
+    api.get<Viewing[]>('/leads/today_viewings/').then(r => r.data),
 
   viewings: () =>
     api.get<PaginatedResponse<Viewing>>('/viewings/').then(r => r.data),

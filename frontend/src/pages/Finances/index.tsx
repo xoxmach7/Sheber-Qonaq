@@ -9,6 +9,7 @@ import {
   Banknote, Smartphone, Building2, CreditCard,
 } from 'lucide-react'
 import type { Expense } from '../../types'
+import type { LucideIcon } from 'lucide-react'
 
 function fmt(n: number | string) {
   return Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
@@ -16,7 +17,7 @@ function fmt(n: number | string) {
 
 const METHOD_CONFIG: Record<string, {
   label: string
-  Icon: React.ComponentType<{ size?: number; className?: string }>
+  Icon: LucideIcon
 }> = {
   cash:          { label: 'Наличные', Icon: Banknote   },
   kaspi:         { label: 'Kaspi',    Icon: Smartphone  },
@@ -28,7 +29,7 @@ const CATEGORY_OPTIONS: {
   value: string
   label: string
   hint: string
-  Icon: React.ComponentType<{ size?: number; className?: string }>
+  Icon: LucideIcon
 }[] = [
   { value: 'utility',     label: 'Коммуналка', hint: 'Свет, вода, газ, интернет',    Icon: Zap          },
   { value: 'supply',      label: 'Расходники',  hint: 'Бельё, химия, инвентарь',      Icon: ShoppingCart },

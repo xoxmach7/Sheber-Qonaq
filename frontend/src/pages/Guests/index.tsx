@@ -7,6 +7,7 @@ import {
   Banknote, Lock, Hammer, UserX, VolumeX, HelpCircle,
 } from 'lucide-react'
 import type { GuestCreate, BlacklistCreate, BlacklistReason } from '../../types'
+import type { LucideIcon } from 'lucide-react'
 
 // ── Форма нового гостя ────────────────────────────────────────────────────────
 function GuestForm({ onClose }: { onClose: () => void }) {
@@ -71,7 +72,7 @@ function GuestForm({ onClose }: { onClose: () => void }) {
 const REASON_OPTIONS: {
   value: BlacklistReason
   label: string
-  Icon: React.ComponentType<{ size?: number; className?: string }>
+  Icon: LucideIcon
 }[] = [
   { value: 'debt',      label: 'Долг / не заплатил', Icon: Banknote  },
   { value: 'theft',     label: 'Кража',               Icon: Lock      },
@@ -240,8 +241,8 @@ function GuestsList({ search }: { search: string }) {
               <Phone size={12} />
               <span>{guest.phone}</span>
             </div>
-            {guest.iin_display && (
-              <p className="text-xs text-gray-400">ИИН: {guest.iin_display}</p>
+            {guest.iin && guest.iin !== '***' && (
+              <p className="text-xs text-gray-400">ИИН: {guest.iin}</p>
             )}
           </div>
         </div>

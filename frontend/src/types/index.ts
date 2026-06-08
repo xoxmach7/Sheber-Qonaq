@@ -43,17 +43,24 @@ export interface Property {
   name: string
   address: string
   city: string
+  description?: string
   is_active: boolean
+  rooms_count?: number
+  created_at?: string
 }
 
 export interface Room {
   id: number
   property: number
-  property_name: string
   name: string
+  number?: string
   room_type: 'dorm' | 'private'
   floor: number
   max_capacity: number
+  description?: string
+  units?: Unit[]
+  units_count?: number
+  available_count?: number
 }
 
 export type UnitStatus =
@@ -90,7 +97,7 @@ export interface Guest {
   full_name: string
   phone: string
   email?: string
-  iin_display?: string
+  iin?: string
   notes?: string
   is_blacklisted?: boolean
   nationality?: string
@@ -149,15 +156,20 @@ export interface Stay {
   expected_check_out_date: string
   actual_check_out_date?: string
   rate_type: RateType
+  rate_type_display?: string
   rate_amount: string
   deposit_amount: string
   status: StayStatus
+  status_display?: string
   source: StaySource
+  source_display?: string
+  notes?: string
   mpis_status: MpisStatus
   mpis_status_display?: string
   total_paid: string
   total_expected: string
   balance: string
+  has_debt?: boolean
   created_at: string
 }
 
@@ -207,13 +219,15 @@ export interface Expense {
 }
 
 export interface FinanceSummary {
-  month: string
-  income: number
-  expenses: number
-  net_profit: number
-  total_debt: number
-  income_by_method: Record<PaymentMethod, number>
-  expenses_by_category: Record<string, number>
+  period_start: string
+  period_end: string
+  income: number | string
+  expenses: number | string
+  net_profit: number | string
+  total_debt: number | string
+  payments_count: number
+  income_by_method: Record<string, string | number>
+  expenses_by_category: Record<string, string | number>
 }
 
 // ─── Lead ────────────────────────────────────────────────────────────────────
@@ -230,22 +244,32 @@ export interface Lead {
   name: string
   phone: string
   source?: string
+  source_display?: string
   status: LeadStatus
-  unit_type_interest?: string
-  expected_check_in?: string
+  status_display?: string
+  interested_unit_type?: string
+  budget_min?: string
+  budget_max?: string
   notes?: string
+  converted_to_guest?: number | null
+  converted_at?: string | null
+  viewings?: Viewing[]
+  next_viewing?: Viewing | null
   created_at: string
 }
 
 export interface Viewing {
   id: number
   lead: number
-  lead_name: string
-  lead_phone: string
+  lead_name?: string
+  lead_phone?: string
   scheduled_at: string
+  conducted_at?: string | null
   outcome?: string
+  outcome_display?: string
   notes?: string
   reminder_sent: boolean
+  created_at?: string
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────

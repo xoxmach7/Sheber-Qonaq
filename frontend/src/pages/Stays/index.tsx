@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import type { StayCreate, Stay, PaymentCreate, PaymentMethod, RateType, GuestCreate, MpisStatus } from '../../types'
+import type { LucideIcon } from 'lucide-react'
 
 // ── MPIS статус-бейдж ─────────────────────────────────────────────────────────
 function MpisBadge({ status }: { status: MpisStatus }) {
@@ -205,7 +206,7 @@ function PaymentForm({ stayId, onClose }: { stayId: number; onClose: () => void 
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('cash')
 
-  const methods: { value: PaymentMethod; label: string; Icon: React.ComponentType<{size?: number; className?: string}> }[] = [
+  const methods: { value: PaymentMethod; label: string; Icon: LucideIcon }[] = [
     { value: 'cash',          label: 'Наличные', Icon: Banknote   },
     { value: 'kaspi',         label: 'Kaspi',    Icon: Smartphone  },
     { value: 'bank_transfer', label: 'Перевод',  Icon: Building2   },
