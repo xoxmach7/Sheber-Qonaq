@@ -17,6 +17,7 @@ function fmt(n: number | string) {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
+  const logout = useAuthStore(s => s.logout)
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
@@ -45,10 +46,19 @@ export default function DashboardPage() {
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Greeting */}
-      <div className="pb-1">
-        <p className="text-sm text-gray-400">{greeting}, {userName}</p>
-        <h1 className="text-2xl font-extrabold text-gray-900 mt-0.5">Sheber PMS</h1>
-        <p className="text-[13px] text-gray-500 mt-0.5">Сегодня, {today}</p>
+      <div className="flex items-start justify-between pb-1">
+        <div>
+          <p className="text-sm text-gray-400">{greeting}, {userName}</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 mt-0.5">Sheber PMS</h1>
+          <p className="text-[13px] text-gray-500 mt-0.5">Сегодня, {today}</p>
+        </div>
+        <button
+          onClick={() => { logout(); navigate('/login') }}
+          className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors mt-1"
+          title="Выйти"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
 
       {/* KPI Grid */}
