@@ -21,7 +21,7 @@ class OnboardingSerializer(serializers.Serializer):
     # Организация + объект
     org_name    = serializers.CharField(max_length=255, help_text='Название организации / объекта')
     city        = serializers.CharField(max_length=100, default='Алматы')
-    address     = serializers.CharField(max_length=255, default='')
+    address     = serializers.CharField(max_length=255, default='', allow_blank=True)
     plan        = serializers.ChoiceField(
         choices=['free', 'basic', 'pro'], default='free'
     )
@@ -31,10 +31,10 @@ class OnboardingSerializer(serializers.Serializer):
 
     # Аккаунт менеджера
     manager_first_name = serializers.CharField(max_length=150)
-    manager_last_name  = serializers.CharField(max_length=150, default='')
+    manager_last_name  = serializers.CharField(max_length=150, default='', allow_blank=True)
     manager_username   = serializers.CharField(max_length=150)
     manager_password   = serializers.CharField(max_length=128, write_only=True)
-    manager_phone      = serializers.CharField(max_length=20, default='')
+    manager_phone      = serializers.CharField(max_length=20, default='', allow_blank=True)
 
     def validate_manager_username(self, value):
         if User.objects.filter(username=value).exists():
