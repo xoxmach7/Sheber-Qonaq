@@ -9,6 +9,7 @@ import GuestsPage from './pages/Guests'
 import StaysPage from './pages/Stays'
 import FinancesPage from './pages/Finances'
 import LeadsPage from './pages/Leads'
+import OnboardingPage from './pages/Onboarding'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="stays" element={<StaysPage />} />
           <Route path="finances" element={<FinancesPage />} />
           <Route path="leads" element={<LeadsPage />} />
+          <Route path="onboarding" element={<OnboardingPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
