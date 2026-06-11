@@ -86,6 +86,10 @@ export interface Unit {
   unit_type: UnitType
   status: UnitStatus
   current_guest?: string
+  current_stay_id?: number
+  current_guest_phone?: string
+  check_in?: string
+  check_out?: string
 }
 
 // ─── Guest ───────────────────────────────────────────────────────────────────

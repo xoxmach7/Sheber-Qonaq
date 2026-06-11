@@ -7,22 +7,45 @@ class UnitSerializer(serializers.ModelSerializer):
     status_display    = serializers.CharField(source='get_status_display', read_only=True)
     room_name         = serializers.CharField(source='room.name', read_only=True)
     current_guest     = serializers.SerializerMethodField()
+    current_stay_id   = serializers.SerializerMethodField()
+    current_guest_phone = serializers.SerializerMethodField()
+    check_in          = serializers.SerializerMethodField()
+    check_out         = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit
         fields = [
             'id', 'name', 'unit_type', 'unit_type_display',
             'status', 'status_display', 'description', 'sort_order',
-            'room', 'room_name', 'current_guest',
+            'room', 'room_name', 'current_guest', 'current_stay_id',
+            'current_guest_phone', 'check_in', 'check_out',
         ]
         read_only_fields = ['id']
 
-    def get_current_guest(self, obj):
+    def _active_stay(self, obj):
         if obj.status == 'occupied':
-            stay = obj.stays.filter(status='active').select_related('guest').first()
-            if stay:
-                return stay.guest.full_name
+            return obj.stays.filter(status='active').select_related('guest').first()
         return None
+
+    def get_current_guest(self, obj):
+        stay = self._active_stay(obj)
+        return stay.guest.full_name if stay else None
+
+    def get_current_stay_id(self, obj):
+        stay = self._active_stay(obj)
+        return stay.id if stay else None
+
+    def get_current_guest_phone(self, obj):
+        stay = self._active_stay(obj)
+        return stay.guest.phone if stay else None
+
+    def get_check_in(self, obj):
+        stay = self._active_stay(obj)
+        return str(stay.check_in) if stay else None
+
+    def get_check_out(self, obj):
+        stay = self._active_stay(obj)
+        return str(stay.check_out) if stay else None
 
 
 class UnitStatusSerializer(serializers.Serializer):

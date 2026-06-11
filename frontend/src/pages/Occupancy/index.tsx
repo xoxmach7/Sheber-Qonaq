@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { propertiesApi } from '../../api'
 import type { Unit, UnitStatus } from '../../types'
-import { Wrench, Moon, CheckCircle2, Clock, Ban, Sparkles } from 'lucide-react'
+import { Wrench, Moon, CheckCircle2, Clock, Ban, Sparkles, Phone, CalendarDays, ArrowRight } from 'lucide-react'
 import { PageHeader, FilterPills } from '../../components/ui'
 
 // ── Status config ──
@@ -90,6 +91,62 @@ function StatusPicker({ unit, onSelect, onClose }: {
   )
 }
 
+// ── Guest panel ──
+function GuestPanel({ unit, onClose, onChangeStatus, navigate }: {
+  unit: Unit; onClose: () => void
+  onChangeStatus: () => void
+  navigate: (path: string) => void
+}) {
+  const fmt = (d?: string) => {
+    if (!d) return '—'
+    const [y, m, day] = d.split('-')
+    return `${day}.${m}.${y}`
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/30 animate-fade-in" />
+      <div className="relative w-full bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex justify-center mb-3">
+          <div className="w-9 h-1 rounded-full bg-gray-300" />
+        </div>
+        <p className="text-xs font-semibold text-gray-400 uppercase mb-3">{unit.name}</p>
+
+        <div className="bg-primary-50 rounded-2xl p-4 mb-3">
+          <p className="text-base font-bold text-gray-900">{unit.current_guest}</p>
+          {unit.current_guest_phone && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Phone size={13} className="text-gray-400" />
+              <span className="text-sm text-gray-600">{unit.current_guest_phone}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <CalendarDays size={13} className="text-gray-400" />
+            <span className="text-sm text-gray-600">{fmt(unit.check_in)} → {fmt(unit.check_out)}</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          {unit.current_stay_id && (
+            <button
+              onClick={() => { onClose(); navigate('/stays') }}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-500 text-white rounded-xl text-sm font-semibold"
+            >
+              Открыть заезд <ArrowRight size={16} />
+            </button>
+          )}
+          <button
+            onClick={() => { onClose(); onChangeStatus() }}
+            className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold"
+          >
+            Статус
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Bed cell ──
 function BedCell({ unit, position, onClick }: {
   unit: Unit; position: 'lower' | 'upper'; onClick: () => void
@@ -157,8 +214,15 @@ function Legend({ units }: { units: Unit[] }) {
 // ── Page ──
 export default function OccupancyPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [picker, setPicker] = useState<Unit | null>(null)
+  const [guestPanel, setGuestPanel] = useState<Unit | null>(null)
   const [filter, setFilter] = useState('all')
+
+  const handleUnitClick = (unit: Unit) => {
+    if (unit.status === 'occupied') setGuestPanel(unit)
+    else setPicker(unit)
+  }
 
   const { data: units = [], isLoading } = useQuery({
     queryKey: ['units'],
@@ -280,11 +344,11 @@ export default function OccupancyPage() {
                 {bunks.map(([lower, upper], idx) => (
                   <div key={idx} className="flex flex-col gap-1.5">
                     {upper ? (
-                      <BedCell unit={upper} position="upper" onClick={() => setPicker(upper)} />
+                      <BedCell unit={upper} position="upper" onClick={() => handleUnitClick(upper)} />
                     ) : (
                       <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50" style={{ minHeight: 72 }} />
                     )}
-                    <BedCell unit={lower} position="lower" onClick={() => setPicker(lower)} />
+                    <BedCell unit={lower} position="lower" onClick={() => handleUnitClick(lower)} />
                   </div>
                 ))}
               </div>
@@ -294,7 +358,7 @@ export default function OccupancyPage() {
                   const cfg = STATUS[unit.status]
                   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
                   return (
-                    <button key={unit.id} onClick={() => setPicker(unit)}
+                    <button key={unit.id} onClick={() => handleUnitClick(unit)}
                       className={`relative flex flex-col items-center justify-center rounded-xl border p-2 transition tap-card ${cfg.bg} ${cfg.border}`}
                       style={{ minHeight: 72 }}>
                       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
@@ -326,6 +390,15 @@ export default function OccupancyPage() {
           unit={picker}
           onSelect={(s) => changeStatus({ id: picker.id, status: s })}
           onClose={() => setPicker(null)}
+        />
+      )}
+
+      {guestPanel && (
+        <GuestPanel
+          unit={guestPanel}
+          onClose={() => setGuestPanel(null)}
+          onChangeStatus={() => setPicker(guestPanel)}
+          navigate={navigate}
         />
       )}
     </div>
