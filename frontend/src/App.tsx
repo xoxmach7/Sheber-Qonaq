@@ -10,6 +10,7 @@ import StaysPage from './pages/Stays'
 import FinancesPage from './pages/Finances'
 import LeadsPage from './pages/Leads'
 import OnboardingPage from './pages/Onboarding'
+import BlacklistPage from './pages/Blacklist'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="finances" element={<FinancesPage />} />
           <Route path="leads" element={<LeadsPage />} />
           <Route path="onboarding" element={<OnboardingPage />} />
+          <Route path="blacklist" element={<BlacklistPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -90,12 +90,27 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* Unit */}
+          {/* Unit — grouped by room */}
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Место / комната *</label>
             <select className="input-field" value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
               <option value="">— Выберите свободное место —</option>
-              {availableUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              {(() => {
+                const byRoom = new Map<string, typeof availableUnits>()
+                availableUnits.forEach(u => {
+                  const rn = u.room_name ?? `Комната ${u.room}`
+                  if (!byRoom.has(rn)) byRoom.set(rn, [])
+                  byRoom.get(rn)!.push(u)
+                })
+                return Array.from(byRoom.entries()).map(([roomName, roomUnits]) => (
+                  <optgroup key={roomName} label={roomName}>
+                    {roomUnits.map(u => {
+                      const shortName = u.name.includes('-') ? u.name.split('-')[1] : u.name
+                      return <option key={u.id} value={u.id}>{shortName}</option>
+                    })}
+                  </optgroup>
+                ))
+              })()}
             </select>
             {availableUnits.length === 0 && <p className="text-xs text-orange-500 mt-1">Нет свободных мест</p>}
           </div>
