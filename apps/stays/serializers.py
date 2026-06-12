@@ -49,10 +49,20 @@ class StaySerializer(serializers.ModelSerializer):
         check_out = data.get('expected_check_out_date')
         shift_type = data.get('shift_type')
 
-        if check_in and check_out and check_out <= check_in:
-            raise serializers.ValidationError(
-                'Дата выселения должна быть позже даты заселения.'
-            )
+        # Cottage-режим: дневная смена (13–19) допускает check_out == check_in
+        if check_in and check_out:
+            if shift_type:
+                # посменная аренда — check_out >= check_in
+                if check_out < check_in:
+                    raise serializers.ValidationError(
+                        'Дата выселения не может быть раньше даты заселения.'
+                    )
+            else:
+                # обычный режим — check_out > check_in
+                if check_out <= check_in:
+                    raise serializers.ValidationError(
+                        'Дата выселения должна быть позже даты заселения.'
+                    )
 
         if self.instance is None and unit and check_in:
             mode = self._get_booking_mode(unit)
