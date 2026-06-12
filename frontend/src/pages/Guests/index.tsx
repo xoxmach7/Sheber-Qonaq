@@ -2,45 +2,76 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { guestsApi, blacklistApi } from '../../api'
 import {
-  Plus, Phone, User, AlertTriangle, X,
+  Plus, Phone, User, X,
   ShieldAlert, ShieldOff,
-  Banknote, Lock, Hammer, UserX, VolumeX, HelpCircle, ChevronRight, Star,
+  Banknote, Lock, Hammer, UserX, VolumeX, HelpCircle, Pencil,
 } from 'lucide-react'
-import type { GuestCreate, BlacklistCreate, BlacklistReason } from '../../types'
+import type { Guest, GuestCreate, BlacklistCreate, BlacklistReason } from '../../types'
 import type { LucideIcon } from 'lucide-react'
 import { Avatar, PageHeader, SegmentControl, SearchBar, EmptyState } from '../../components/ui'
 
-// ── Guest form ──
-function GuestForm({ onClose }: { onClose: () => void }) {
+// ─── Guest Form (create / edit) ──────────────────────────────────────────────
+function GuestForm({
+  onClose,
+  initial,
+}: {
+  onClose: () => void
+  initial?: Guest
+}) {
   const qc = useQueryClient()
-  const [form, setForm] = useState<GuestCreate>({
-    first_name: '', last_name: '', phone: '', is_foreigner: false,
-  })
+  const isEdit = !!initial
+
+  const [form, setForm] = useState<GuestCreate>(
+    initial
+      ? {
+          first_name: initial.first_name ?? '',
+          last_name: initial.last_name ?? '',
+          middle_name: initial.middle_name ?? '',
+          phone: initial.phone ?? '',
+          email: initial.email ?? '',
+          iin: initial.iin ?? '',
+          notes: initial.notes ?? '',
+          nationality: initial.nationality ?? '',
+          is_foreigner: initial.is_foreigner ?? false,
+        }
+      : { first_name: '', last_name: '', phone: '', is_foreigner: false }
+  )
   const [error, setError] = useState('')
 
-  const { mutate, isPending } = useMutation({
+  const { mutate: create, isPending: creating } = useMutation({
     mutationFn: guestsApi.create,
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['guests'] }); onClose() },
     onError: () => setError('Ошибка при создании. Проверьте данные.'),
   })
 
+  const { mutate: update, isPending: updating } = useMutation({
+    mutationFn: (data: Partial<GuestCreate>) => guestsApi.update(initial!.id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['guests'] }); onClose() },
+    onError: () => setError('Ошибка при сохранении.'),
+  })
+
+  const isPending = creating || updating
   const set = (k: keyof GuestCreate, v: string) => setForm(f => ({ ...f, [k]: v }))
   const toggleForeigner = () => setForm(f => ({ ...f, is_foreigner: !f.is_foreigner, iin: '' }))
+  const handleSave = () => isEdit ? update(form) : create(form)
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up max-h-[92vh] overflow-y-auto">
         <div className="flex justify-center mb-3">
           <div className="w-9 h-1 rounded-full bg-gray-300" />
         </div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-lg">Новый гость</h3>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100"><X size={20} className="text-gray-400" /></button>
+          <h3 className="font-bold text-lg">{isEdit ? 'Редактировать гостя' : 'Новый гость'}</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+            <X size={20} className="text-gray-400" />
+          </button>
         </div>
+
         {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-3 py-2 mb-3">{error}</div>}
 
-        {/* Иностранный гость — переключатель */}
+        {/* Иностранный гость */}
         <button
           type="button"
           onClick={toggleForeigner}
@@ -50,7 +81,7 @@ function GuestForm({ onClose }: { onClose: () => void }) {
               : 'bg-gray-50 border-gray-200 text-gray-500'
           }`}>
           <div className="flex items-center gap-2">
-            <span className="text-lg">🌍</span>
+            <span className="text-lg">&#127757;</span>
             <span className="text-sm font-semibold">Иностранный гость</span>
           </div>
           <div className={`w-11 h-6 rounded-full relative transition-colors ${form.is_foreigner ? 'bg-blue-500' : 'bg-gray-300'}`}>
@@ -76,26 +107,34 @@ function GuestForm({ onClose }: { onClose: () => void }) {
             <input className="input-field" placeholder="ИИН (12 цифр)" value={form.iin ?? ''} onChange={e => set('iin', e.target.value)} />
           )}
 
-          <textarea className="input-field resize-none" placeholder="Заметки" rows={2} value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} />
+          <textarea
+            className="input-field resize-none"
+            placeholder="Заметки"
+            rows={2}
+            value={form.notes ?? ''}
+            onChange={e => set('notes', e.target.value)}
+          />
         </div>
-        <button onClick={() => mutate(form)}
+
+        <button
+          onClick={handleSave}
           disabled={isPending || !form.first_name || !form.last_name || !form.phone}
           className="w-full mt-4 bg-primary-500 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 transition tap-card">
-          {isPending ? 'Сохраняем...' : 'Создать гостя'}
+          {isPending ? 'Сохраняем...' : isEdit ? 'Сохранить изменения' : 'Создать гостя'}
         </button>
       </div>
     </div>
   )
 }
 
-// ── Blacklist form ──
+// ─── Blacklist form ───────────────────────────────────────────────────────────
 const REASON_OPTIONS: { value: BlacklistReason; label: string; Icon: LucideIcon }[] = [
-  { value: 'debt', label: 'Долг / не заплатил', Icon: Banknote },
-  { value: 'theft', label: 'Кража', Icon: Lock },
-  { value: 'vandalism', label: 'Вандализм', Icon: Hammer },
-  { value: 'fraud', label: 'Мошенничество', Icon: UserX },
-  { value: 'behavior', label: 'Нарушение порядка', Icon: VolumeX },
-  { value: 'other', label: 'Другое', Icon: HelpCircle },
+  { value: 'debt',      label: 'Долг / не заплатил', Icon: Banknote },
+  { value: 'theft',     label: 'Кража',               Icon: Lock },
+  { value: 'vandalism', label: 'Вандализм',            Icon: Hammer },
+  { value: 'fraud',     label: 'Мошенничество',        Icon: UserX },
+  { value: 'behavior',  label: 'Нарушение порядка',    Icon: VolumeX },
+  { value: 'other',     label: 'Другое',               Icon: HelpCircle },
 ]
 
 function BlacklistForm({ onClose }: { onClose: () => void }) {
@@ -128,7 +167,7 @@ function BlacklistForm({ onClose }: { onClose: () => void }) {
         <div className="overflow-y-auto px-5 py-4 space-y-3 flex-1">
           {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-3 py-2">{error}</div>}
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-800">
-            ⚠ Запись видна всем объектам платформы. Убедитесь в достоверности.
+            Запись видна всем объектам платформы. Убедитесь в достоверности.
           </div>
           <input className="input-field" placeholder="ФИО *" value={form.full_name} onChange={e => set('full_name', e.target.value)} />
           <input className="input-field" placeholder="Телефон (+7...)" type="tel" value={form.phone ?? ''} onChange={e => set('phone', e.target.value)} />
@@ -167,8 +206,10 @@ function BlacklistForm({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Guests list ──
+// ─── Guests list ──────────────────────────────────────────────────────────────
 function GuestsList({ search }: { search: string }) {
+  const [editGuest, setEditGuest] = useState<Guest | null>(null)
+
   const { data, isLoading } = useQuery({
     queryKey: ['guests', search],
     queryFn: () => guestsApi.list(search || undefined),
@@ -184,36 +225,49 @@ function GuestsList({ search }: { search: string }) {
   if (guests.length === 0) return <EmptyState icon={User} title={search ? 'Гости не найдены' : 'Гостей пока нет'} />
 
   return (
-    <div className="space-y-2">
-      {guests.map(guest => (
-        <div key={guest.id}
-          className={`tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card cursor-pointer ${
-            guest.is_blacklisted ? 'border-l-[3px] border-red-500' : ''
-          }`}>
-          <Avatar name={guest.full_name} size={44} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-[15px] font-semibold text-gray-900 truncate">{guest.full_name}</p>
-              {guest.is_blacklisted && (
-                <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded shrink-0">ЧС</span>
-              )}
+    <>
+      <div className="space-y-2">
+        {guests.map(guest => (
+          <div
+            key={guest.id}
+            onClick={() => setEditGuest(guest)}
+            className={`tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card cursor-pointer ${
+              guest.is_blacklisted ? 'border-l-[3px] border-red-500' : ''
+            }`}>
+            <Avatar name={guest.full_name} size={44} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[15px] font-semibold text-gray-900 truncate">{guest.full_name}</p>
+                {guest.is_blacklisted && (
+                  <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded shrink-0">ЧС</span>
+                )}
+                {guest.is_foreigner && (
+                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded shrink-0">
+                    {guest.nationality ?? 'Иностр.'}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-[13px] text-gray-500 mt-0.5">
+                <Phone size={12} />
+                <span>{guest.phone}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-[13px] text-gray-500 mt-0.5">
-              <Phone size={12} />
-              <span>{guest.phone}</span>
-            </div>
+            <Pencil size={15} className="text-gray-300 shrink-0" />
           </div>
-          <ChevronRight size={18} className="text-gray-300 shrink-0" />
-        </div>
-      ))}
-      {(data?.count ?? 0) > guests.length && (
-        <p className="text-center text-sm text-gray-400 py-2">Показано {guests.length} из {data?.count}</p>
+        ))}
+        {(data?.count ?? 0) > guests.length && (
+          <p className="text-center text-sm text-gray-400 py-2">Показано {guests.length} из {data?.count}</p>
+        )}
+      </div>
+
+      {editGuest && (
+        <GuestForm initial={editGuest} onClose={() => setEditGuest(null)} />
       )}
-    </div>
+    </>
   )
 }
 
-// ── Blacklist tab ──
+// ─── Blacklist tab ────────────────────────────────────────────────────────────
 function BlacklistTab({ search }: { search: string }) {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({
@@ -263,11 +317,14 @@ function BlacklistTab({ search }: { search: string }) {
             </div>
             <p className="mt-2 text-sm text-gray-600 bg-red-50/60 rounded-xl px-3 py-2">{entry.description}</p>
             {entry.reported_by_name && (
-              <p className="text-xs text-gray-400 mt-1.5">Добавлено: {entry.reported_by_name} · {entry.created_at.slice(0, 10)}</p>
+              <p className="text-xs text-gray-400 mt-1.5">
+                Добавлено: {entry.reported_by_name} · {entry.created_at.slice(0, 10)}
+              </p>
             )}
           </div>
           <div className="border-t border-gray-100 px-4 py-2.5">
-            <button onClick={() => { if (confirm(`Убрать "${entry.full_name}" из чёрного списка?`)) deactivate(entry.id) }}
+            <button
+              onClick={() => { if (confirm('Убрать из черного списка?')) deactivate(entry.id) }}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
               <ShieldOff size={14} /> Убрать из чёрного списка
             </button>
@@ -278,6 +335,48 @@ function BlacklistTab({ search }: { search: string }) {
   )
 }
 
-// ── Page ──
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function GuestsPage() {
-  const [tab, setTab] = useState<'guests' | 'bla
+  const [tab, setTab] = useState<'guests' | 'blacklist'>('guests')
+  const [search, setSearch] = useState('')
+  const [showGuestForm, setShowGuestForm] = useState(false)
+  const [showBlacklistForm, setShowBlacklistForm] = useState(false)
+
+  const { data: blData } = useQuery({
+    queryKey: ['blacklist', ''],
+    queryFn: () => blacklistApi.list(),
+  })
+  const blacklistCount = blData?.count ?? 0
+
+  return (
+    <div className="px-4 py-4 space-y-3">
+      <PageHeader
+        title="Гости"
+        action={tab === 'blacklist' ? 'В ЧС' : 'Добавить'}
+        actionIcon={Plus}
+        actionVariant={tab === 'blacklist' ? 'danger' : 'primary'}
+        onAction={() => tab === 'guests' ? setShowGuestForm(true) : setShowBlacklistForm(true)}
+      />
+
+      <SegmentControl
+        value={tab}
+        onChange={v => { setTab(v as any); setSearch('') }}
+        options={[
+          { value: 'guests', label: 'Все гости' },
+          { value: 'blacklist', label: `Черный список${blacklistCount > 0 ? ` (${blacklistCount})` : ''}` },
+        ]}
+      />
+
+      <SearchBar
+        value={search}
+        onChange={setSearch}
+        placeholder={tab === 'blacklist' ? 'Поиск в черном списке...' : 'Имя или телефон...'}
+      />
+
+      {tab === 'guests' ? <GuestsList search={search} /> : <BlacklistTab search={search} />}
+
+      {showGuestForm && <GuestForm onClose={() => setShowGuestForm(false)} />}
+      {showBlacklistForm && <BlacklistForm onClose={() => setShowBlacklistForm(false)} />}
+    </div>
+  )
+}
