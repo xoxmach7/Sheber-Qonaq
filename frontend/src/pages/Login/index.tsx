@@ -32,7 +32,7 @@ export default function LoginPage() {
         <div className="w-[72px] h-[72px] rounded-2xl bg-primary-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/30">
           <Building2 size={36} className="text-white" />
         </div>
-        <h1 className="text-[28px] font-extrabold text-gray-900">Sheber PMS</h1>
+        <h1 className="text-[28px] font-extrabold text-gray-900">Sheber Qonaq</h1>
         <p className="text-[15px] text-gray-500 mt-1">Управление хостелом</p>
       </div>
 

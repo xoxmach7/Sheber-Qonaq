@@ -49,7 +49,6 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between pb-1">
         <div>
           <p className="text-sm text-gray-400">{greeting}, {userName}</p>
-          <h1 className="text-2xl font-extrabold text-gray-900 mt-0.5">Sheber PMS</h1>
           <p className="text-[13px] text-gray-500 mt-0.5">Сегодня, {today}</p>
         </div>
         <button

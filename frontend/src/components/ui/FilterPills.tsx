@@ -29,4 +29,8 @@ export default function FilterPills({ options, value, onChange }: FilterPillsPro
             {o.label}{o.count != null ? ` (${o.count})` : ''}
           </button>
         )
-   
+      })}
+      </div>
+    </div>
+  )
+}
