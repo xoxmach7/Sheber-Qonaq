@@ -118,6 +118,81 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
         })
 
 
+    @action(detail=False, methods=['get'], url_path='cottage-calendar')
+    def cottage_calendar(self, request):
+        """
+        GET /api/v1/stays/cottage-calendar/?unit=<id>&month=2026-06
+        Возвращает доступность смен по каждому дню месяца для cottage-режима.
+        Формат ответа:
+        {
+          "unit_id": 5,
+          "month": "2026-06",
+          "days": {
+            "2026-06-01": {"day": null, "night": null, "full": null},
+            "2026-06-02": {"day": {"stay_id":12,"guest":"Иванов А."}, "night": null, "full": null},
+            ...
+          }
+        }
+        null = свободно, объект = занято (с данными бронирования).
+        """
+        from datetime import date, timedelta
+        import calendar as cal
+
+        unit_id = request.query_params.get('unit')
+        month_str = request.query_params.get('month')  # "2026-06"
+
+        if not unit_id or not month_str:
+            return Response({'error': 'Параметры unit и month обязательны.'}, status=400)
+
+        try:
+            year, month = map(int, month_str.split('-'))
+        except ValueError:
+            return Response({'error': 'Формат month: YYYY-MM'}, status=400)
+
+        # Первый и последний день месяца
+        first_day = date(year, month, 1)
+        last_day = date(year, month, cal.monthrange(year, month)[1])
+
+        # Все активные stays для этого unit в этом месяце
+        stays = self.get_queryset().filter(
+            unit_id=unit_id,
+            status='active',
+            check_in_date__range=[first_day, last_day],
+            shift_type__isnull=False,  # только cottage-смены
+        ).select_related('guest')
+
+        # Индексируем по дате + типу смены
+        booked = {}
+        for s in stays:
+            key = str(s.check_in_date)
+            if key not in booked:
+                booked[key] = {}
+            booked[key][s.shift_type] = {
+                'stay_id': s.id,
+                'guest': s.guest.full_name,
+                'guest_phone': s.guest.phone,
+            }
+
+        # Строим ответ по всем дням месяца
+        days = {}
+        current = first_day
+        while current <= last_day:
+            key = str(current)
+            day_bookings = booked.get(key, {})
+            days[key] = {
+                'day':   day_bookings.get('day'),
+                'night': day_bookings.get('night'),
+                'full':  day_bookings.get('full'),
+            }
+            current += timedelta(days=1)
+
+        return Response({
+            'unit_id': int(unit_id),
+            'month': month_str,
+            'days': days,
+        })
+
+
 class MpisPendingView(APIView):
     """
     GET /api/v1/mpis/pending/
