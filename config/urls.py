@@ -30,6 +30,8 @@ urlpatterns = [
         path('', include('apps.leads.urls')),
         # /api/v1/blacklist/
         path('', include('apps.blacklist.urls')),
+        # /api/v1/notifications/
+        path('', include('apps.notifications.urls')),
     ])),
 
     # API Docs (swagger)

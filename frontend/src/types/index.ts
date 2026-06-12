@@ -377,3 +377,23 @@ export interface PaginatedResponse<T> {
   previous: string | null
   results: T[]
 }
+
+// -- Notifications ------------------------------------------------------------
+export type NotificationType = 'debt' | 'expiring' | 'overdue' | 'info'
+
+export interface Notification {
+  id: number
+  type: NotificationType
+  type_display: string
+  title: string
+  body: string
+  is_read: boolean
+  stay_id?: number
+  guest_name: string
+  created_at: string
+}
+
+export interface NotificationsResponse {
+  results: Notification[]
+  unread_count: number
+}

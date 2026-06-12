@@ -9,6 +9,7 @@ import type {
   DashboardData,
   PaginatedResponse,
   BlacklistEntry, BlacklistCreate, BlacklistCheck,
+  NotificationsResponse,
 } from '../types'
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -155,4 +156,15 @@ export const leadsApi = {
 
   viewings: () =>
     api.get<PaginatedResponse<Viewing>>('/viewings/').then(r => r.data),
+}
+
+export const notificationsApi = {
+  list: () =>
+    api.get<NotificationsResponse>('/notifications/').then(r => r.data),
+
+  markRead: (id: number) =>
+    api.post(`/notifications/${id}/read/`).then(r => r.data),
+
+  markAllRead: () =>
+    api.post('/notifications/read-all/').then(r => r.data),
 }
