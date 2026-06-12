@@ -243,12 +243,21 @@ export default function CottagePage() {
   const [booking, setBooking] = useState<{ date: string; shift: ShiftType } | null>(null)
 
   const monthStr = format(currentMonth, 'yyyy-MM')
-  const unitId = 1 // TODO: получать из настроек организации или query param
+
+  // Получаем первый юнит организации (cottage-клиент имеет 1+ домиков)
+  const { data: unitsData } = useQuery({
+    queryKey: ['units'],
+    queryFn: () => api.get<{ results: { id: number; name: string }[] }>('/units/').then((r: { data: any }) => r.data),
+    staleTime: 60_000,
+  })
+  const unitId: number = unitsData?.results?.[0]?.id ?? unitsData?.[0]?.id ?? 0
+  const unitName: string = unitsData?.results?.[0]?.name ?? unitsData?.[0]?.name ?? 'Домик'
 
   const { data: calData, isLoading } = useQuery<CalendarData>({
     queryKey: ['cottage-calendar', unitId, monthStr],
     queryFn: () => api.get<CalendarData>(`/stays/cottage-calendar/?unit=${unitId}&month=${monthStr}`).then((r: { data: CalendarData }) => r.data),
     staleTime: 30_000,
+    enabled: unitId > 0,
   })
 
   const days = eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
@@ -262,7 +271,7 @@ export default function CottagePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-gray-900">Домик / Баня</h1>
+          <h1 className="text-xl font-extrabold text-gray-900">{unitName}</h1>
           <p className="text-xs text-gray-400">Занято {occupiedCount} из {totalDays} дней</p>
         </div>
       </div>
