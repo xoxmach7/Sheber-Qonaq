@@ -12,7 +12,8 @@ interface FilterPillsProps {
 
 export default function FilterPills({ options, value, onChange }: FilterPillsProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="overflow-x-auto -mx-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex gap-2 px-4 pb-1">
       {options.map(o => {
         const active = value === o.value
         return (
@@ -28,7 +29,4 @@ export default function FilterPills({ options, value, onChange }: FilterPillsPro
             {o.label}{o.count != null ? ` (${o.count})` : ''}
           </button>
         )
-      })}
-    </div>
-  )
-}
+   
