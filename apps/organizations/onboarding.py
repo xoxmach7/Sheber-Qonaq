@@ -136,4 +136,9 @@ class OnboardingView(APIView):
             )
 
         return Response({
-            '
+            'organization_id':  org.id,
+            'property_id':      prop.id,
+            'unit_count':       unit_count,
+            'manager_username': manager.username,
+            'manager_id':       manager.id,
+        }, status=status.HTTP_201_CREATED)
