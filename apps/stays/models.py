@@ -38,6 +38,12 @@ class Stay(OrganizationScopedModel):
         ('confirmed', 'Подтверждено'),
     ]
 
+    SHIFT_TYPES = [
+        ('day',   'Дневная смена (13:00–19:00)'),
+        ('night', 'Ночная смена (20:00–11:00)'),
+        ('full',  'Сутки (13:00–11:00)'),
+    ]
+
     unit = models.ForeignKey(
         'properties.Unit', on_delete=models.PROTECT,
         related_name='stays', verbose_name='Юнит'
@@ -75,6 +81,13 @@ class Stay(OrganizationScopedModel):
         verbose_name='Статус MPIS',
         help_text='Статус регистрации иностранного гостя в системе MPIS/eQonaq'
     )
+    # Cottage mode — посменная аренда (null = обычный хостельный режим)
+    shift_type = models.CharField(
+        max_length=10, choices=SHIFT_TYPES,
+        null=True, blank=True, verbose_name='Тип смены',
+        help_text='Только для cottage-режима. null = обычное проживание.'
+    )
+
     notes = models.TextField(blank=True, verbose_name='Заметки')
     created_by = models.ForeignKey(
         'users.User', on_delete=models.SET_NULL, null=True,
@@ -85,19 +98,11 @@ class Stay(OrganizationScopedModel):
         verbose_name = 'Проживание'
         verbose_name_plural = 'Проживания'
         ordering = ['-check_in_date']
-        constraints = [
-            # Partial unique index: в каждый момент времени у одного юнита
-            # может быть только один активный Stay.
-            # Остальные статусы (checked_out, cancelled, no_show) не попадают
-            # под ограничение — история проживаний не удаляется.
-            # PostgreSQL: CREATE UNIQUE INDEX ON stays_stay (unit_id)
-            # WHERE (status = 'active')
-            models.UniqueConstraint(
-                fields=['unit'],
-                condition=Q(status='active'),
-                name='unique_active_stay_per_unit',
-            ),
-        ]
+        # Валидация уникальности перенесена в StaySerializer.validate():
+        # - hostel режим: только один активный Stay на unit
+        # - cottage режим: только один активный Stay на (unit, check_in_date, shift_type)
+        # DB constraint убран чтобы поддерживать две смены в один день для cottage.
+        constraints = []
 
     def __str__(self):
         return f'{self.guest} / {self.unit} / с {self.check_in_date}'

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from .models import Stay
 from apps.guests.serializers import GuestShortSerializer
@@ -19,6 +19,8 @@ class StaySerializer(serializers.ModelSerializer):
     source_display = serializers.CharField(source='get_source_display', read_only=True)
     mpis_status_display = serializers.CharField(source='get_mpis_status_display', read_only=True)
 
+    shift_type_display = serializers.CharField(source='get_shift_type_display', read_only=True)
+
     class Meta:
         model = Stay
         fields = [
@@ -28,27 +30,65 @@ class StaySerializer(serializers.ModelSerializer):
             'deposit_amount', 'status', 'status_display',
             'source', 'source_display', 'notes',
             'mpis_status', 'mpis_status_display',
+            'shift_type', 'shift_type_display',
             'total_paid', 'total_expected', 'balance', 'has_debt',
             'created_at',
         ]
         read_only_fields = ['id', 'actual_check_out_date', 'created_at']
 
+    def _get_booking_mode(self, unit):
+        """Возвращает booking_mode объекта размещения для данного unit."""
+        try:
+            return unit.room.property.booking_mode
+        except Exception:
+            return 'hostel'
+
     def validate(self, data):
         unit = data.get('unit')
         check_in = data.get('check_in_date')
         check_out = data.get('expected_check_out_date')
+        shift_type = data.get('shift_type')
 
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError(
                 'Дата выселения должна быть позже даты заселения.'
             )
 
-        # Предварительная проверка статуса (без блокировки — для UX).
-        # Финальная проверка под блокировкой выполняется внутри create().
-        if self.instance is None and unit and unit.status != 'available':
-            raise serializers.ValidationError(
-                f'Юнит "{unit.name}" недоступен (статус: {unit.get_status_display()}).'
-            )
+        if self.instance is None and unit and check_in:
+            mode = self._get_booking_mode(unit)
+
+            if mode == 'hostel':
+                # Hostel: только один активный Stay на unit (application-level)
+                if unit.status != 'available':
+                    raise serializers.ValidationError(
+                        f'Юнит "{unit.name}" недоступен (статус: {unit.get_status_display()}).'
+                    )
+
+            elif mode == 'cottage':
+                # Cottage: нельзя дублировать смену на ту же дату
+                if not shift_type:
+                    raise serializers.ValidationError(
+                        'Для cottage-режима необходимо указать тип смены (shift_type).'
+                    )
+                # full занимает весь день — нельзя добавить day/night если есть full, и наоборот
+                existing = Stay.objects.filter(
+                    unit=unit,
+                    check_in_date=check_in,
+                    status='active',
+                )
+                if existing.filter(shift_type=shift_type).exists():
+                    raise serializers.ValidationError(
+                        f'Смена "{shift_type}" на {check_in} уже занята.'
+                    )
+                if existing.filter(shift_type='full').exists():
+                    raise serializers.ValidationError(
+                        f'На {check_in} уже забронированы сутки — весь день занят.'
+                    )
+                if shift_type == 'full' and existing.exists():
+                    raise serializers.ValidationError(
+                        f'На {check_in} уже есть бронь — нельзя добавить сутки.'
+                    )
+
         return data
 
     @transaction.atomic
@@ -56,39 +96,49 @@ class StaySerializer(serializers.ModelSerializer):
         """
         Атомарное создание Stay.
 
-        Порядок операций:
-        1. Блокируем Unit строку через SELECT FOR UPDATE — устраняет race condition.
-        2. Повторно проверяем статус под блокировкой.
-        3. Создаём Stay.
-        4. Обновляем Unit.status → 'occupied'.
-        5. Если иностранец — ставим mpis_status='pending'.
-        Всё в одной транзакции: любой сбой откатывает все изменения.
+        Hostel-режим:
+          1. SELECT FOR UPDATE на Unit.
+          2. Повторная проверка статуса под блокировкой.
+          3. Создаём Stay, Unit.status → 'occupied'.
+
+        Cottage-режим:
+          1. SELECT FOR UPDATE на Unit.
+          2. Повторная проверка перекрытия смен под блокировкой.
+          3. Создаём Stay. Unit.status НЕ меняем (календарь — источник истины).
         """
         unit_id = validated_data['unit'].id
-
-        # SELECT FOR UPDATE: блокирует строку Unit до конца транзакции.
-        # Если параллельный запрос тоже пытается заблокировать тот же unit —
-        # он ждёт здесь пока мы не закоммитимся. После нашего коммита
-        # unit.status уже 'occupied', и параллельный запрос получит ошибку.
         unit = Unit.objects.select_for_update().get(id=unit_id)
-
-        # Повторная проверка под блокировкой — теперь атомарно.
-        if unit.status != 'available':
-            raise serializers.ValidationError(
-                f'Юнит "{unit.name}" недоступен (статус: {unit.get_status_display()}). '
-                f'Возможно, только что был занят другим заездом.'
-            )
-
-        # Подменяем unit в validated_data на заблокированный объект.
         validated_data['unit'] = unit
 
-        stay = super().create(validated_data)
+        mode = self._get_booking_mode(unit)
 
-        # Помечаем юнит как занятый — в той же транзакции.
-        unit.status = 'occupied'
-        unit.save(update_fields=['status'])
+        if mode == 'hostel':
+            # Повторная проверка под блокировкой
+            if unit.status != 'available':
+                raise serializers.ValidationError(
+                    f'Юнит "{unit.name}" недоступен. '
+                    f'Возможно, только что был занят другим заездом.'
+                )
+            stay = super().create(validated_data)
+            unit.status = 'occupied'
+            unit.save(update_fields=['status'])
 
-        # Если гость иностранец — автоматически ставим MPIS статус pending.
+        else:  # cottage
+            check_in = validated_data['check_in_date']
+            shift_type = validated_data.get('shift_type')
+            conflict = Stay.objects.filter(
+                unit=unit, check_in_date=check_in, status='active',
+            ).filter(
+                models.Q(shift_type=shift_type) |
+                models.Q(shift_type='full') |
+                models.Q(shift_type__isnull=False) if shift_type == 'full' else models.Q()
+            ).exists() if shift_type else False
+
+            if conflict:
+                raise serializers.ValidationError('Смена уже занята (race condition).')
+            stay = super().create(validated_data)
+
+        # Если иностранец — ставим MPIS pending
         if stay.guest.is_foreigner and stay.mpis_status == 'not_required':
             stay.mpis_status = 'pending'
             stay.save(update_fields=['mpis_status'])

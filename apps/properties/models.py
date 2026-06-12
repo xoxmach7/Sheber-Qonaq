@@ -4,14 +4,24 @@ from apps.core.models import OrganizationScopedModel
 
 class Property(OrganizationScopedModel):
     """
-    Объект размещения (хостел, мотель, апарт-отель).
+    Объект размещения (хостел, мотель, апарт-отель, гостевой дом).
     Один Organization может иметь несколько Property (multi-property).
     """
+    BOOKING_MODES = [
+        ('hostel', 'Хостел / Отель (посуточно/помесячно)'),
+        ('cottage', 'Гостевой дом / Баня (посменно)'),
+    ]
+
     name = models.CharField(max_length=255, verbose_name='Название')
     address = models.TextField(verbose_name='Адрес')
     city = models.CharField(max_length=100, verbose_name='Город')
     description = models.TextField(blank=True, verbose_name='Описание')
     is_active = models.BooleanField(default=True, verbose_name='Активен')
+    booking_mode = models.CharField(
+        max_length=20, choices=BOOKING_MODES, default='hostel',
+        verbose_name='Режим бронирования',
+        help_text='hostel — обычный режим, cottage — посменная аренда'
+    )
 
     class Meta:
         verbose_name = 'Объект размещения'

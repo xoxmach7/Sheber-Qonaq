@@ -9,7 +9,7 @@ from django.db.models import Sum, Count, Q
 from datetime import date, timedelta
 from decimal import Decimal
 
-from apps.properties.models import Unit
+from apps.properties.models import Unit, Property
 from apps.stays.models import Stay
 from apps.payments.models import Payment, Expense
 from apps.leads.models import Viewing
@@ -118,9 +118,14 @@ class DashboardView(APIView):
             mpis_status__in=['pending', 'submitted'],
         ).count()
 
+        # Режим бронирования — берём из первого активного Property организации
+        first_property = Property.objects.filter(organization=org, is_active=True).first()
+        property_mode = first_property.booking_mode if first_property else 'hostel'
+
         return Response({
             'date': today,
             'month': today.strftime('%Y-%m'),
+            'property_mode': property_mode,
 
             'occupancy': {
                 'total': total_units,

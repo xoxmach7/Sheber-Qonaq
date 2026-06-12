@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Building2, BedDouble, User, ChevronRight, ChevronLeft, Plus, X, Check, Copy } from 'lucide-react'
+import { Building2, BedDouble, User, ChevronRight, ChevronLeft, Plus, X, Check, Copy, Home } from 'lucide-react'
 import api from '../../api/client'
 import { useAuthStore } from '../../store/auth'
 
@@ -9,6 +9,7 @@ interface RoomInput { name: string }
 
 interface OnboardingPayload {
   org_name: string; city: string; address: string; plan: string
+  booking_mode: string
   rooms: RoomInput[]
   manager_first_name: string; manager_last_name: string
   manager_username: string; manager_password: string; manager_phone: string
@@ -57,6 +58,7 @@ export default function OnboardingPage() {
   const [city, setCity] = useState('Алматы')
   const [address, setAddress] = useState('')
   const [plan, setPlan] = useState('free')
+  const [bookingMode, setBookingMode] = useState<'hostel' | 'cottage'>('hostel')
   const [rooms, setRooms] = useState<RoomInput[]>([{ name: 'Комната 1' }])
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -85,7 +87,7 @@ export default function OnboardingPage() {
 
   const handleSubmit = () => {
     mutation.mutate({
-      org_name: orgName, city, address, plan, rooms,
+      org_name: orgName, city, address, plan, booking_mode: bookingMode, rooms,
       manager_first_name: firstName, manager_last_name: lastName,
       manager_username: username, manager_password: password, manager_phone: phone,
     })
@@ -105,7 +107,7 @@ export default function OnboardingPage() {
             <Check size={28} className="text-white" />
           </div>
           <h2 className="text-lg font-bold text-gray-900">Клиент создан!</h2>
-          <p className="text-sm text-gray-500 mt-1">{orgName} — {result.unit_count} комнат</p>
+          <p className="text-sm text-gray-500 mt-1">{orgName} — {result.unit_count} {bookingMode === 'cottage' ? 'объектов' : 'комнат'}</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-4 space-y-3">
           <p className="text-sm font-semibold text-gray-700">Данные для входа</p>
@@ -156,6 +158,41 @@ export default function OnboardingPage() {
             <input className="input-field" placeholder="ул. Абая 10" value={address} onChange={e => setAddress(e.target.value)} />
           </div>
           <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Тип объекта</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setBookingMode('hostel')
+                  setRooms([{ name: 'Комната 1' }])
+                }}
+                className={`flex flex-col items-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  bookingMode === 'hostel'
+                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 bg-white text-gray-500'
+                }`}
+              >
+                <BedDouble size={22} />
+                <span>Хостел / Отель</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBookingMode('cottage')
+                  setRooms([{ name: 'Домик 1' }])
+                }}
+                className={`flex flex-col items-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  bookingMode === 'cottage'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700'
+                    : 'border-gray-200 bg-white text-gray-500'
+                }`}
+              >
+                <Home size={22} />
+                <span>Гостевой дом / Баня</span>
+              </button>
+            </div>
+          </div>
+          <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Тарифный план</label>
             <select className="input-field" value={plan} onChange={e => setPlan(e.target.value)}>
               <option value="free">Бесплатный</option>
@@ -169,16 +206,21 @@ export default function OnboardingPage() {
       {step === 1 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
-              <BedDouble size={18} className="text-blue-600" />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${bookingMode === 'cottage' ? 'bg-amber-50' : 'bg-blue-50'}`}>
+              {bookingMode === 'cottage'
+                ? <Home size={18} className="text-amber-600" />
+                : <BedDouble size={18} className="text-blue-600" />}
             </div>
-            <h2 className="text-base font-bold text-gray-900">Комнаты / места</h2>
+            <h2 className="text-base font-bold text-gray-900">
+              {bookingMode === 'cottage' ? 'Домики / объекты' : 'Комнаты / места'}
+            </h2>
           </div>
           <div className="space-y-2">
             {rooms.map((room, i) => (
               <div key={i} className="flex items-center gap-2">
                 <input className="input-field flex-1" value={room.name}
-                  onChange={e => updateRoom(i, e.target.value)} placeholder={`Комната ${i + 1}`} />
+                  onChange={e => updateRoom(i, e.target.value)}
+                  placeholder={bookingMode === 'cottage' ? `Домик ${i + 1}` : `Комната ${i + 1}`} />
                 {rooms.length > 1 && (
                   <button onClick={() => removeRoom(i)}
                     className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -190,9 +232,11 @@ export default function OnboardingPage() {
           </div>
           <button onClick={addRoom}
             className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 font-medium">
-            <Plus size={16} /> Добавить комнату
+            <Plus size={16} /> {bookingMode === 'cottage' ? 'Добавить домик' : 'Добавить комнату'}
           </button>
-          <p className="text-xs text-gray-400 text-center">{rooms.length} комнат добавлено</p>
+          <p className="text-xs text-gray-400 text-center">
+            {rooms.length} {bookingMode === 'cottage' ? 'объектов добавлено' : 'комнат добавлено'}
+          </p>
         </div>
       )}
 
