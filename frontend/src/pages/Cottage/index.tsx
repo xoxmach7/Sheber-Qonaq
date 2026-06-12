@@ -179,13 +179,12 @@ function DayCell({ date, slots, onBook }: {
 
   if (slots.full) {
     return (
-      <div className="rounded-xl overflow-hidden border border-primary-200">
+      <div className="rounded-xl overflow-hidden border border-violet-300">
         <div className={`px-1 py-1.5 text-center ${isToday ? 'bg-primary-500' : 'bg-gray-50 border-b border-gray-100'}`}>
           <span className={`text-xs font-bold ${isToday ? 'text-white' : 'text-gray-700'}`}>{dateStr}</span>
         </div>
-        <div className="bg-primary-50 px-1 py-2.5 text-center">
-          <p className="text-[10px] font-bold text-primary-700">СУТКИ</p>
-          <p className="text-[9px] text-primary-500 truncate leading-tight mt-0.5">{slots.full.guest.split(' ')[0]}</p>
+        <div className="bg-violet-500 px-1 py-3 text-center">
+          <p className="text-[10px] font-bold text-white">СУТКИ</p>
         </div>
       </div>
     )
@@ -199,28 +198,26 @@ function DayCell({ date, slots, onBook }: {
       <div className="divide-y divide-gray-100">
         {/* Day shift */}
         {slots.day ? (
-          <div className="bg-amber-50 px-1 py-2 text-center">
-            <p className="text-[10px] font-bold text-amber-700">13–19</p>
-            <p className="text-[9px] text-amber-600 truncate">{slots.day.guest.split(' ')[0]}</p>
+          <div className="bg-orange-400 px-1 py-2 text-center">
+            <p className="text-[10px] font-bold text-white">13–19</p>
           </div>
         ) : (
           <button onClick={() => !isPast && onBook('day')}
             disabled={isPast}
-            className="w-full bg-white px-1 py-2 text-center hover:bg-amber-50 transition disabled:opacity-30">
+            className="w-full bg-white px-1 py-2 text-center hover:bg-orange-50 transition disabled:opacity-30">
             <p className="text-[10px] text-gray-400">13–19</p>
             <p className="text-[9px] text-emerald-500 font-medium">св.</p>
           </button>
         )}
         {/* Night shift */}
         {slots.night ? (
-          <div className="bg-indigo-50 px-1 py-2 text-center">
-            <p className="text-[10px] font-bold text-indigo-700">20–11</p>
-            <p className="text-[9px] text-indigo-600 truncate">{slots.night.guest.split(' ')[0]}</p>
+          <div className="bg-blue-600 px-1 py-2 text-center">
+            <p className="text-[10px] font-bold text-white">20–11</p>
           </div>
         ) : (
           <button onClick={() => !isPast && onBook('night')}
             disabled={isPast}
-            className="w-full bg-white px-1 py-2 text-center hover:bg-indigo-50 transition disabled:opacity-30">
+            className="w-full bg-white px-1 py-2 text-center hover:bg-blue-50 transition disabled:opacity-30">
             <p className="text-[10px] text-gray-400">20–11</p>
             <p className="text-[9px] text-emerald-500 font-medium">св.</p>
           </button>
@@ -228,8 +225,8 @@ function DayCell({ date, slots, onBook }: {
         {/* Full day button — only if both shifts free */}
         {!slots.day && !slots.night && !isPast && (
           <button onClick={() => onBook('full')}
-            className="w-full bg-gray-50 px-1 py-1.5 text-center hover:bg-primary-50 transition">
-            <p className="text-[9px] text-gray-400 font-medium">сутки</p>
+            className="w-full bg-gray-50 px-1 py-1.5 text-center hover:bg-violet-50 transition">
+            <p className="text-[9px] text-gray-500 font-medium">сутки</p>
           </button>
         )}
       </div>
@@ -325,9 +322,9 @@ export default function CottagePage() {
       {/* Legend */}
       <div className="bg-white rounded-2xl shadow-card px-4 py-3">
         <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-100 border border-amber-300" /><span className="text-xs text-gray-600">Дневная 13–19 · {fmt(35500)}</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-indigo-100 border border-indigo-300" /><span className="text-xs text-gray-600">Ночная 20–11 · {fmt(35500)}</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-primary-100 border border-primary-300" /><span className="text-xs text-gray-600">Сутки · {fmt(49500)}</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400" /><span className="text-xs text-gray-600">Дневная 13–19 · {fmt(35500)}</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-blue-600" /><span className="text-xs text-gray-600">Ночная 20–11 · {fmt(35500)}</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-violet-500" /><span className="text-xs text-gray-600">Сутки · {fmt(49500)}</span></div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-white border border-gray-200" /><span className="text-xs text-gray-600">Свободно (нажми для брони)</span></div>
         </div>
       </div>
