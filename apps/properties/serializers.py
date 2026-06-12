@@ -41,11 +41,11 @@ class UnitSerializer(serializers.ModelSerializer):
 
     def get_check_in(self, obj):
         stay = self._active_stay(obj)
-        return str(stay.check_in) if stay else None
+        return str(stay.check_in_date) if stay else None
 
     def get_check_out(self, obj):
         stay = self._active_stay(obj)
-        return str(stay.check_out) if stay else None
+        return str(stay.expected_check_out_date) if stay else None
 
 
 class UnitStatusSerializer(serializers.Serializer):
