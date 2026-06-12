@@ -160,12 +160,12 @@ export default function BlacklistPage() {
   })
 
   const { mutate: addEntry } = useMutation({
-    mutationFn: blacklistApi.add,
+    mutationFn: (d: BlacklistCreate) => blacklistApi.create(d),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['blacklist'] }); setShowAdd(false) },
   })
 
   const { mutate: removeEntry } = useMutation({
-    mutationFn: blacklistApi.remove,
+    mutationFn: (id: number) => blacklistApi.deactivate(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['blacklist'] }),
   })
 
