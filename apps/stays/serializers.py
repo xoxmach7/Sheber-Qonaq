@@ -136,16 +136,19 @@ class StaySerializer(serializers.ModelSerializer):
         else:  # cottage
             check_in = validated_data['check_in_date']
             shift_type = validated_data.get('shift_type')
-            conflict = Stay.objects.filter(
-                unit=unit, check_in_date=check_in, status='active',
-            ).filter(
-                models.Q(shift_type=shift_type) |
-                models.Q(shift_type='full') |
-                models.Q(shift_type__isnull=False) if shift_type == 'full' else models.Q()
-            ).exists() if shift_type else False
-
-            if conflict:
-                raise serializers.ValidationError('Смена уже занята (race condition).')
+            if shift_type:
+                existing_qs = Stay.objects.filter(
+                    unit=unit, check_in_date=check_in, status='active'
+                )
+                # дубль той же смены или конфликт с full
+                conflict = existing_qs.filter(
+                    models.Q(shift_type=shift_type) | models.Q(shift_type='full')
+                ).exists()
+                # сутки нельзя добавить если уже есть любая смена
+                if not conflict and shift_type == 'full':
+                    conflict = existing_qs.exists()
+                if conflict:
+                    raise serializers.ValidationError('Смена уже занята (race condition).')
             stay = super().create(validated_data)
 
         # Если иностранец — ставим MPIS pending

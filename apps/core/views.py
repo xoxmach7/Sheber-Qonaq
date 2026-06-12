@@ -30,15 +30,29 @@ class DashboardView(APIView):
 
         # ── 1. ЗАПОЛНЯЕМОСТЬ ─────────────────────────────────────────────────
         units = Unit.objects.filter(room__property__organization=org)
-        unit_stats = units.values('status').annotate(count=Count('id'))
-        status_map = {s['status']: s['count'] for s in unit_stats}
-
         total_units = units.count()
-        occupied = status_map.get('occupied', 0)
-        available = status_map.get('available', 0)
-        reserved = status_map.get('reserved', 0)
-        dirty = status_map.get('dirty', 0)
-        maintenance = status_map.get('maintenance', 0)
+
+        # Режим бронирования — берём из первого активного Property организации
+        first_property = Property.objects.filter(organization=org, is_active=True).first()
+        property_mode = first_property.booking_mode if first_property else 'hostel'
+
+        if property_mode == 'cottage':
+            # Cottage: считаем активные смены сегодня вместо unit.status
+            occupied = Stay.objects.filter(
+                organization=org, status='active', check_in_date=today,
+                shift_type__isnull=False
+            ).count()
+            available = max(0, total_units - occupied)
+            reserved = dirty = maintenance = 0
+        else:
+            unit_stats = units.values('status').annotate(count=Count('id'))
+            status_map = {s['status']: s['count'] for s in unit_stats}
+            occupied = status_map.get('occupied', 0)
+            available = status_map.get('available', 0)
+            reserved = status_map.get('reserved', 0)
+            dirty = status_map.get('dirty', 0)
+            maintenance = status_map.get('maintenance', 0)
+
         occupancy_rate = round(occupied / total_units * 100, 1) if total_units else 0
 
         # ── 2. ФИНАНСЫ МЕСЯЦА ────────────────────────────────────────────────
@@ -117,10 +131,6 @@ class DashboardView(APIView):
             guest__is_foreigner=True,
             mpis_status__in=['pending', 'submitted'],
         ).count()
-
-        # Режим бронирования — берём из первого активного Property организации
-        first_property = Property.objects.filter(organization=org, is_active=True).first()
-        property_mode = first_property.booking_mode if first_property else 'hostel'
 
         return Response({
             'date': today,
