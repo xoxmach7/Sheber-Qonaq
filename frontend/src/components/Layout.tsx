@@ -4,7 +4,7 @@ import { Bell } from 'lucide-react'
 import { notificationsApi } from '../api'
 import BottomNav from './BottomNav'
 
-function NotificationBell() {
+function TopBar() {
   const navigate = useNavigate()
   const { data } = useQuery({
     queryKey: ['notifications'],
@@ -14,31 +14,31 @@ function NotificationBell() {
   const unread = data?.unread_count ?? 0
 
   return (
-    <button
-      onClick={() => navigate('/notifications')}
-      className="relative w-9 h-9 rounded-xl bg-white shadow-card flex items-center justify-center">
-      <Bell size={18} className="text-gray-600" />
-      {unread > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-          {unread > 99 ? '99+' : unread}
-        </span>
-      )}
-    </button>
+    <div className="sticky top-0 z-20 bg-[#FAFAFA]/90 backdrop-blur-sm border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 h-11">
+        <span className="text-[13px] font-bold text-primary-500 tracking-wide">SHEBER</span>
+        <button
+          onClick={() => navigate('/notifications')}
+          className="relative w-8 h-8 rounded-xl flex items-center justify-center">
+          <Bell size={18} className={unread > 0 ? 'text-primary-500' : 'text-gray-400'} />
+          {unread > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+              {unread > 99 ? '99+' : unread}
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
   )
 }
 
 export default function Layout() {
   return (
     <div className="flex flex-col min-h-screen min-h-dvh max-w-[430px] mx-auto bg-[#FAFAFA] shadow-[0_0_60px_rgba(0,0,0,0.08)] relative">
-      {/* Floating bell - top right */}
-      <div className="fixed top-4 right-4 z-30 max-w-[430px]" style={{ right: 'max(1rem, calc(50vw - 215px + 1rem))' }}>
-        <NotificationBell />
-      </div>
-
+      <TopBar />
       <main className="flex-1 overflow-y-auto pb-[68px]">
         <Outlet />
       </main>
-
       <BottomNav />
     </div>
   )
