@@ -7,13 +7,13 @@ import {
   CalendarDays,
   Wallet,
 } from 'lucide-react'
-import { api } from '../api/client'
+import api from '../api/client'
 
 export default function BottomNav() {
   // Читаем property_mode из dashboard — запрос уже закеширован Layout/Dashboard
   const { data } = useQuery({
     queryKey: ['dashboard'],
-    queryFn: () => api.get('/dashboard/').then(r => r.data),
+    queryFn: () => api.get('/dashboard/').then((r: { data: any }) => r.data),
     staleTime: 60_000,
   })
 

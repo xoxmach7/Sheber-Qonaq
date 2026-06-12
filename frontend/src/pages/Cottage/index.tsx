@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, X, Search, UserPlus, User } from 'lucide-react'
-import { api } from '../../api/client'
+import api from '../../api/client'
 import { staysApi, guestsApi } from '../../api'
 import type { GuestCreate } from '../../types'
 import { Avatar } from '../../components/ui'
@@ -247,7 +247,7 @@ export default function CottagePage() {
 
   const { data: calData, isLoading } = useQuery<CalendarData>({
     queryKey: ['cottage-calendar', unitId, monthStr],
-    queryFn: () => api.get<CalendarData>(`/stays/cottage-calendar/?unit=${unitId}&month=${monthStr}`).then(r => r.data),
+    queryFn: () => api.get<CalendarData>(`/stays/cottage-calendar/?unit=${unitId}&month=${monthStr}`).then((r: { data: CalendarData }) => r.data),
     staleTime: 30_000,
   })
 

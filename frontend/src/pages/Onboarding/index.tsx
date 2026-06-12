@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Building2, BedDouble, User, ChevronRight, ChevronLeft, Plus, X, Check, Copy } from 'lucide-react'
+import { Building2, BedDouble, User, ChevronRight, ChevronLeft, Plus, X, Check, Copy, Home } from 'lucide-react'
 import api from '../../api/client'
 import { useAuthStore } from '../../store/auth'
 
@@ -9,6 +9,7 @@ interface RoomInput { name: string }
 
 interface OnboardingPayload {
   org_name: string; city: string; address: string; plan: string
+  booking_mode: string
   rooms: RoomInput[]
   manager_first_name: string; manager_last_name: string
   manager_username: string; manager_password: string; manager_phone: string
@@ -57,6 +58,7 @@ export default function OnboardingPage() {
   const [city, setCity] = useState('Алматы')
   const [address, setAddress] = useState('')
   const [plan, setPlan] = useState('free')
+  const [bookingMode, setBookingMode] = useState<'hostel' | 'cottage'>('hostel')
   const [rooms, setRooms] = useState<RoomInput[]>([{ name: 'Комната 1' }])
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')

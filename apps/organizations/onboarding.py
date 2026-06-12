@@ -25,6 +25,10 @@ class OnboardingSerializer(serializers.Serializer):
     plan        = serializers.ChoiceField(
         choices=['free', 'basic', 'pro'], default='free'
     )
+    booking_mode = serializers.ChoiceField(
+        choices=['hostel', 'cottage'], default='hostel',
+        help_text='hostel — обычный, cottage — посменная аренда'
+    )
 
     # Комнаты
     rooms = RoomInputSerializer(many=True, min_length=1)
@@ -97,6 +101,7 @@ class OnboardingView(APIView):
                 name=data['org_name'],
                 city=data['city'],
                 address=data['address'],
+                booking_mode=data['booking_mode'],
             )
 
             # 3. Rooms + Units
