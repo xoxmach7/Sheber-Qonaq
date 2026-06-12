@@ -14,7 +14,7 @@ import { Avatar, PageHeader, SegmentControl, SearchBar, EmptyState } from '../..
 function GuestForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
   const [form, setForm] = useState<GuestCreate>({
-    first_name: '', last_name: '', phone: '',
+    first_name: '', last_name: '', phone: '', is_foreigner: false,
   })
   const [error, setError] = useState('')
 
@@ -25,6 +25,7 @@ function GuestForm({ onClose }: { onClose: () => void }) {
   })
 
   const set = (k: keyof GuestCreate, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const toggleForeigner = () => setForm(f => ({ ...f, is_foreigner: !f.is_foreigner, iin: '' }))
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -38,13 +39,43 @@ function GuestForm({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100"><X size={20} className="text-gray-400" /></button>
         </div>
         {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-3 py-2 mb-3">{error}</div>}
+
+        {/* Иностранный гость — переключатель */}
+        <button
+          type="button"
+          onClick={toggleForeigner}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border mb-3 transition ${
+            form.is_foreigner
+              ? 'bg-blue-50 border-blue-300 text-blue-700'
+              : 'bg-gray-50 border-gray-200 text-gray-500'
+          }`}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🌍</span>
+            <span className="text-sm font-semibold">Иностранный гость</span>
+          </div>
+          <div className={`w-11 h-6 rounded-full relative transition-colors ${form.is_foreigner ? 'bg-blue-500' : 'bg-gray-300'}`}>
+            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.is_foreigner ? 'translate-x-6' : 'translate-x-1'}`} />
+          </div>
+        </button>
+
         <div className="space-y-3">
           <input className="input-field" placeholder="Фамилия *" value={form.last_name} onChange={e => set('last_name', e.target.value)} />
           <input className="input-field" placeholder="Имя *" value={form.first_name} onChange={e => set('first_name', e.target.value)} />
           <input className="input-field" placeholder="Отчество" value={form.middle_name ?? ''} onChange={e => set('middle_name', e.target.value)} />
           <input className="input-field" placeholder="Телефон * (+7...)" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} />
           <input className="input-field" placeholder="Email" type="email" value={form.email ?? ''} onChange={e => set('email', e.target.value)} />
-          <input className="input-field" placeholder="ИИН (12 цифр)" value={form.iin ?? ''} onChange={e => set('iin', e.target.value)} />
+
+          {form.is_foreigner ? (
+            <input
+              className="input-field border-blue-200 focus:ring-blue-300"
+              placeholder="Гражданство (Россия, Узбекистан...)"
+              value={form.nationality ?? ''}
+              onChange={e => set('nationality', e.target.value)}
+            />
+          ) : (
+            <input className="input-field" placeholder="ИИН (12 цифр)" value={form.iin ?? ''} onChange={e => set('iin', e.target.value)} />
+          )}
+
           <textarea className="input-field resize-none" placeholder="Заметки" rows={2} value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} />
         </div>
         <button onClick={() => mutate(form)}
@@ -249,39 +280,4 @@ function BlacklistTab({ search }: { search: string }) {
 
 // ── Page ──
 export default function GuestsPage() {
-  const [tab, setTab] = useState<'guests' | 'blacklist'>('guests')
-  const [search, setSearch] = useState('')
-  const [showGuestForm, setShowGuestForm] = useState(false)
-  const [showBlacklistForm, setShowBlacklistForm] = useState(false)
-
-  const { data: blData } = useQuery({
-    queryKey: ['blacklist', ''],
-    queryFn: () => blacklistApi.list(),
-  })
-  const blacklistCount = blData?.count ?? 0
-
-  return (
-    <div className="px-4 py-4 space-y-3">
-      <PageHeader
-        title="Гости"
-        action={tab === 'blacklist' ? 'В ЧС' : 'Добавить'}
-        actionIcon={Plus}
-        actionVariant={tab === 'blacklist' ? 'danger' : 'primary'}
-        onAction={() => tab === 'guests' ? setShowGuestForm(true) : setShowBlacklistForm(true)}
-      />
-
-      <SegmentControl value={tab} onChange={v => { setTab(v as any); setSearch('') }} options={[
-        { value: 'guests', label: 'Все гости' },
-        { value: 'blacklist', label: `Чёрный список${blacklistCount > 0 ? ` (${blacklistCount})` : ''}` },
-      ]} />
-
-      <SearchBar value={search} onChange={setSearch}
-        placeholder={tab === 'blacklist' ? 'Поиск в чёрном списке...' : 'Имя или телефон...'} />
-
-      {tab === 'guests' ? <GuestsList search={search} /> : <BlacklistTab search={search} />}
-
-      {showGuestForm && <GuestForm onClose={() => setShowGuestForm(false)} />}
-      {showBlacklistForm && <BlacklistForm onClose={() => setShowBlacklistForm(false)} />}
-    </div>
-  )
-}
+  const [tab, setTab] = useState<'guests' | 'bla
