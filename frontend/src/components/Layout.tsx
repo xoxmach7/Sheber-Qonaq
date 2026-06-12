@@ -16,7 +16,7 @@ function TopBar() {
   return (
     <div className="sticky top-0 z-20 bg-[#FAFAFA]/90 backdrop-blur-sm border-b border-gray-100">
       <div className="flex items-center justify-between px-4 h-11">
-        <span className="text-[13px] font-bold text-primary-500 tracking-wide">Sheber Qonaq</span>
+        <span className="text-[17px] font-extrabold text-primary-500 tracking-tight">Sheber Qonaq</span>
         <button
           onClick={() => navigate('/notifications')}
           className="relative w-8 h-8 rounded-xl flex items-center justify-center">
