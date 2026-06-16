@@ -74,7 +74,8 @@ class PropertySerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = ['id', 'name', 'address', 'city', 'description',
-                  'is_active', 'rooms_count', 'created_at']
+                  'is_active', 'booking_mode', 'shift_rates',
+                  'rooms_count', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 

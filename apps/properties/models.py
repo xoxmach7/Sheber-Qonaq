@@ -2,6 +2,11 @@ from django.db import models
 from apps.core.models import OrganizationScopedModel
 
 
+def default_shift_rates():
+    """Тарифы посменной аренды по умолчанию (₸). Редактируются в настройках объекта."""
+    return {'day': 35500, 'night': 35500, 'full': 49500}
+
+
 class Property(OrganizationScopedModel):
     """
     Объект размещения (хостел, мотель, апарт-отель, гостевой дом).
@@ -21,6 +26,11 @@ class Property(OrganizationScopedModel):
         max_length=20, choices=BOOKING_MODES, default='hostel',
         verbose_name='Режим бронирования',
         help_text='hostel — обычный режим, cottage — посменная аренда'
+    )
+    shift_rates = models.JSONField(
+        default=default_shift_rates, blank=True,
+        verbose_name='Тарифы смен (cottage)',
+        help_text='Цены посменной аренды: {"day": ₸, "night": ₸, "full": ₸}'
     )
 
     class Meta:

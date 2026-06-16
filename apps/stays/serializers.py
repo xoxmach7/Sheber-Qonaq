@@ -1,3 +1,4 @@
+from datetime import timedelta
 from rest_framework import serializers
 from django.db import models, transaction
 from django.utils import timezone
@@ -136,6 +137,12 @@ class StaySerializer(serializers.ModelSerializer):
         else:  # cottage
             check_in = validated_data['check_in_date']
             shift_type = validated_data.get('shift_type')
+            # Ночная (20–11) и суточная (13–11) смены завершаются на следующий день.
+            # Дневная (13–19) — в тот же день. Выставляем дату выезда авторитетно.
+            if shift_type in ('night', 'full'):
+                validated_data['expected_check_out_date'] = check_in + timedelta(days=1)
+            elif shift_type == 'day':
+                validated_data['expected_check_out_date'] = check_in
             if shift_type:
                 existing_qs = Stay.objects.filter(
                     unit=unit, check_in_date=check_in, status='active'

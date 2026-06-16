@@ -122,6 +122,12 @@ class Stay(OrganizationScopedModel):
         #           relativedelta. Неполный месяц округляется вверх до 1.
         # Исправлен баг: деление delta_days / 30 давало ceil(31/30) = 2
         # для любого 31-дневного периода, что приводило к двойному начислению.
+        # Посменная аренда (cottage): цена фиксирована за смену, не зависит от дней.
+        # Иначе дневная смена (check_out == check_in) давала бы delta_days = 0
+        # и сумму к оплате 0.
+        if self.shift_type:
+            return self.rate_amount or Decimal('0')
+
         end_date = self.actual_check_out_date or self.expected_check_out_date
         if not end_date or not self.check_in_date:
             return Decimal('0')

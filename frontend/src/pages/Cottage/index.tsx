@@ -14,20 +14,25 @@ interface ShiftBooking { stay_id: number; guest: string; guest_phone: string }
 interface DaySlots { day: ShiftBooking | null; night: ShiftBooking | null; full: ShiftBooking | null }
 interface CalendarData { unit_id: number; month: string; days: Record<string, DaySlots> }
 
-const SHIFTS: { type: ShiftType; label: string; time: string; price: number; color: string; bg: string }[] = [
-  { type: 'day',   label: 'Дневная', time: '13:00–19:00', price: 35500, color: 'text-amber-700',   bg: 'bg-amber-500' },
-  { type: 'night', label: 'Ночная',  time: '20:00–11:00', price: 35500, color: 'text-indigo-700',  bg: 'bg-indigo-500' },
-  { type: 'full',  label: 'Сутки',   time: '13:00–11:00', price: 49500, color: 'text-primary-700', bg: 'bg-primary-500' },
+type ShiftRates = { day: number; night: number; full: number }
+
+const DEFAULT_RATES: ShiftRates = { day: 35500, night: 35500, full: 49500 }
+
+const SHIFTS: { type: ShiftType; label: string; time: string; color: string; bg: string }[] = [
+  { type: 'day',   label: 'Дневная', time: '13:00–19:00', color: 'text-amber-700',   bg: 'bg-amber-500' },
+  { type: 'night', label: 'Ночная',  time: '20:00–11:00', color: 'text-indigo-700',  bg: 'bg-indigo-500' },
+  { type: 'full',  label: 'Сутки',   time: '13:00–11:00', color: 'text-primary-700', bg: 'bg-primary-500' },
 ]
 
 function fmt(n: number) { return n.toLocaleString('ru-RU') + ' ₸' }
 
 // ── Booking Sheet ──
-function BookingSheet({ date, shift, unitId, onClose }: {
-  date: string; shift: ShiftType; unitId: number; onClose: () => void
+function BookingSheet({ date, shift, unitId, rates, onClose }: {
+  date: string; shift: ShiftType; unitId: number; rates: ShiftRates; onClose: () => void
 }) {
   const qc = useQueryClient()
   const shiftCfg = SHIFTS.find(s => s.type === shift)!
+  const price = rates[shift]
   const [guestSearch, setGuestSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
@@ -56,7 +61,7 @@ function BookingSheet({ date, shift, unitId, onClose }: {
       check_in_date: date,
       expected_check_out_date: date,
       rate_type: 'daily',
-      rate_amount: String(shiftCfg.price),
+      rate_amount: String(price),
       deposit_amount: 0,
       shift_type: shift,
     } as any),
@@ -96,7 +101,7 @@ function BookingSheet({ date, shift, unitId, onClose }: {
                 <p className={`font-bold text-base ${shiftCfg.color}`}>{shiftCfg.label} смена</p>
                 <p className="text-xs text-gray-500">{shiftCfg.time}</p>
               </div>
-              <p className={`text-xl font-extrabold ${shiftCfg.color}`}>{fmt(shiftCfg.price)}</p>
+              <p className={`text-xl font-extrabold ${shiftCfg.color}`}>{fmt(price)}</p>
             </div>
           </div>
 
@@ -161,7 +166,7 @@ function BookingSheet({ date, shift, unitId, onClose }: {
           <button onClick={() => book()}
             disabled={!selectedGuest || isPending}
             className="w-full py-3.5 bg-primary-500 text-white rounded-2xl text-sm font-bold disabled:opacity-40">
-            {isPending ? 'Бронируем...' : `Забронировать — ${fmt(shiftCfg.price)}`}
+            {isPending ? 'Бронируем...' : `Забронировать — ${fmt(price)}`}
           </button>
         </div>
       </div>
@@ -240,15 +245,28 @@ export default function CottagePage() {
   const [booking, setBooking] = useState<{ date: string; shift: ShiftType } | null>(null)
 
   const monthStr = format(currentMonth, 'yyyy-MM')
+  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null)
 
-  // Получаем первый юнит организации (cottage-клиент имеет 1+ домиков)
+  // Юниты организации (cottage-клиент имеет 1+ домиков)
   const { data: unitsData } = useQuery({
     queryKey: ['units'],
     queryFn: () => api.get<{ results: { id: number; name: string }[] }>('/units/').then((r: { data: any }) => r.data),
     staleTime: 60_000,
   })
-  const unitId: number = unitsData?.results?.[0]?.id ?? unitsData?.[0]?.id ?? 0
-  const unitName: string = unitsData?.results?.[0]?.name ?? unitsData?.[0]?.name ?? 'Домик'
+  const units: { id: number; name: string }[] = unitsData?.results ?? unitsData ?? []
+  // Выбранный домик: пользовательский выбор, иначе первый
+  const unitId: number = selectedUnitId ?? units[0]?.id ?? 0
+  const unitName: string = units.find(u => u.id === unitId)?.name ?? 'Домик'
+
+  // Тарифы смен берём из настроек объекта (Property.shift_rates), не из хардкода
+  const { data: propsData } = useQuery({
+    queryKey: ['properties'],
+    queryFn: () => api.get<{ results: any[] }>('/properties/').then((r: { data: any }) => r.data),
+    staleTime: 60_000,
+  })
+  const properties: any[] = propsData?.results ?? propsData ?? []
+  const cottageProp = properties.find(p => p.booking_mode === 'cottage') ?? properties[0]
+  const rates: ShiftRates = { ...DEFAULT_RATES, ...(cottageProp?.shift_rates ?? {}) }
 
   const { data: calData, isLoading } = useQuery<CalendarData>({
     queryKey: ['cottage-calendar', unitId, monthStr],
@@ -272,6 +290,22 @@ export default function CottagePage() {
           <p className="text-xs text-gray-400">Занято {occupiedCount} из {totalDays} дней</p>
         </div>
       </div>
+
+      {/* Переключатель домиков (если больше одного) */}
+      {units.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {units.map(u => (
+            <button key={u.id} onClick={() => setSelectedUnitId(u.id)}
+              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
+                u.id === unitId
+                  ? 'bg-primary-500 text-white shadow-sm'
+                  : 'bg-white text-gray-600 border border-gray-200'
+              }`}>
+              {u.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Month nav */}
       <div className="bg-white rounded-2xl shadow-card px-4 py-3">
@@ -322,9 +356,9 @@ export default function CottagePage() {
       {/* Legend */}
       <div className="bg-white rounded-2xl shadow-card px-4 py-3">
         <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400" /><span className="text-xs text-gray-600">Дневная 13–19 · {fmt(35500)}</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-blue-600" /><span className="text-xs text-gray-600">Ночная 20–11 · {fmt(35500)}</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-violet-500" /><span className="text-xs text-gray-600">Сутки · {fmt(49500)}</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400" /><span className="text-xs text-gray-600">Дневная 13–19 · {fmt(rates.day)}</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-blue-600" /><span className="text-xs text-gray-600">Ночная 20–11 · {fmt(rates.night)}</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-violet-500" /><span className="text-xs text-gray-600">Сутки · {fmt(rates.full)}</span></div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-white border border-gray-200" /><span className="text-xs text-gray-600">Свободно (нажми для брони)</span></div>
         </div>
       </div>
@@ -335,6 +369,7 @@ export default function CottagePage() {
           date={booking.date}
           shift={booking.shift}
           unitId={unitId}
+          rates={rates}
           onClose={() => setBooking(null)} />
       )}
     </div>
