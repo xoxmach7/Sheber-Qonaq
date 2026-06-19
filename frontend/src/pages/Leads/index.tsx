@@ -6,6 +6,7 @@ import StatusBadge from '../../components/StatusBadge'
 import type { LeadStatus } from '../../types'
 import { format } from 'date-fns'
 import { PageHeader, EmptyState } from '../../components/ui'
+import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 
 function NewLeadForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
@@ -31,7 +32,7 @@ function NewLeadForm({ onClose }: { onClose: () => void }) {
         </div>
         <div className="space-y-3">
           <input className="input-field" placeholder="Имя *" value={name} onChange={e => setName(e.target.value)} />
-          <input className="input-field" placeholder="Телефон *" type="tel" value={phone} onChange={e => setPhone(e.target.value)} />
+          <input className="input-field" placeholder={PHONE_PLACEHOLDER} type="tel" value={phone} onChange={e => setPhone(formatPhoneKZ(e.target.value))} />
           <textarea className="input-field resize-none" placeholder="Заметки" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
         <button onClick={() => mutate()}

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { staysApi, guestsApi, propertiesApi, blacklistApi } from '../../api'
-import { format, differenceInDays, differenceInMonths, addMonths } from 'date-fns'
+import { format, differenceInDays, differenceInMonths, addMonths, addDays } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import {
   Plus, X, LogOut, User, Search, AlertTriangle, UserPlus,
   ChevronLeft, CreditCard, CalendarClock, Globe, Clock,
@@ -9,9 +10,18 @@ import {
 import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader } from '../../components/ui'
 import { MpisBadge, MpisPanel, ExtendForm, PaymentForm } from './_helpers'
+import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import type { StayCreate, Stay, RateType, GuestCreate } from '../../types'
 
 const fmtTg = (n: number | string) => Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
+
+// Дата выезда = заезд + 1 период выбранного типа оплаты
+function addPeriod(dateStr: string, rate: RateType): string {
+  if (!dateStr) return dateStr
+  const d = new Date(dateStr + 'T12:00:00')
+  const nd = rate === 'daily' ? addDays(d, 1) : rate === 'weekly' ? addDays(d, 7) : addMonths(d, 1)
+  return format(nd, 'yyyy-MM-dd')
+}
 
 // Русское склонение числительных: plural(2, 'день','дня','дней')
 function plural(n: number, one: string, few: string, many: string): string {
@@ -38,11 +48,14 @@ function CheckoutBadge({ date }: { date: string }) {
 // ── CheckIn Form ──
 function CheckInForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
-  const [form, setForm] = useState({
-    unit: '', guest: '', guestName: '', guestPhone: '',
-    check_in_date: format(new Date(), 'yyyy-MM-dd'),
-    expected_check_out_date: format(new Date(Date.now() + 30 * 86400000), 'yyyy-MM-dd'),
-    rate_type: 'monthly' as RateType, rate_amount: '', deposit_amount: '',
+  const [form, setForm] = useState(() => {
+    const today = format(new Date(), 'yyyy-MM-dd')
+    return {
+      unit: '', guest: '', guestName: '', guestPhone: '',
+      check_in_date: today,
+      expected_check_out_date: addPeriod(today, 'monthly'),
+      rate_type: 'monthly' as RateType, rate_amount: '', deposit_amount: '',
+    }
   })
   const [guestSearch, setGuestSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
@@ -78,26 +91,26 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
   const canSubmit = form.unit && form.guest && form.check_in_date && form.expected_check_out_date && form.rate_amount && !isPending
   const isBlacklisted = blacklistCheck?.is_blacklisted ?? false
 
-  // Живой расчёт срока и итоговой суммы (повторяет логику total_expected на бэке)
-  const calcTotal = (): { label: string; total: number } | null => {
-    const rate = Number(form.rate_amount)
-    if (!rate || !form.check_in_date || !form.expected_check_out_date) return null
+  // Живой расчёт срока, диапазона дат и суммы (повторяет логику total_expected на бэке)
+  const calcTotal = (): { duration: string; range: string; total: number; hasRate: boolean } | null => {
+    if (!form.check_in_date || !form.expected_check_out_date) return null
     const ci = new Date(form.check_in_date + 'T12:00:00')
     const co = new Date(form.expected_check_out_date + 'T12:00:00')
     const days = differenceInDays(co, ci)
     if (days < 0) return null
+    const rate = Number(form.rate_amount)
+    const range = `${format(ci, 'd MMMM', { locale: ru })} → ${format(co, 'd MMMM', { locale: ru })}`
+    let units = 0, word = ''
     if (form.rate_type === 'daily') {
-      return { label: `${days} ${plural(days, 'день', 'дня', 'дней')} × ${fmtTg(rate)}`, total: rate * days }
+      units = days; word = plural(days, 'день', 'дня', 'дней')
+    } else if (form.rate_type === 'weekly') {
+      units = Math.max(Math.ceil(days / 7), 1); word = plural(units, 'неделя', 'недели', 'недель')
+    } else {
+      let m = differenceInMonths(co, ci)
+      if (addMonths(ci, m) < co) m += 1
+      units = Math.max(m, 1); word = plural(units, 'месяц', 'месяца', 'месяцев')
     }
-    if (form.rate_type === 'weekly') {
-      const weeks = Math.max(Math.ceil(days / 7), 1)
-      return { label: `${weeks} ${plural(weeks, 'неделя', 'недели', 'недель')} × ${fmtTg(rate)}`, total: rate * weeks }
-    }
-    // monthly
-    let m = differenceInMonths(co, ci)
-    if (addMonths(ci, m) < co) m += 1
-    m = Math.max(m, 1)
-    return { label: `${m} ${plural(m, 'месяц', 'месяца', 'месяцев')} × ${fmtTg(rate)}`, total: rate * m }
+    return { duration: `${units} ${word}`, range, total: rate ? rate * units : 0, hasRate: !!rate }
   }
   const calc = calcTotal()
 
@@ -203,7 +216,7 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
                   <div><label className="text-xs text-gray-500 mb-1 block">Имя *</label><input className="input-field text-sm" placeholder="Алибек" value={newGuest.first_name} onChange={e => setNewGuest(g => ({ ...g, first_name: e.target.value }))} /></div>
                   <div><label className="text-xs text-gray-500 mb-1 block">Фамилия *</label><input className="input-field text-sm" placeholder="Сейткали" value={newGuest.last_name} onChange={e => setNewGuest(g => ({ ...g, last_name: e.target.value }))} /></div>
                 </div>
-                <div><label className="text-xs text-gray-500 mb-1 block">Телефон *</label><input className="input-field text-sm" placeholder="+7 700 000 00 00" value={newGuest.phone} onChange={e => setNewGuest(g => ({ ...g, phone: e.target.value }))} /></div>
+                <div><label className="text-xs text-gray-500 mb-1 block">Телефон *</label><input className="input-field text-sm" placeholder={PHONE_PLACEHOLDER} value={newGuest.phone} onChange={e => setNewGuest(g => ({ ...g, phone: formatPhoneKZ(e.target.value) }))} /></div>
                 <div className="flex items-center gap-3 py-2 border-t border-gray-200">
                   <button type="button" onClick={() => setNewGuest(g => ({ ...g, is_foreigner: !g.is_foreigner, nationality: !g.is_foreigner ? g.nationality : '' }))}
                     className={`relative w-10 h-6 rounded-full transition-colors ${newGuest.is_foreigner ? 'bg-blue-600' : 'bg-gray-300'}`}>
@@ -232,7 +245,7 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд *</label><input type="date" className="input-field" value={form.check_in_date} onChange={e => setForm(f => ({ ...f, check_in_date: e.target.value }))} /></div>
+            <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд *</label><input type="date" className="input-field" value={form.check_in_date} onChange={e => setForm(f => ({ ...f, check_in_date: e.target.value, expected_check_out_date: addPeriod(e.target.value, f.rate_type) }))} /></div>
             <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Планируемый выезд</label><input type="date" className="input-field" value={form.expected_check_out_date} onChange={e => setForm(f => ({ ...f, expected_check_out_date: e.target.value }))} /></div>
           </div>
           <p className="text-xs text-gray-400 -mt-2">Дату выезда всегда можно продлить</p>
@@ -242,7 +255,7 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Тип оплаты</label>
             <div className="flex gap-2">
               {(['daily', 'weekly', 'monthly'] as RateType[]).map(r => (
-                <button key={r} onClick={() => setForm(f => ({ ...f, rate_type: r }))}
+                <button key={r} onClick={() => setForm(f => ({ ...f, rate_type: r, expected_check_out_date: addPeriod(f.check_in_date, r) }))}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition tap-card ${
                     form.rate_type === r ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-600 border-gray-200'
                   }`}>
@@ -258,14 +271,17 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
             <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Депозит (₸)</label><input type="number" className="input-field" placeholder="0" value={form.deposit_amount} onChange={e => setForm(f => ({ ...f, deposit_amount: e.target.value }))} /></div>
           </div>
 
-          {/* Живой расчёт суммы */}
+          {/* Живой расчёт срока и суммы */}
           {calc && (
-            <div className="bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-primary-500 font-semibold uppercase">К оплате за период</p>
-                <p className="text-xs text-gray-500 mt-0.5">{calc.label}</p>
+            <div className="bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-primary-800">{calc.duration}</p>
+                <p className="text-xs text-gray-500 mt-0.5 truncate">{calc.range}</p>
               </div>
-              <p className="text-lg font-extrabold text-primary-700">{fmtTg(calc.total)}</p>
+              <div className="text-right shrink-0">
+                <p className="text-[10px] text-primary-500 font-semibold uppercase">К оплате</p>
+                <p className="text-lg font-extrabold text-primary-700">{calc.hasRate ? fmtTg(calc.total) : '—'}</p>
+              </div>
             </div>
           )}
         </div>

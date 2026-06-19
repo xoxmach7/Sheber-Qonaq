@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const mpisPending = alerts?.mpis_pending_count ?? 0
   const expiringSoon = alerts?.expiring_soon_count ?? 0
 
-  type TopAlert = { key: string; icon: typeof Globe; title: string; sub: string; cls: string; to: string }
+  type TopAlert = { key: string; icon: typeof Globe; title: string; sub: string; cls: string; to?: string; scrollTo?: string }
   const topAlerts: TopAlert[] = []
   if (mpisPending > 0) topAlerts.push({
     key: 'mpis', icon: Globe,
@@ -68,7 +68,7 @@ export default function DashboardPage() {
   if (debtors.length > 0) topAlerts.push({
     key: 'debt', icon: Banknote,
     title: `${debtors.length} ${plural(debtors.length, 'должник', 'должника', 'должников')} · ${fmt(debtTotal)}`,
-    sub: 'Не оплатили проживание', cls: 'bg-red-50 border-red-200 text-red-700', to: '/finances',
+    sub: 'Не оплатили проживание', cls: 'bg-red-50 border-red-200 text-red-700', scrollTo: 'debtors',
   })
   if (checkoutsToday > 0) topAlerts.push({
     key: 'checkout', icon: ArrowUpCircle,
@@ -107,7 +107,9 @@ export default function DashboardPage() {
           {topAlerts.map(a => (
             <button
               key={a.key}
-              onClick={() => navigate(a.to)}
+              onClick={() => a.scrollTo
+                ? document.getElementById(a.scrollTo)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                : navigate(a.to!)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left tap-card ${a.cls}`}>
               <a.icon size={20} className="shrink-0" />
               <div className="flex-1 min-w-0">
@@ -226,7 +228,7 @@ export default function DashboardPage() {
 
       {/* Debtors */}
       {alerts?.debtors && alerts.debtors.length > 0 && (
-        <section>
+        <section id="debtors" className="scroll-mt-4">
           <h3 className="text-[15px] font-bold text-gray-900 mb-2.5 flex items-center gap-1.5">
             <AlertCircle size={15} className="text-amber-500" />
             Должники

@@ -7,6 +7,7 @@ import api from '../../api/client'
 import { staysApi, guestsApi } from '../../api'
 import type { GuestCreate } from '../../types'
 import { Avatar } from '../../components/ui'
+import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 
 // ── Types ──
 type ShiftType = 'day' | 'night' | 'full'
@@ -151,7 +152,7 @@ function BookingSheet({ date, shift, unitId, rates, onClose }: {
                   <input className="input-field text-sm" placeholder="Имя *" value={newGuest.first_name} onChange={e => setNewGuest(g => ({ ...g, first_name: e.target.value }))} />
                   <input className="input-field text-sm" placeholder="Фамилия *" value={newGuest.last_name} onChange={e => setNewGuest(g => ({ ...g, last_name: e.target.value }))} />
                 </div>
-                <input className="input-field text-sm" placeholder="Телефон *" value={newGuest.phone} onChange={e => setNewGuest(g => ({ ...g, phone: e.target.value }))} />
+                <input className="input-field text-sm" placeholder={PHONE_PLACEHOLDER} value={newGuest.phone} onChange={e => setNewGuest(g => ({ ...g, phone: formatPhoneKZ(e.target.value) }))} />
                 <button onClick={() => createGuest(newGuest)}
                   disabled={!newGuest.first_name || !newGuest.last_name || !newGuest.phone || creating}
                   className="w-full py-2.5 bg-primary-500 text-white rounded-xl text-sm font-semibold disabled:opacity-40">

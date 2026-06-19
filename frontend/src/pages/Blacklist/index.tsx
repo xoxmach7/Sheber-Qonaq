@@ -5,6 +5,7 @@ import type { BlacklistCreate, BlacklistEntry, BlacklistReason } from '../../typ
 import { ShieldAlert, Plus, X, Phone, User, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react'
 import { PageHeader } from '../../components/ui'
 import { useAuthStore } from '../../store/auth'
+import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 
 const REASONS: { value: BlacklistReason; label: string }[] = [
   { value: 'debt',       label: 'Долг / не заплатил' },
@@ -51,8 +52,8 @@ function AddSheet({ onClose, onSave }: { onClose: () => void; onSave: (d: Blackl
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Телефон</label>
-              <input className="input-field" placeholder="+7 700 000 00 00" value={form.phone ?? ''}
-                onChange={e => set('phone', e.target.value)} />
+              <input className="input-field" placeholder={PHONE_PLACEHOLDER} value={form.phone ?? ''}
+                onChange={e => set('phone', formatPhoneKZ(e.target.value))} />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">ИИН</label>

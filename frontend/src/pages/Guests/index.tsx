@@ -9,6 +9,7 @@ import {
 import type { Guest, GuestCreate, BlacklistCreate, BlacklistReason, BlacklistEntry } from '../../types'
 import type { LucideIcon } from 'lucide-react'
 import { Avatar, PageHeader, SegmentControl, SearchBar, EmptyState } from '../../components/ui'
+import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 
 // ─── Guest Form (create / edit) ──────────────────────────────────────────────
 function GuestForm({
@@ -108,7 +109,7 @@ function GuestForm({
           <input className="input-field" placeholder="Фамилия *" value={form.last_name} onChange={e => set('last_name', e.target.value)} />
           <input className="input-field" placeholder="Имя *" value={form.first_name} onChange={e => set('first_name', e.target.value)} />
           <input className="input-field" placeholder="Отчество" value={form.middle_name ?? ''} onChange={e => set('middle_name', e.target.value)} />
-          <input className="input-field" placeholder="Телефон * (+7...)" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} />
+          <input className="input-field" placeholder={PHONE_PLACEHOLDER} type="tel" value={form.phone} onChange={e => set('phone', formatPhoneKZ(e.target.value))} />
           <input className="input-field" placeholder="Email" type="email" value={form.email ?? ''} onChange={e => set('email', e.target.value)} />
 
           {form.is_foreigner ? (
@@ -207,7 +208,7 @@ function BlacklistForm({ onClose, initial }: { onClose: () => void; initial?: Bl
             Запись видна всем объектам платформы. Убедитесь в достоверности.
           </div>
           <input className="input-field" placeholder="ФИО *" value={form.full_name} onChange={e => set('full_name', e.target.value)} />
-          <input className="input-field" placeholder="Телефон (+7...)" type="tel" value={form.phone ?? ''} onChange={e => set('phone', e.target.value)} />
+          <input className="input-field" placeholder={PHONE_PLACEHOLDER} type="tel" value={form.phone ?? ''} onChange={e => set('phone', formatPhoneKZ(e.target.value))} />
           <input className="input-field" placeholder={isEdit ? 'ИИН — оставьте пустым, чтобы не менять' : 'ИИН (12 цифр)'} value={form.iin ?? ''} onChange={e => set('iin', e.target.value)} />
           <p className="text-xs text-gray-400 -mt-1">Укажите телефон и/или ИИН</p>
           <div>

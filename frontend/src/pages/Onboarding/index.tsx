@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Building2, BedDouble, User, ChevronRight, ChevronLeft, Plus, X, Check, Copy, Home } from 'lucide-react'
 import api from '../../api/client'
 import { useAuthStore } from '../../store/auth'
+import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 
 interface RoomInput { name: string }
 
@@ -270,7 +271,7 @@ export default function OnboardingPage() {
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Телефон</label>
-            <input className="input-field" placeholder="+7 777 000 00 00" value={phone} onChange={e => setPhone(e.target.value)} />
+            <input className="input-field" placeholder={PHONE_PLACEHOLDER} value={phone} onChange={e => setPhone(formatPhoneKZ(e.target.value))} />
           </div>
           {mutation.isError && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-600">
