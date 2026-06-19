@@ -6,7 +6,7 @@ import { ru } from 'date-fns/locale'
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, Plus, X,
   Zap, ShoppingCart, Wrench, Users, Megaphone, Receipt, Package,
-  Banknote, Smartphone, Building2, CreditCard,
+  Banknote, Smartphone, Building2, CreditCard, Trash2,
 } from 'lucide-react'
 import type { Expense } from '../../types'
 import type { LucideIcon } from 'lucide-react'
@@ -117,9 +117,28 @@ export default function FinancesPage() {
   const displayMonth = format(subMonths(new Date(), -monthOffset), 'LLLL yyyy', { locale: ru })
   const defaultExpenseDate = monthOffset === 0 ? format(new Date(), 'yyyy-MM-dd') : `${currentMonth}-01`
 
+  const qc = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['finances', currentMonth],
     queryFn: () => paymentsApi.summary(currentMonth),
+  })
+
+  // Отдельные расходы за выбранный месяц (с датами + удаление)
+  const { data: expensesData } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => paymentsApi.expenses(),
+  })
+  const monthExpenses = (expensesData?.results ?? [])
+    .filter(e => (e.date ?? '').startsWith(currentMonth))
+    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+
+  const { mutate: deleteExpense } = useMutation({
+    mutationFn: (id: number) => paymentsApi.deleteExpense(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['finances'] })
+      qc.invalidateQueries({ queryKey: ['expenses'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+    },
   })
 
   return (
@@ -237,6 +256,38 @@ export default function FinancesPage() {
               </div>
             )}
           </div>
+
+          {/* Список расходов с датами */}
+          {monthExpenses.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-50">
+                <h3 className="font-semibold text-gray-800 text-sm">Список расходов · {displayMonth}</h3>
+              </div>
+              {monthExpenses.map(exp => {
+                const catCfg = CATEGORY_OPTIONS.find(c => c.value === exp.category)
+                const Icon = catCfg?.Icon ?? Package
+                return (
+                  <div key={exp.id} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0">
+                    <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center shrink-0">
+                      <Icon size={15} className="text-gray-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-800 truncate">{exp.description || CATEGORY_LABELS[exp.category] || exp.category}</p>
+                      <p className="text-xs text-gray-400">
+                        {CATEGORY_LABELS[exp.category] ?? exp.category} · {format(new Date(exp.date + 'T12:00:00'), 'd MMM yyyy', { locale: ru })}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-red-600 shrink-0">−{fmt(exp.amount)}</span>
+                    <button
+                      onClick={() => { if (confirm('Удалить этот расход?')) deleteExpense(exp.id) }}
+                      className="p-1.5 text-gray-300 hover:text-red-500 shrink-0">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </>
       )}
 

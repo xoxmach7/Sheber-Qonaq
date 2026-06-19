@@ -36,7 +36,7 @@ class BlacklistEntry(TimestampedModel):
     reason = models.CharField(
         max_length=20, choices=REASONS, verbose_name='Причина'
     )
-    description = models.TextField(verbose_name='Описание инцидента')
+    description = models.TextField(blank=True, default='', verbose_name='Описание инцидента')
     evidence_url = models.URLField(blank=True, verbose_name='Ссылка на доказательство')
 
     # Кто добавил

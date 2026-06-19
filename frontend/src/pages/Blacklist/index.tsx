@@ -75,14 +75,14 @@ function AddSheet({ onClose, onSave }: { onClose: () => void; onSave: (d: Blackl
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Описание *</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Описание</label>
             <textarea className="input-field resize-none" rows={3}
-              placeholder="Что произошло? Даты, сумма долга или детали инцидента..."
+              placeholder="Что произошло? Даты, сумма долга или детали (необязательно)..."
               value={form.description} onChange={e => set('description', e.target.value)} />
           </div>
           <button
-            onClick={() => { if (form.full_name && form.description) onSave(form) }}
-            disabled={!form.full_name || !form.description}
+            onClick={() => { if (form.full_name && (form.phone || form.iin)) onSave(form) }}
+            disabled={!form.full_name || !(form.phone || form.iin)}
             className="w-full py-3 bg-red-500 text-white rounded-2xl text-sm font-bold disabled:opacity-40">
             Добавить в список
           </button>

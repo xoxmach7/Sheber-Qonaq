@@ -68,6 +68,9 @@ export const guestsApi = {
   update: (id: number, data: Partial<GuestCreate>) =>
     api.patch<Guest>(`/guests/${id}/`, data).then(r => r.data),
 
+  remove: (id: number) =>
+    api.delete<{ archived?: boolean; detail?: string }>(`/guests/${id}/`).then(r => r.data),
+
   checkBlacklist: (iin?: string, phone?: string) =>
     api.post<BlacklistCheck>('/guests/check_blacklist/', { iin, phone }).then(r => r.data),
 }
@@ -116,6 +119,9 @@ export const paymentsApi = {
   createExpense: (data: Partial<Expense>) =>
     api.post<Expense>('/expenses/', data).then(r => r.data),
 
+  deleteExpense: (id: number) =>
+    api.delete(`/expenses/${id}/`),
+
   summary: (month: string) =>
     api.get<FinanceSummary>('/summary/', { params: { month } }).then(r => r.data),
 }
@@ -129,6 +135,9 @@ export const blacklistApi = {
 
   create: (data: BlacklistCreate) =>
     api.post<BlacklistEntry>('/blacklist/', data).then(r => r.data),
+
+  update: (id: number, data: Partial<BlacklistCreate>) =>
+    api.patch<BlacklistEntry>(`/blacklist/${id}/`, data).then(r => r.data),
 
   deactivate: (id: number) =>
     api.delete(`/blacklist/${id}/`),

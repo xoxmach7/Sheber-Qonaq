@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { staysApi, guestsApi, propertiesApi, blacklistApi } from '../../api'
-import { format, differenceInDays } from 'date-fns'
+import { format, differenceInDays, differenceInMonths, addMonths } from 'date-fns'
 import {
   Plus, X, LogOut, User, Search, AlertTriangle, UserPlus,
   ChevronLeft, CreditCard, CalendarClock, Globe, Clock,
@@ -10,6 +10,16 @@ import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader } from '../../components/ui'
 import { MpisBadge, MpisPanel, ExtendForm, PaymentForm } from './_helpers'
 import type { StayCreate, Stay, RateType, GuestCreate } from '../../types'
+
+const fmtTg = (n: number | string) => Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
+
+// Русское склонение числительных: plural(2, 'день','дня','дней')
+function plural(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10, m100 = n % 100
+  if (m10 === 1 && m100 !== 11) return one
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few
+  return many
+}
 
 // ── Checkout badge ──
 function CheckoutBadge({ date }: { date: string }) {
@@ -67,6 +77,29 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
   const rateLabels: Record<RateType, string> = { daily: 'Суточно', weekly: 'Понедельно', monthly: 'Помесячно' }
   const canSubmit = form.unit && form.guest && form.check_in_date && form.expected_check_out_date && form.rate_amount && !isPending
   const isBlacklisted = blacklistCheck?.is_blacklisted ?? false
+
+  // Живой расчёт срока и итоговой суммы (повторяет логику total_expected на бэке)
+  const calcTotal = (): { label: string; total: number } | null => {
+    const rate = Number(form.rate_amount)
+    if (!rate || !form.check_in_date || !form.expected_check_out_date) return null
+    const ci = new Date(form.check_in_date + 'T12:00:00')
+    const co = new Date(form.expected_check_out_date + 'T12:00:00')
+    const days = differenceInDays(co, ci)
+    if (days < 0) return null
+    if (form.rate_type === 'daily') {
+      return { label: `${days} ${plural(days, 'день', 'дня', 'дней')} × ${fmtTg(rate)}`, total: rate * days }
+    }
+    if (form.rate_type === 'weekly') {
+      const weeks = Math.max(Math.ceil(days / 7), 1)
+      return { label: `${weeks} ${plural(weeks, 'неделя', 'недели', 'недель')} × ${fmtTg(rate)}`, total: rate * weeks }
+    }
+    // monthly
+    let m = differenceInMonths(co, ci)
+    if (addMonths(ci, m) < co) m += 1
+    m = Math.max(m, 1)
+    return { label: `${m} ${plural(m, 'месяц', 'месяца', 'месяцев')} × ${fmtTg(rate)}`, total: rate * m }
+  }
+  const calc = calcTotal()
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -224,6 +257,17 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
             <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Ставка (₸) *</label><input type="number" className="input-field" placeholder="80 000" value={form.rate_amount} onChange={e => setForm(f => ({ ...f, rate_amount: e.target.value }))} /></div>
             <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Депозит (₸)</label><input type="number" className="input-field" placeholder="0" value={form.deposit_amount} onChange={e => setForm(f => ({ ...f, deposit_amount: e.target.value }))} /></div>
           </div>
+
+          {/* Живой расчёт суммы */}
+          {calc && (
+            <div className="bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-primary-500 font-semibold uppercase">К оплате за период</p>
+                <p className="text-xs text-gray-500 mt-0.5">{calc.label}</p>
+              </div>
+              <p className="text-lg font-extrabold text-primary-700">{fmtTg(calc.total)}</p>
+            </div>
+          )}
         </div>
 
         <div className="px-5 pb-5 pt-3 border-t border-gray-100">

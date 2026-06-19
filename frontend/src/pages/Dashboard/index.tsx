@@ -14,6 +14,13 @@ function fmt(n: number | string) {
   return Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
 }
 
+function plural(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10, m100 = n % 100
+  if (m10 === 1 && m100 !== 11) return one
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few
+  return many
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
@@ -43,6 +50,37 @@ export default function DashboardPage() {
   const todayData = data?.today
   const alerts = data?.alerts
 
+  // ── Сводка «Требует внимания» (для заметной панели сверху) ──
+  const checkoutsToday = todayData?.checkouts?.length ?? 0
+  const debtors = alerts?.debtors ?? []
+  const debtTotal = debtors.reduce((s, d) => s + Number(d.debt), 0)
+  const mpisPending = alerts?.mpis_pending_count ?? 0
+  const expiringSoon = alerts?.expiring_soon_count ?? 0
+
+  type TopAlert = { key: string; icon: typeof Globe; title: string; sub: string; cls: string; to: string }
+  const topAlerts: TopAlert[] = []
+  if (mpisPending > 0) topAlerts.push({
+    key: 'mpis', icon: Globe,
+    title: `${mpisPending} без MPIS`,
+    sub: 'Штраф 40 МРП за каждого — зарегистрируйте',
+    cls: 'bg-orange-50 border-orange-200 text-orange-700', to: '/stays',
+  })
+  if (debtors.length > 0) topAlerts.push({
+    key: 'debt', icon: Banknote,
+    title: `${debtors.length} ${plural(debtors.length, 'должник', 'должника', 'должников')} · ${fmt(debtTotal)}`,
+    sub: 'Не оплатили проживание', cls: 'bg-red-50 border-red-200 text-red-700', to: '/finances',
+  })
+  if (checkoutsToday > 0) topAlerts.push({
+    key: 'checkout', icon: ArrowUpCircle,
+    title: `${checkoutsToday} ${plural(checkoutsToday, 'выезд', 'выезда', 'выездов')} сегодня`,
+    sub: 'Проверьте оплату перед выездом', cls: 'bg-blue-50 border-blue-200 text-blue-700', to: '/stays',
+  })
+  if (expiringSoon > 0) topAlerts.push({
+    key: 'expiring', icon: AlertCircle,
+    title: `${expiringSoon} ${plural(expiringSoon, 'заезд', 'заезда', 'заездов')} скоро заканчиваются`,
+    sub: 'В течение 3 дней', cls: 'bg-amber-50 border-amber-200 text-amber-700', to: '/stays',
+  })
+
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Greeting */}
@@ -59,6 +97,28 @@ export default function DashboardPage() {
           <LogOut size={18} />
         </button>
       </div>
+
+      {/* Требует внимания — заметная сводка сверху */}
+      {topAlerts.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="text-[13px] font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <AlertCircle size={14} className="text-amber-500" /> Требует внимания
+          </h3>
+          {topAlerts.map(a => (
+            <button
+              key={a.key}
+              onClick={() => navigate(a.to)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left tap-card ${a.cls}`}>
+              <a.icon size={20} className="shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold leading-tight">{a.title}</p>
+                <p className="text-xs opacity-80 mt-0.5">{a.sub}</p>
+              </div>
+              <ArrowUpCircle size={16} className="rotate-45 opacity-40 shrink-0" />
+            </button>
+          ))}
+        </section>
+      )}
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 gap-2.5">
@@ -191,30 +251,6 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* MPIS alert */}
-      {(alerts?.mpis_pending_count ?? 0) > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <Globe size={20} className="text-orange-600 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-orange-800">
-              {alerts!.mpis_pending_count} иностранц{alerts!.mpis_pending_count === 1 ? 'а' : 'ев'} без регистрации MPIS
-            </p>
-            <p className="text-xs text-orange-600 mt-0.5">
-              Зарегистрируйте в eQonaq.kz
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Expiring soon */}
-      {(alerts?.expiring_soon_count ?? 0) > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <AlertCircle size={20} className="text-amber-600 shrink-0" />
-          <p className="text-sm text-amber-800">
-            <strong>{alerts!.expiring_soon_count}</strong> заездов заканчиваются в течение 3 дней
-          </p>
-        </div>
-      )}
     </div>
   )
 }

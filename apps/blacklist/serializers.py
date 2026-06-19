@@ -4,6 +4,7 @@ from .models import BlacklistEntry
 
 class BlacklistEntrySerializer(serializers.ModelSerializer):
     iin = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
     reason_display = serializers.CharField(source='get_reason_display', read_only=True)
     reported_by_name = serializers.CharField(source='reported_by.name', read_only=True)
 
