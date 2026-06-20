@@ -7,6 +7,21 @@ def default_shift_rates():
     return {'day': 35500, 'night': 35500, 'full': 49500}
 
 
+def default_base_rates():
+    """
+    Базовые тарифы по типу юнита (₸). Ключ — unit_type, значение —
+    {daily, weekly, monthly}. Редактируются в настройках объекта.
+    Сезонные надбавки/скидки — отдельным слоем (RateRule, Фаза B).
+    """
+    return {
+        'bed':          {'daily': 5000,  'weekly': 30000,  'monthly': 100000},
+        'private_room': {'daily': 12000, 'weekly': 70000,  'monthly': 250000},
+        'apartment':    {'daily': 20000, 'weekly': 120000, 'monthly': 400000},
+        'studio':       {'daily': 15000, 'weekly': 90000,  'monthly': 320000},
+        'family_room':  {'daily': 18000, 'weekly': 110000, 'monthly': 380000},
+    }
+
+
 class Property(OrganizationScopedModel):
     """
     Объект размещения (хостел, мотель, апарт-отель, гостевой дом).
@@ -32,6 +47,19 @@ class Property(OrganizationScopedModel):
         verbose_name='Тарифы смен (cottage)',
         help_text='Цены посменной аренды: {"day": ₸, "night": ₸, "full": ₸}'
     )
+    base_rates = models.JSONField(
+        default=default_base_rates, blank=True,
+        verbose_name='Базовые тарифы по типу юнита',
+        help_text='{"bed": {"daily": ₸, "weekly": ₸, "monthly": ₸}, ...}'
+    )
+
+    def rate_for(self, unit_type, rate_type):
+        """Базовая ставка для типа юнита и типа тарифа. None, если не задана."""
+        try:
+            value = (self.base_rates or {}).get(unit_type, {}).get(rate_type)
+            return value if value not in (None, '', 0) else None
+        except (AttributeError, TypeError):
+            return None
 
     class Meta:
         verbose_name = 'Объект размещения'

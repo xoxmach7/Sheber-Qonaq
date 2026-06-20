@@ -11,7 +11,7 @@ from apps.core.permissions import IsReception, IsOwnerOrManager
 from .models import Stay
 from .serializers import (
     StaySerializer, CheckOutSerializer, ExtendStaySerializer,
-    MpisStatusSerializer, MpisPendingStaySerializer,
+    MpisStatusSerializer, MpisPendingStaySerializer, QuoteSerializer,
 )
 
 
@@ -176,6 +176,50 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
         stay.status = 'no_show'
         stay.save(update_fields=['status'])
         return self._stay_response(stay)
+
+    @action(detail=False, methods=['post'])
+    def quote(self, request):
+        """
+        Котировка брони без её создания.
+        POST /api/v1/stays/quote/  { unit, check_in_date, expected_check_out_date, rate_type }
+        Возвращает базовую ставку (из Property.base_rates по типу юнита),
+        количество единиц, итог и доступность на эти даты.
+        """
+        from apps.properties.models import Unit
+        ser = QuoteSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        d = ser.validated_data
+
+        unit = (
+            Unit.objects
+            .filter(organization=request.user.organization, id=d['unit'])
+            .select_related('room__property')
+            .first()
+        )
+        if not unit:
+            return Response({'error': 'Юнит не найден.'}, status=status.HTTP_404_NOT_FOUND)
+
+        rate = unit.room.property.rate_for(unit.unit_type, d['rate_type'])
+        units = Stay.duration_units(
+            d['rate_type'], d['check_in_date'], d['expected_check_out_date']
+        )
+        rate_dec = Decimal(str(rate)) if rate is not None else Decimal('0')
+        total = rate_dec * units
+        available = not Stay.overlapping(
+            unit, d['check_in_date'], d['expected_check_out_date']
+        ).exists()
+
+        return Response({
+            'unit': unit.id,
+            'unit_type': unit.unit_type,
+            'unit_type_display': unit.get_unit_type_display(),
+            'rate_type': d['rate_type'],
+            'rate_amount': str(rate_dec) if rate is not None else None,
+            'units': units,
+            'total': str(total),
+            'configured': rate is not None,
+            'available': available,
+        })
 
     @action(detail=False, methods=['get'])
     def active(self, request):
