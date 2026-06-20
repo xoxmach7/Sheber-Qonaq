@@ -15,11 +15,17 @@ class Stay(OrganizationScopedModel):
     ]
 
     STATUSES = [
-        ('active', 'Активно'),
+        ('reserved', 'Бронь (резерв)'),
+        ('confirmed', 'Подтверждено (предоплата)'),
+        ('active', 'Активно (заселён)'),
         ('checked_out', 'Выселен'),
         ('cancelled', 'Отменено'),
         ('no_show', 'Не явился'),
+        ('expired', 'Резерв истёк'),
     ]
+
+    # Статусы, которые занимают даты юнита (учитываются в проверке пересечений).
+    BLOCKING_STATUSES = ('reserved', 'confirmed', 'active')
 
     SOURCES = [
         ('direct', 'Напрямую'),

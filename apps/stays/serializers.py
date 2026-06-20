@@ -69,8 +69,11 @@ class StaySerializer(serializers.ModelSerializer):
             mode = self._get_booking_mode(unit)
 
             if mode == 'hostel':
-                # Hostel: только один активный Stay на unit (application-level)
-                if unit.status != 'available':
+                # Доступность по unit.status проверяем только при немедленном
+                # заселении (walk-in). Бронь вперёд (reserved/confirmed) опирается
+                # на диапазоны дат (overlap-движок, Step 2), а не на unit.status.
+                new_status = data.get('status', 'active')
+                if new_status == 'active' and unit.status != 'available':
                     raise serializers.ValidationError(
                         f'Юнит "{unit.name}" недоступен (статус: {unit.get_status_display()}).'
                     )
@@ -122,17 +125,23 @@ class StaySerializer(serializers.ModelSerializer):
         validated_data['unit'] = unit
 
         mode = self._get_booking_mode(unit)
+        new_status = validated_data.get('status', 'active')
 
         if mode == 'hostel':
-            # Повторная проверка под блокировкой
-            if unit.status != 'available':
-                raise serializers.ValidationError(
-                    f'Юнит "{unit.name}" недоступен. '
-                    f'Возможно, только что был занят другим заездом.'
-                )
-            stay = super().create(validated_data)
-            unit.status = 'occupied'
-            unit.save(update_fields=['status'])
+            # Занимаем юнит только при немедленном заселении (walk-in, status=active).
+            # Бронь вперёд (reserved/confirmed) не трогает unit.status — источник
+            # истины по доступности это диапазоны дат (см. overlap-движок, Step 2).
+            if new_status == 'active':
+                if unit.status != 'available':
+                    raise serializers.ValidationError(
+                        f'Юнит "{unit.name}" недоступен. '
+                        f'Возможно, только что был занят другим заездом.'
+                    )
+                stay = super().create(validated_data)
+                unit.status = 'occupied'
+                unit.save(update_fields=['status'])
+            else:
+                stay = super().create(validated_data)
 
         else:  # cottage
             check_in = validated_data['check_in_date']
