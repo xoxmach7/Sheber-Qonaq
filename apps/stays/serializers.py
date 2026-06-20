@@ -190,6 +190,19 @@ class ExtendStaySerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True)
 
 
+class QuoteSerializer(serializers.Serializer):
+    """Вход для котировки брони: юнит + даты + тип тарифа."""
+    unit = serializers.IntegerField()
+    check_in_date = serializers.DateField()
+    expected_check_out_date = serializers.DateField()
+    rate_type = serializers.ChoiceField(choices=Stay.RATE_TYPES)
+
+    def validate(self, data):
+        if data['expected_check_out_date'] <= data['check_in_date']:
+            raise serializers.ValidationError('Дата выезда должна быть позже заезда.')
+        return data
+
+
 class MpisStatusSerializer(serializers.Serializer):
     """Обновление MPIS-статуса заезда."""
     mpis_status = serializers.ChoiceField(choices=Stay.MPIS_STATUSES)

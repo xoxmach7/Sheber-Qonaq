@@ -139,40 +139,41 @@ class Stay(OrganizationScopedModel):
         result = self.payments.aggregate(total=Sum('amount'))['total']
         return result or Decimal('0')
 
+    @staticmethod
+    def duration_units(rate_type, check_in, check_out):
+        """
+        Кол-во расчётных единиц за интервал [check_in, check_out):
+          daily   — количество дней.
+          weekly  — ceil(дней / 7).
+          monthly — календарные месяцы через relativedelta, неполный -> вверх, мин 1.
+        Единый источник логики для total_expected и котировки (quote).
+        """
+        import math as _math
+        if not check_in or not check_out:
+            return 0
+        days = (check_out - check_in).days
+        if days <= 0:
+            return 0
+        if rate_type == 'daily':
+            return days
+        if rate_type == 'weekly':
+            return _math.ceil(days / 7)
+        if rate_type == 'monthly':
+            diff = relativedelta(check_out, check_in)
+            months = diff.years * 12 + diff.months
+            if diff.days > 0:
+                months += 1  # неполный месяц -> вверх
+            return max(months, 1)
+        return 0
+
     @property
     def total_expected(self) -> Decimal:
-        # daily   — rate x количество дней (точно).
-        # weekly  — rate x ceil(дней / 7).
-        # monthly — rate x реальное количество календарных месяцев через
-        #           relativedelta. Неполный месяц округляется вверх до 1.
-        # Исправлен баг: деление delta_days / 30 давало ceil(31/30) = 2
-        # для любого 31-дневного периода, что приводило к двойному начислению.
         # Посменная аренда (cottage): цена фиксирована за смену, не зависит от дней.
-        # Иначе дневная смена (check_out == check_in) давала бы delta_days = 0
-        # и сумму к оплате 0.
         if self.shift_type:
             return self.rate_amount or Decimal('0')
-
         end_date = self.actual_check_out_date or self.expected_check_out_date
-        if not end_date or not self.check_in_date:
-            return Decimal('0')
-
-        delta_days = (end_date - self.check_in_date).days
-
-        if self.rate_type == 'daily':
-            return self.rate_amount * delta_days
-
-        elif self.rate_type == 'weekly':
-            return self.rate_amount * Decimal(math.ceil(delta_days / 7))
-
-        elif self.rate_type == 'monthly':
-            diff = relativedelta(end_date, self.check_in_date)
-            whole_months = diff.years * 12 + diff.months
-            if diff.days > 0:
-                whole_months += 1  # неполный месяц -> округление вверх
-            return self.rate_amount * Decimal(max(whole_months, 1))
-
-        return Decimal('0')
+        units = self.duration_units(self.rate_type, self.check_in_date, end_date)
+        return (self.rate_amount or Decimal('0')) * units
 
     @property
     def balance(self) -> Decimal:
