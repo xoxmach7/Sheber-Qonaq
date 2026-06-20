@@ -69,13 +69,15 @@ class StaySerializer(serializers.ModelSerializer):
             mode = self._get_booking_mode(unit)
 
             if mode == 'hostel':
-                # Доступность по unit.status проверяем только при немедленном
-                # заселении (walk-in). Бронь вперёд (reserved/confirmed) опирается
-                # на диапазоны дат (overlap-движок, Step 2), а не на unit.status.
-                new_status = data.get('status', 'active')
-                if new_status == 'active' and unit.status != 'available':
+                # Доступность = нет пересекающихся броней на эти даты (overlap-движок).
+                # Юнит, выведенный из эксплуатации, не бронируется вовсе.
+                if unit.status in ('maintenance', 'out_of_order'):
                     raise serializers.ValidationError(
                         f'Юнит "{unit.name}" недоступен (статус: {unit.get_status_display()}).'
+                    )
+                if check_out and Stay.overlapping(unit, check_in, check_out).exists():
+                    raise serializers.ValidationError(
+                        f'Юнит "{unit.name}" уже занят на эти даты другой бронью.'
                     )
 
             elif mode == 'cottage':
@@ -128,20 +130,23 @@ class StaySerializer(serializers.ModelSerializer):
         new_status = validated_data.get('status', 'active')
 
         if mode == 'hostel':
-            # Занимаем юнит только при немедленном заселении (walk-in, status=active).
-            # Бронь вперёд (reserved/confirmed) не трогает unit.status — источник
-            # истины по доступности это диапазоны дат (см. overlap-движок, Step 2).
-            if new_status == 'active':
-                if unit.status != 'available':
-                    raise serializers.ValidationError(
-                        f'Юнит "{unit.name}" недоступен. '
-                        f'Возможно, только что был занят другим заездом.'
-                    )
-                stay = super().create(validated_data)
+            # Источник истины по доступности — диапазоны дат (overlap), а не unit.status.
+            # Повторная проверка под SELECT FOR UPDATE (защита от гонок).
+            check_in_d = validated_data['check_in_date']
+            check_out_d = validated_data['expected_check_out_date']
+            if unit.status in ('maintenance', 'out_of_order'):
+                raise serializers.ValidationError(
+                    f'Юнит "{unit.name}" недоступен (статус: {unit.get_status_display()}).'
+                )
+            if Stay.overlapping(unit, check_in_d, check_out_d).exists():
+                raise serializers.ValidationError(
+                    f'Юнит "{unit.name}" только что заняли на эти даты.'
+                )
+            stay = super().create(validated_data)
+            # Занимаем юнит операционно только при немедленном заселении (walk-in).
+            if new_status == 'active' and unit.status == 'available':
                 unit.status = 'occupied'
                 unit.save(update_fields=['status'])
-            else:
-                stay = super().create(validated_data)
 
         else:  # cottage
             check_in = validated_data['check_in_date']

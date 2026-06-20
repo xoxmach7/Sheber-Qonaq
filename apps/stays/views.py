@@ -79,6 +79,12 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
                 {'error': 'Новая дата должна быть позже текущей.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        # Продление не должно наезжать на следующую бронь этого юнита
+        if Stay.overlapping(stay.unit, stay.check_in_date, new_date, exclude_pk=stay.id).exists():
+            return Response(
+                {'error': 'Продление пересекается с другой бронью на этом юните.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         stay.expected_check_out_date = new_date
         if serializer.validated_data.get('notes'):
             stay.notes = (stay.notes + '\nПродление: ' + serializer.validated_data['notes']).strip()

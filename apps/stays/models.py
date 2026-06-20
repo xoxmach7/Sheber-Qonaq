@@ -113,6 +113,25 @@ class Stay(OrganizationScopedModel):
     def __str__(self):
         return f'{self.guest} / {self.unit} / с {self.check_in_date}'
 
+    @staticmethod
+    def overlapping(unit, check_in, check_out, exclude_pk=None):
+        """
+        Брони, пересекающие интервал [check_in, check_out) на данном юните.
+        Полуоткрытый интервал: заезд в день чужого выезда НЕ считается пересечением.
+        Учитываются только обычные проживания (shift_type IS NULL) в блокирующих
+        статусах (reserved/confirmed/active). Cottage-смены — отдельная подсистема.
+        """
+        qs = Stay.objects.filter(
+            unit=unit,
+            shift_type__isnull=True,
+            status__in=Stay.BLOCKING_STATUSES,
+            check_in_date__lt=check_out,
+            expected_check_out_date__gt=check_in,
+        )
+        if exclude_pk:
+            qs = qs.exclude(pk=exclude_pk)
+        return qs
+
     # --- Финансовые расчёты ---
 
     @property
