@@ -222,6 +222,134 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['get'])
+    def availability(self, request):
+        """
+        Свободные койки на диапазон дат [from, to).
+        GET /api/v1/stays/availability/?from=2026-07-01&to=2026-07-05&unit_type=bed&property=<id>
+        Юнит свободен, если на эти даты нет пересекающейся брони (overlap-движок).
+        Возвращает цену из Property.base_rates и итог за период.
+        """
+        from django.utils.dateparse import parse_date
+        from apps.properties.models import Unit
+
+        org = request.user.organization
+        d_from = parse_date(request.query_params.get('from', ''))
+        d_to = parse_date(request.query_params.get('to', ''))
+        if not d_from or not d_to or d_to <= d_from:
+            return Response(
+                {'error': 'Параметры from и to обязательны, to должен быть позже from.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        units = (
+            Unit.objects
+            .filter(organization=org, room__property__booking_mode='hostel')
+            .exclude(status__in=['maintenance', 'out_of_order'])
+            .select_related('room__property')
+        )
+        if request.query_params.get('unit_type'):
+            units = units.filter(unit_type=request.query_params['unit_type'])
+        if request.query_params.get('property'):
+            units = units.filter(room__property_id=request.query_params['property'])
+
+        occupied_ids = set(
+            Stay.objects.filter(
+                unit__organization=org,
+                shift_type__isnull=True,
+                status__in=Stay.BLOCKING_STATUSES,
+                check_in_date__lt=d_to,
+                expected_check_out_date__gt=d_from,
+            ).values_list('unit_id', flat=True)
+        )
+
+        nights = Stay.duration_units('daily', d_from, d_to)
+        results = []
+        for u in units:
+            if u.id in occupied_ids:
+                continue
+            rates = (u.room.property.base_rates or {}).get(u.unit_type, {})
+            daily = rates.get('daily')
+            total = (Decimal(str(daily)) * nights) if daily else None
+            results.append({
+                'unit': u.id,
+                'name': u.name,
+                'room_name': u.room.name,
+                'unit_type': u.unit_type,
+                'unit_type_display': u.get_unit_type_display(),
+                'property': u.room.property_id,
+                'rates': rates,
+                'nights': nights,
+                'total': str(total) if total is not None else None,
+            })
+
+        return Response({
+            'from': str(d_from), 'to': str(d_to), 'nights': nights,
+            'count': len(results), 'results': results,
+        })
+
+    @action(detail=False, methods=['get'], url_path='occupancy-calendar')
+    def occupancy_calendar(self, request):
+        """
+        Занятость по каждой ночи диапазона [from, to) — для тепловой карты.
+        GET /api/v1/stays/occupancy-calendar/?from=&to=&property=<id>
+        Возвращает {date: {occupied, total, rate}} по каждой ночи.
+        """
+        from datetime import timedelta
+        from collections import defaultdict
+        from django.utils.dateparse import parse_date
+        from apps.properties.models import Unit
+
+        org = request.user.organization
+        d_from = parse_date(request.query_params.get('from', ''))
+        d_to = parse_date(request.query_params.get('to', ''))
+        if not d_from or not d_to or d_to <= d_from:
+            return Response(
+                {'error': 'Параметры from и to обязательны, to должен быть позже from.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        units = Unit.objects.filter(organization=org, room__property__booking_mode='hostel')
+        prop = request.query_params.get('property')
+        if prop:
+            units = units.filter(room__property_id=prop)
+        total_units = units.count()
+
+        stays = Stay.objects.filter(
+            unit__organization=org,
+            shift_type__isnull=True,
+            status__in=Stay.BLOCKING_STATUSES,
+            check_in_date__lt=d_to,
+            expected_check_out_date__gt=d_from,
+        )
+        if prop:
+            stays = stays.filter(unit__room__property_id=prop)
+
+        occ = defaultdict(set)
+        for s in stays.values('unit_id', 'check_in_date', 'expected_check_out_date'):
+            start = max(s['check_in_date'], d_from)
+            end = min(s['expected_check_out_date'], d_to)
+            d = start
+            while d < end:
+                occ[d].add(s['unit_id'])
+                d += timedelta(days=1)
+
+        days = {}
+        d = d_from
+        while d < d_to:
+            o = len(occ.get(d, set()))
+            days[str(d)] = {
+                'occupied': o,
+                'total': total_units,
+                'rate': round(o / total_units * 100) if total_units else 0,
+            }
+            d += timedelta(days=1)
+
+        return Response({
+            'from': str(d_from), 'to': str(d_to),
+            'total_units': total_units, 'days': days,
+        })
+
+    @action(detail=False, methods=['get'])
     def active(self, request):
         """Все активные проживания — для дашборда."""
         qs = self.get_queryset().filter(status='active').order_by('expected_check_out_date')
