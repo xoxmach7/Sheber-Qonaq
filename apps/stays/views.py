@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -84,6 +85,91 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
         stay.save(update_fields=['expected_check_out_date', 'notes'])
 
         return Response(StaySerializer(stay, context={'request': request}).data)
+
+    # ── Стейт-машина брони: reserved → confirmed → active → checked_out ──
+
+    def _stay_response(self, stay):
+        return Response(StaySerializer(stay, context={'request': self.request}).data)
+
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        """
+        Подтвердить бронь (reserved → confirmed).
+        Требует предоплату не меньше organization.deposit_percent от суммы брони.
+        """
+        stay = self.get_object()
+        if stay.status != 'reserved':
+            return Response(
+                {'error': 'Подтвердить можно только бронь в статусе «резерв».'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        percent = stay.organization.deposit_percent or Decimal('0')
+        required = (percent * stay.total_expected).quantize(Decimal('1'))
+        if stay.total_paid < required:
+            return Response(
+                {
+                    'error': f'Нужна предоплата не меньше {required} ₸ '
+                             f'({int(percent * 100)}%). Оплачено {stay.total_paid:.0f} ₸.',
+                    'required': str(required),
+                    'paid': str(stay.total_paid),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        stay.status = 'confirmed'
+        stay.save(update_fields=['status'])
+        return self._stay_response(stay)
+
+    @action(detail=True, methods=['post'], url_path='check-in')
+    @transaction.atomic
+    def check_in(self, request, pk=None):
+        """Заселить гостя (reserved/confirmed → active)."""
+        stay = self.get_object()
+        if stay.status not in ('reserved', 'confirmed'):
+            return Response(
+                {'error': 'Заселить можно только бронь в статусе «резерв» или «подтверждено».'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        stay.status = 'active'
+        stay.save(update_fields=['status'])
+        # Операционно помечаем юнит занятым (для hostel-режима)
+        if not stay.shift_type and stay.unit.status == 'available':
+            stay.unit.status = 'occupied'
+            stay.unit.save(update_fields=['status'])
+        return self._stay_response(stay)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def cancel(self, request, pk=None):
+        """Отменить бронь (любой незавершённый статус → cancelled)."""
+        stay = self.get_object()
+        if stay.status in ('checked_out', 'cancelled', 'no_show', 'expired'):
+            return Response(
+                {'error': 'Нельзя отменить завершённую бронь.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        was_active = stay.status == 'active'
+        if request.data.get('notes'):
+            stay.notes = (stay.notes + '\nОтмена: ' + request.data['notes']).strip()
+        stay.status = 'cancelled'
+        stay.save(update_fields=['status', 'notes'])
+        # Если гость был заселён — освобождаем юнит
+        if was_active and not stay.shift_type and stay.unit.status == 'occupied':
+            stay.unit.status = 'available'
+            stay.unit.save(update_fields=['status'])
+        return self._stay_response(stay)
+
+    @action(detail=True, methods=['post'], url_path='no-show')
+    def no_show(self, request, pk=None):
+        """Гость не явился (reserved/confirmed → no_show)."""
+        stay = self.get_object()
+        if stay.status not in ('reserved', 'confirmed'):
+            return Response(
+                {'error': 'Отметить неявку можно только для брони/подтверждённой брони.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        stay.status = 'no_show'
+        stay.save(update_fields=['status'])
+        return self._stay_response(stay)
 
     @action(detail=False, methods=['get'])
     def active(self, request):
