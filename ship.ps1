@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-$repo = "https://github.com/xoxmach7/i-hostel"
+$repo = "https://github.com/xoxmach7/sheber-qonaq"
 
 # 1. Remove stale git locks (left over from interrupted operations)
 Remove-Item .git\index.lock, .git\HEAD.lock -Force -ErrorAction SilentlyContinue
