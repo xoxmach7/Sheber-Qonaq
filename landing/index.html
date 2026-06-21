@@ -1,370 +1,395 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sheber Qonaq — PMS для хостелов Казахстана. MPIS без штрафов</title>
-<meta name="description" content="Sheber Qonaq — система управления для хостелов, мотелей и гостевых домов. Заселение за 5 минут, контроль долгов, чёрный список и MPIS-трекер под закон с 1 июля 2026. 15 000 ₸/мес." />
-<meta property="og:title" content="Sheber Qonaq — PMS для хостелов. MPIS без штрафов" />
-<meta property="og:description" content="Заселяйте за 5 минут, не теряйте долги и не пропустите регистрацию иностранцев. Штраф за MPIS — 40 МРП (180 000 ₸). Подписка — 15 000 ₸/мес." />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sheber Qonaq — PMS для хостелов Казахстана. МПИС без штрафов</title>
+<meta name="description" content="Sheber Qonaq — система управления для хостелов, мотелей и гостевых домов. Заселение за 5 минут, контроль долгов, чёрный список и МПИС-трекер под закон с 1 июля 2026. 15 000 ₸/мес." />
+<meta property="og:title" content="Sheber Qonaq — PMS для хостелов. МПИС без штрафов" />
+<meta property="og:description" content="Заселяйте за 5 минут, не теряйте долги и не пропустите регистрацию иностранцев. Штраф за МПИС — 40 МРП (180 000 ₸). Подписка — 15 000 ₸/мес." />
 <meta property="og:type" content="website" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<meta property="og:locale" content="ru_RU" />
+<meta name="theme-color" content="#0F172A" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230EA5E9'/%3E%3Cstop offset='1' stop-color='%231B2E4B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='66' font-family='Arial,sans-serif' font-size='46' font-weight='900' fill='white' text-anchor='middle'%3ESQ%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --navy: #1B2E4B;
-    --sky: #0EA5E9;
-    --gold: #F59E0B;
-    --dark: #0F172A;
-    --gray: #F1F5F9;
-    --muted: #64748B;
-    --line: #E2E8F0;
-    --wa: #25D366;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body {
-    font-family: 'Inter', Arial, sans-serif;
-    color: var(--dark);
-    background: #fff;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+  body { margin: 0; background: #0F172A; -webkit-font-smoothing: antialiased; }
+  input, button, textarea { font-family: inherit; }
+  @keyframes sq-drift {
+    0%   { transform: translate(0,0) scale(1); }
+    50%  { transform: translate(6%,-4%) scale(1.15); }
+    100% { transform: translate(0,0) scale(1); }
   }
-  .mono { font-family: 'JetBrains Mono', monospace; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-  a { text-decoration: none; color: inherit; }
-
-  /* ── Header ── */
-  header {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--line);
+  @keyframes sq-drift2 {
+    0%   { transform: translate(0,0) scale(1.1); }
+    50%  { transform: translate(-7%,5%) scale(1); }
+    100% { transform: translate(0,0) scale(1.1); }
   }
-  .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; color: var(--navy); }
-  .logo .dot { width: 30px; height: 30px; border-radius: 9px; background: var(--navy); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; }
-  .logo .sub { font-weight: 500; color: var(--muted); font-size: 13px; }
-  .nav-cta { display: inline-flex; align-items: center; gap: 8px; background: var(--wa); color: #fff;
-    padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; transition: transform .15s; }
-  .nav-cta:hover { transform: translateY(-1px); }
-  @media (max-width: 560px) { .logo .sub { display: none; } .nav-cta span.full { display: none; } }
-
-  /* ── Hero ── */
-  .hero { background: linear-gradient(160deg, var(--navy) 0%, var(--dark) 100%); color: #fff;
-    padding: 64px 0 72px; position: relative; overflow: hidden; }
-  .hero::after { content: ''; position: absolute; right: -120px; top: -120px; width: 420px; height: 420px;
-    background: radial-gradient(circle, rgba(14,165,233,0.25), transparent 70%); }
-  .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(245,158,11,0.15);
-    border: 1px solid rgba(245,158,11,0.4); color: var(--gold); font-weight: 600; font-size: 13px;
-    padding: 7px 14px; border-radius: 999px; margin-bottom: 22px; }
-  .badge .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: pulse 1.6s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
-  h1 { font-size: 44px; line-height: 1.1; font-weight: 900; letter-spacing: -1px; max-width: 760px; }
-  h1 .hl { color: var(--sky); }
-  .hero p.lead { font-size: 19px; color: #CBD5E1; max-width: 620px; margin-top: 20px; }
-  .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
-  .btn-primary { display: inline-flex; align-items: center; gap: 10px; background: var(--wa); color: #fff;
-    padding: 15px 26px; border-radius: 12px; font-weight: 700; font-size: 16px; transition: transform .15s, box-shadow .15s;
-    box-shadow: 0 8px 24px rgba(37,211,102,0.35); }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(37,211,102,0.45); }
-  .btn-ghost { display: inline-flex; align-items: center; gap: 8px; color: #fff; padding: 15px 24px;
-    border-radius: 12px; font-weight: 600; font-size: 16px; border: 1px solid rgba(255,255,255,0.25); }
-  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
-  .hero-stats { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 46px; }
-  .hero-stats .s .n { font-size: 26px; font-weight: 800; color: #fff; }
-  .hero-stats .s .l { font-size: 13px; color: #94A3B8; margin-top: 2px; }
-  @media (max-width: 700px) { h1 { font-size: 32px; } .hero p.lead { font-size: 17px; } .hero { padding: 44px 0 52px; } }
-
-  /* ── Section base ── */
-  section { padding: 72px 0; }
-  .eyebrow { color: var(--sky); font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
-  h2 { font-size: 32px; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; margin-top: 10px; }
-  .section-lead { color: var(--muted); font-size: 17px; max-width: 600px; margin-top: 12px; }
-  @media (max-width: 700px) { section { padding: 52px 0; } h2 { font-size: 26px; } }
-
-  /* ── Problem ── */
-  .problem { background: var(--gray); }
-  .alert-card { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--gold);
-    border-radius: 16px; padding: 28px; margin-top: 28px; display: flex; gap: 20px; align-items: flex-start;
-    box-shadow: 0 4px 16px rgba(15,23,42,0.04); }
-  .alert-card .ico { font-size: 30px; line-height: 1; }
-  .alert-card h3 { font-size: 19px; color: var(--navy); }
-  .alert-card p { color: var(--muted); margin-top: 8px; font-size: 15px; }
-  .fine { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-weight: 700; }
-
-  /* ── Features ── */
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
-  @media (max-width: 860px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
-  .card { border: 1px solid var(--line); border-radius: 16px; padding: 26px; transition: transform .18s, box-shadow .18s; background: #fff; }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(15,23,42,0.08); }
-  .card .ci { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    font-size: 22px; margin-bottom: 16px; background: rgba(14,165,233,0.1); }
-  .card.gold .ci { background: rgba(245,158,11,0.14); }
-  .card h3 { font-size: 17px; color: var(--navy); }
-  .card p { color: var(--muted); font-size: 14.5px; margin-top: 8px; }
-
-  /* ── Pricing ── */
-  .pricing { background: var(--navy); color: #fff; }
-  .price-box { background: #fff; color: var(--dark); border-radius: 22px; padding: 40px; max-width: 460px; margin: 36px auto 0;
-    text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
-  .price-box .amount { font-family: 'JetBrains Mono', monospace; font-size: 52px; font-weight: 700; color: var(--navy); }
-  .price-box .per { color: var(--muted); font-size: 16px; }
-  .price-box .note { color: var(--muted); font-size: 14px; margin-top: 6px; }
-  .price-list { text-align: left; margin: 26px 0; display: flex; flex-direction: column; gap: 12px; }
-  .price-list li { list-style: none; display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
-  .price-list .ch { color: var(--wa); font-weight: 800; }
-  .price-box .btn-primary { width: 100%; justify-content: center; }
-
-  /* ── Founder ── */
-  .founder { background: var(--gray); }
-  .founder-box { display: flex; gap: 28px; align-items: center; background: #fff; border: 1px solid var(--line);
-    border-radius: 20px; padding: 36px; margin-top: 30px; }
-  .founder-box .av { width: 84px; height: 84px; border-radius: 50%; background: var(--navy); color: #fff; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800; }
-  .founder-box blockquote { font-size: 19px; color: var(--navy); font-weight: 500; line-height: 1.45; }
-  .founder-box .who { color: var(--muted); font-size: 14px; margin-top: 12px; }
-  @media (max-width: 600px) { .founder-box { flex-direction: column; text-align: center; padding: 28px; } }
-
-  /* ── Form ── */
-  .lead-form { background: linear-gradient(160deg, var(--dark), var(--navy)); color: #fff; }
-  .form-card { background: #fff; color: var(--dark); border-radius: 22px; padding: 38px; max-width: 540px; margin: 34px auto 0;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
-  .form-card label { display: block; font-size: 13px; font-weight: 600; color: var(--navy); margin: 16px 0 6px; }
-  .form-card input, .form-card select { width: 100%; border: 1.5px solid var(--line); border-radius: 11px; padding: 13px 14px;
-    font-size: 15px; font-family: 'Inter', sans-serif; transition: border-color .15s; }
-  .form-card input:focus, .form-card select:focus { outline: none; border-color: var(--sky); }
-  .form-card .btn-primary { width: 100%; justify-content: center; margin-top: 24px; }
-  .form-note { color: var(--muted); font-size: 12.5px; text-align: center; margin-top: 14px; }
-
-  /* ── Footer ── */
-  footer { background: var(--dark); color: #94A3B8; padding: 40px 0; font-size: 14px; }
-  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; }
-  footer .logo { color: #fff; }
-  footer a:hover { color: #fff; }
-
-  /* ── Floating WhatsApp ── */
-  .fab { position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 58px; height: 58px; border-radius: 50%;
-    background: var(--wa); display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 24px rgba(37,211,102,0.5); transition: transform .15s; }
-  .fab:hover { transform: scale(1.08); }
-  .fab svg { width: 30px; height: 30px; fill: #fff; }
+  @keyframes sq-pulse {
+    0%   { box-shadow: 0 12px 30px rgba(16,185,129,.45), 0 0 0 0 rgba(37,211,102,.55); }
+    70%  { box-shadow: 0 12px 30px rgba(16,185,129,.45), 0 0 0 18px rgba(37,211,102,0); }
+    100% { box-shadow: 0 12px 30px rgba(16,185,129,.45), 0 0 0 0 rgba(37,211,102,0); }
+  }
+  @keyframes sq-blink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
 </style>
 </head>
 <body>
+<div style="font-family: 'Inter', system-ui, sans-serif; color: #0F172A; background: #F1F5F9; overflow-x: hidden;">
 
-<!-- Header -->
-<header>
-  <div class="wrap nav">
-    <div class="logo">
-      <span class="dot">S</span>
-      <span>Sheber Qonaq <span class="sub">· PMS для хостелов</span></span>
-    </div>
-    <a class="nav-cta" id="wa-header" href="#" target="_blank" rel="noopener">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24z"/></svg>
-      <span class="full">Написать в&nbsp;</span>WhatsApp
-    </a>
-  </div>
-</header>
+  <!-- ============ HERO ============ -->
+  <section data-screen-label="Hero" style="position: relative; background: #0F172A; color: #fff; overflow: hidden; padding: clamp(28px,5vw,40px) clamp(20px,5vw,48px) clamp(64px,8vw,96px);">
+    <div style="position: absolute; top: -20%; left: -10%; width: 60vw; height: 60vw; max-width: 820px; max-height: 820px; background: radial-gradient(circle, rgba(14,165,233,.38), transparent 62%); filter: blur(10px); animation: sq-drift 16s ease-in-out infinite; pointer-events: none;"></div>
+    <div style="position: absolute; bottom: -25%; right: -12%; width: 55vw; height: 55vw; max-width: 720px; max-height: 720px; background: radial-gradient(circle, rgba(245,158,11,.22), transparent 60%); filter: blur(10px); animation: sq-drift2 20s ease-in-out infinite; pointer-events: none;"></div>
 
-<!-- Hero -->
-<section class="hero" style="padding-top:56px">
-  <div class="wrap">
-    <div class="badge"><span class="pulse"></span> MPIS обязателен с 1 июля 2026</div>
-    <h1>Заселяйте за 5 минут и <span class="hl">не пропустите регистрацию</span> иностранцев</h1>
-    <p class="lead">Sheber Qonaq — система управления для хостелов, мотелей и гостевых домов. Шахматка, гости, долги, чёрный список и MPIS-трекер — в одном месте. Без Excel и без штрафов.</p>
-    <div class="hero-cta">
-      <a class="btn-primary" id="wa-hero" href="#" target="_blank" rel="noopener">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.742-.981z"/></svg>
-        Узнать про MPIS
-      </a>
-      <a class="btn-ghost" href="#features">Что умеет система →</a>
-    </div>
-    <div class="hero-stats">
-      <div class="s"><div class="n mono">5 мин</div><div class="l">на заселение гостя</div></div>
-      <div class="s"><div class="n mono">40 МРП</div><div class="l">штраф, который вы не получите</div></div>
-      <div class="s"><div class="n mono">15 000 ₸</div><div class="l">в месяц, без скрытых плат</div></div>
-    </div>
-  </div>
-</section>
+    <div style="position: relative; max-width: 1080px; margin: 0 auto;">
+      <header style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: clamp(48px,8vw,88px);">
+        <div style="display: flex; align-items: center; gap: 11px; font-weight: 800; font-size: 19px; letter-spacing: -.02em;">
+          <span style="display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg,#0EA5E9,#1B2E4B); font-weight: 900; box-shadow: 0 6px 18px rgba(14,165,233,.35);">SQ</span>
+          Sheber Qonaq
+        </div>
+        <a href="https://wa.me/77054054706?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%B5%D1%81%D1%83%D0%B5%D1%82%20Sheber%20Qonaq%20%D0%B4%D0%BB%D1%8F%20%D0%BC%D0%BE%D0%B5%D0%B3%D0%BE%20%D1%85%D0%BE%D1%81%D1%82%D0%B5%D0%BB%D0%B0" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 12px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; backdrop-filter: blur(6px);">WhatsApp</a>
+      </header>
 
-<!-- Problem -->
-<section class="problem">
-  <div class="wrap">
-    <span class="eyebrow">Что меняется с 1 июля</span>
-    <h2>Каждый незарегистрированный иностранец — это риск</h2>
-    <p class="section-lead">С 1 июля 2026 регистрация иностранных гостей в системе MPIS обязательна. Пропустил подтверждение — попал на штраф.</p>
-    <div class="alert-card">
-      <div class="ico">⚠️</div>
-      <div>
-        <h3>Штраф за нарушение — <span class="fine">40 МРП = 180 000 ₸</span> за каждого гостя</h3>
-        <p>Вести это в тетради или в голове — значит однажды забыть. Sheber Qonaq отмечает каждого иностранца, показывает кто ещё не подтверждён в MPIS, и не даёт пропустить срок. Один забытый гость дороже, чем год подписки.</p>
+      <div style="display: inline-flex; align-items: center; gap: 9px; padding: 8px 15px; border-radius: 999px; background: rgba(245,158,11,.13); border: 1px solid rgba(245,158,11,.4); color: #FBBF24; font-weight: 600; font-size: 13.5px; margin-bottom: 26px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #F59E0B; animation: sq-blink 1.6s ease-in-out infinite;"></span>
+        С 1 июля 2026 — новые штрафы МПИС
+      </div>
+
+      <h1 style="font-size: clamp(31px,5.4vw,60px); line-height: 1.06; font-weight: 900; letter-spacing: -.03em; margin: 0 0 24px; max-width: 16ch;">
+        Три часа ночи. Иностранец на ресепшене. А ты не помнишь&nbsp;— <span style="color: #38BDF8;">оформил того гостя в МПИС или нет.</span>
+      </h1>
+      <p style="font-size: clamp(17px,2.4vw,21px); line-height: 1.55; color: #CBD5E1; max-width: 46ch; margin: 0 0 36px; font-weight: 400;">
+        Sheber Qonaq помнит за тебя. Заселение, долги, занятость, регистрация иностранцев в МПИС — всё в одном месте. Без тетради, в которой сам не разберёшь через неделю.
+      </p>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 44px;">
+        <a href="https://wa.me/77054054706?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%B5%D1%81%D1%83%D0%B5%D1%82%20Sheber%20Qonaq%20%D0%B4%D0%BB%D1%8F%20%D0%BC%D0%BE%D0%B5%D0%B3%D0%BE%20%D1%85%D0%BE%D1%81%D1%82%D0%B5%D0%BB%D0%B0" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 10px; padding: 17px 28px; border-radius: 15px; background: #25D366; color: #04391f; text-decoration: none; font-weight: 800; font-size: 16.5px; box-shadow: 0 14px 34px rgba(37,211,102,.4);" style-hover="transform: translateY(-2px); box-shadow: 0 20px 44px rgba(37,211,102,.5);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zM6.597 20.13c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-.999zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          Написать в WhatsApp
+        </a>
+        <a href="#solution" style="display: inline-flex; align-items: center; gap: 8px; padding: 17px 26px; border-radius: 15px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); color: #fff; text-decoration: none; font-weight: 700; font-size: 16.5px;" style-hover="background: rgba(255,255,255,.13);">Посмотреть, как работает</a>
+      </div>
+
+      <!-- MPIS warning card -->
+      <div data-reveal style="display: flex; flex-wrap: wrap; align-items: center; gap: clamp(18px,4vw,40px); padding: clamp(20px,3vw,28px); border-radius: 20px; background: linear-gradient(120deg, rgba(245,158,11,.14), rgba(15,23,42,.2)); border: 1px solid rgba(245,158,11,.32); opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #FBBF24; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px;">Штраф за каждого незарегистрированного иностранца</div>
+          <div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;">
+            <div data-counter data-target="40" data-suffix=" МРП" style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(34px,6vw,52px); color: #fff; line-height: 1;">0 МРП</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: clamp(20px,3vw,26px); color: #F59E0B;">= <span data-counter data-target="180000" data-suffix=" ₸" data-group="1">0 ₸</span></div>
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 220px; font-size: 15px; line-height: 1.5; color: #E2E8F0;">
+          Не оформил иностранца в МПИС вовремя — и одна забывчивость стоит как месяц работы. Sheber не даст тебе забыть.
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Features -->
-<section id="features">
-  <div class="wrap">
-    <span class="eyebrow">Полноценный PMS, а не просто трекер</span>
-    <h2>Всё управление хостелом — в одном приложении</h2>
-    <p class="section-lead">Работает с телефона. Койко-места, комнаты, апартаменты, посменная аренда — одна система под любой формат размещения.</p>
-    <div class="grid">
-      <div class="card gold">
-        <div class="ci">🛂</div>
-        <h3>MPIS-трекер</h3>
-        <p>Видно, кто из гостей-иностранцев ещё не подтверждён. Баннер на главном экране не даёт забыть про регистрацию.</p>
+  <!-- ============ PAIN ============ -->
+  <section data-screen-label="Pain" style="padding: clamp(64px,9vw,110px) clamp(20px,5vw,48px); background: #F1F5F9;">
+    <div style="max-width: 1080px; margin: 0 auto;">
+      <div data-reveal style="opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <div style="font-weight: 700; color: #0EA5E9; letter-spacing: .06em; text-transform: uppercase; font-size: 13.5px; margin-bottom: 14px;">Знакомая картина?</div>
+        <h2 style="font-size: clamp(27px,4.4vw,44px); font-weight: 900; letter-spacing: -.025em; line-height: 1.12; margin: 0 0 12px; max-width: 18ch; color: #1B2E4B;">Ты не ленивый. Ты просто держишь слишком много в голове.</h2>
+        <p style="font-size: 17px; color: #475569; max-width: 52ch; margin: 0 0 clamp(34px,5vw,52px); line-height: 1.55;">Каждый из этих вечеров был у каждого хостельера. Узнаёшь?</p>
       </div>
-      <div class="card">
-        <div class="ci">⚡</div>
-        <h3>Заселение за 5 минут</h3>
-        <p>Карточка гостя, бронь, оплата — в пару касаний. Без бумаг и без Excel.</p>
-      </div>
-      <div class="card">
-        <div class="ci">🗓️</div>
-        <h3>Шахматка занятости</h3>
-        <p>Наглядный календарь: кто заселён, что свободно, где бронь. Посуточно, помесячно или посменно.</p>
-      </div>
-      <div class="card">
-        <div class="ci">💰</div>
-        <h3>Контроль долгов</h3>
-        <p>Система сама считает, кто сколько должен и за какой период. Долги больше не теряются.</p>
-      </div>
-      <div class="card">
-        <div class="ci">🚫</div>
-        <h3>Чёрный список</h3>
-        <p>Проблемный гость? Отметьте — и система предупредит при следующей попытке заселения.</p>
-      </div>
-      <div class="card">
-        <div class="ci">📊</div>
-        <h3>Финансы и загрузка</h3>
-        <p>Выручка, занятость, средний срок проживания — понятные цифры без сведения таблиц вручную.</p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 20px;">
+        <div data-reveal style="position: relative; background: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 2px 4px rgba(15,23,42,.04); border: 2px solid #FCD34D; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;" style-hover="transform: translateY(-6px); box-shadow: 0 18px 40px rgba(245,158,11,.2);">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:#FEF3C7;color:#D97706;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="11" r="2.3"/><path d="M5.8 16.5c.7-1.6 5.4-1.6 6.2 0"/><path d="M15 9h3.5M15 13h3.5"/></svg></div>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#B45309; background:#FEF3C7; padding:5px 10px; border-radius:8px;">23:40</span>
+          </div>
+          <h3 style="font-size: 20px; font-weight: 800; margin: 0 0 12px; color: #1B2E4B; letter-spacing: -.01em;">«Я их вообще оформил в МПИС?»</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #475569; margin: 0;">Заехала пара французов в полночь — отдали паспорта, ты выдал ключи. Утром закрутился: заезды, уборка, Kaspi-переводы. Через три дня они выехали, а ты так и не уверен — оформил их в МПИС или нет. Проверять поздно. <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:#B45309;">180 000 ₸</span> за то, что просто закрутился.</p>
+        </div>
+        <div data-reveal style="background: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 2px 4px rgba(15,23,42,.04); border: 1px solid #E2E8F0; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; transition-delay: .08s;" style-hover="transform: translateY(-6px); box-shadow: 0 18px 40px rgba(27,46,75,.13);">
+          <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:#EFF6FF;color:#0EA5E9;margin-bottom:20px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.3"/></svg></div>
+          <h3 style="font-size: 20px; font-weight: 800; margin: 0 0 12px; color: #1B2E4B; letter-spacing: -.01em;">«Сколько он там должен?»</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #475569; margin: 0;">Снял место на месяц, заплатил за две недели, обещал занести остаток «на днях». Прошло три недели. Ты помнишь, что он должен — но сколько именно, за сколько дней? Листаешь тетрадь, считаешь на калькуляторе — и всё равно не уверен. А он съезжает завтра.</p>
+        </div>
+        <div data-reveal style="background: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 2px 4px rgba(15,23,42,.04); border: 1px solid #E2E8F0; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; transition-delay: .16s;" style-hover="transform: translateY(-6px); box-shadow: 0 18px 40px rgba(27,46,75,.13);">
+          <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:#EFF6FF;color:#0EA5E9;margin-bottom:20px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div>
+          <h3 style="font-size: 20px; font-weight: 800; margin: 0 0 12px; color: #1B2E4B; letter-spacing: -.01em;">«Это же тот самый… или нет?»</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #475569; margin: 0;">Полгода назад жилец устроил скандал, разбил дверь и съехал не заплатив. Ты сказал себе «больше никогда». А сегодня на ресепшене — знакомое лицо… или нет? Имя не помнишь, телефон тоже. Заселить — рискнуть. Отказать — а вдруг перепутал. Память — плохой чёрный список.</p>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Pricing -->
-<section class="pricing">
-  <div class="wrap" style="text-align:center">
-    <span class="eyebrow">Простая цена</span>
-    <h2 style="color:#fff">Один тариф. Без сюрпризов.</h2>
-    <div class="price-box">
-      <div class="amount">15 000 ₸</div>
-      <div class="per">в месяц за объект</div>
-      <div class="note">15 000 ₸/мес — это не счёт за один прогулянный день простоя</div>
-      <ul class="price-list">
-        <li><span class="ch">✓</span> Безлимит гостей, броней и мест</li>
-        <li><span class="ch">✓</span> MPIS-трекер иностранцев</li>
-        <li><span class="ch">✓</span> Чёрный список и история гостей</li>
-        <li><span class="ch">✓</span> Работа с телефона, без установки</li>
-        <li><span class="ch">✓</span> Оплата Kaspi — как привыкли</li>
-      </ul>
-      <a class="btn-primary" id="wa-price" href="#" target="_blank" rel="noopener">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24z"/></svg>
-        Подключить хостел
-      </a>
-    </div>
-  </div>
-</section>
+  <!-- ============ SOLUTION ============ -->
+  <section id="solution" data-screen-label="Solution" style="padding: clamp(64px,9vw,110px) clamp(20px,5vw,48px); background: #1B2E4B; color: #fff;">
+    <div style="max-width: 1080px; margin: 0 auto;">
+      <div data-reveal style="opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <div style="font-weight: 700; color: #38BDF8; letter-spacing: .06em; text-transform: uppercase; font-size: 13.5px; margin-bottom: 14px;">Вот как становится легче</div>
+        <h2 style="font-size: clamp(27px,4.4vw,44px); font-weight: 900; letter-spacing: -.025em; line-height: 1.12; margin: 0 0 12px; max-width: 20ch;">Всё, что ты держал в голове и тетради — теперь в одном экране.</h2>
+        <p style="font-size: 17px; color: #B6C2D6; max-width: 54ch; margin: 0 0 clamp(34px,5vw,52px); line-height: 1.55;">Sheber Qonaq запоминает за тебя: кто иностранец и оформлен ли в МПИС, кто сколько должен и за какой день, кого нельзя пускать на порог. Не тетрадь, не «вроде помню» — система, которая не забывает.</p>
+      </div>
 
-<!-- Founder -->
-<section class="founder">
-  <div class="wrap">
-    <span class="eyebrow">Кто за этим стоит</span>
-    <h2>Сам веду хостел — сделал для себя</h2>
-    <div class="founder-box">
-      <div class="av">S</div>
-      <div>
-        <blockquote>«Я сам хостельер из Алматы. Устал от тетрадей и Excel, боялся пропустить MPIS — поэтому собрал систему, которой пользуюсь каждый день. Теперь открываю её для других владельцев. Это не корпорация — это инструмент от своего для своих.»</blockquote>
-        <div class="who">Основатель Sheber Qonaq · Алматы</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 18px;">
+
+        <div data-reveal style="position: relative; background: linear-gradient(150deg, rgba(245,158,11,.16), rgba(15,23,42,.35)); border: 1px solid rgba(245,158,11,.35); border-radius: 20px; padding: 28px; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; grid-column: span 1;" style-hover="transform: translateY(-6px);">
+          <div style="display:inline-flex; align-items:center; gap:8px; padding: 5px 11px; border-radius: 999px; background: rgba(245,158,11,.2); color: #FCD34D; font-size: 12px; font-weight: 700; margin-bottom: 16px; white-space: nowrap;">ГЛАВНОЕ С 1 ИЮЛЯ</div>
+          <h3 style="font-size: 21px; font-weight: 800; margin: 0 0 11px; letter-spacing: -.01em;">МПИС-трекер</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #DBE4F0; margin: 0;">Каждый иностранец — на виду. Sheber показывает, кого ещё не оформил в МПИС, и напоминает, пока не сделаешь. <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:#FBBF24;">180 000 ₸</span> остаются в кармане.</p>
+        </div>
+
+        <div data-reveal style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 28px; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;" style-hover="transform: translateY(-6px); background: rgba(255,255,255,.08);">
+          <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:rgba(56,189,248,.12);color:#38BDF8;margin-bottom:18px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg></div>
+          <h3 style="font-size: 21px; font-weight: 800; margin: 0 0 11px; letter-spacing: -.01em;">Заселение за 5 минут</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #B6C2D6; margin: 0;">ИИН, имя, номер — и гость в системе. Никаких «потом запишу». Даже в полночь, даже уставший.</p>
+        </div>
+
+        <div data-reveal style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 28px; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;" style-hover="transform: translateY(-6px); background: rgba(255,255,255,.08);">
+          <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:rgba(56,189,248,.12);color:#38BDF8;margin-bottom:18px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 9v12M15 9v12"/></svg></div>
+          <h3 style="font-size: 21px; font-weight: 800; margin: 0 0 11px; letter-spacing: -.01em;">Шахматка занятости</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #B6C2D6; margin: 0;">Кто заехал, кто съезжает сегодня, какие места свободны. Вся занятость на одном экране — звонит гость, а ты уже знаешь ответ.</p>
+        </div>
+
+        <div data-reveal style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 28px; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;" style-hover="transform: translateY(-6px); background: rgba(255,255,255,.08);">
+          <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:rgba(56,189,248,.12);color:#38BDF8;margin-bottom:18px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.3"/></svg></div>
+          <h3 style="font-size: 21px; font-weight: 800; margin: 0 0 11px; letter-spacing: -.01em;">Контроль долгов</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #B6C2D6; margin: 0;">Кто сколько должен — красным, на виду. Никто не съедет молча. Деньги, которые раньше «терялись», теперь возвращаются.</p>
+        </div>
+
+        <div data-reveal style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 28px; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;" style-hover="transform: translateY(-6px); background: rgba(255,255,255,.08);">
+          <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:rgba(56,189,248,.12);color:#38BDF8;margin-bottom:18px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 11.4-2.5"/><path d="M16.5 16.5l4 4M20.5 16.5l-4 4"/></svg></div>
+          <h3 style="font-size: 21px; font-weight: 800; margin: 0 0 11px; letter-spacing: -.01em;">Чёрный список</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #B6C2D6; margin: 0;">Скандалил, ломал, не платил? Отметил один раз — и при следующей попытке заселения Sheber подскажет. Тихий нет ещё на входе.</p>
+        </div>
+
+        <div data-reveal style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 28px; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;" style-hover="transform: translateY(-6px); background: rgba(255,255,255,.08);">
+          <div style="display:grid;place-items:center;width:50px;height:50px;border-radius:14px;background:rgba(56,189,248,.12);color:#38BDF8;margin-bottom:18px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7.5 16v-4M12 16V8M16.5 16v-6"/></svg></div>
+          <h3 style="font-size: 21px; font-weight: 800; margin: 0 0 11px; letter-spacing: -.01em;">Финансы и загрузка</h3>
+          <p style="font-size: 15.5px; line-height: 1.6; color: #B6C2D6; margin: 0;">Сколько заработал за месяц и какая загрузка — цифрами, а не ощущениями. Видно, когда пусто и пора что-то делать.</p>
+        </div>
+
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Lead form -->
-<section class="lead-form" id="form">
-  <div class="wrap" style="text-align:center">
-    <span class="eyebrow">Оставьте заявку</span>
-    <h2 style="color:#fff">Покажу систему на вашем хостеле</h2>
-    <p class="section-lead" style="margin-left:auto;margin-right:auto;color:#CBD5E1">Заполните — заявка придёт мне в WhatsApp, отвечу лично и покажу, как это работает у вас.</p>
-    <div class="form-card">
-      <form id="leadForm" onsubmit="return sendLead(event)">
-        <label for="f-name">Ваше имя</label>
-        <input id="f-name" type="text" placeholder="Например: Айдар" required />
+  <!-- ============ PRICE ============ -->
+  <section data-screen-label="Price" style="padding: clamp(64px,9vw,110px) clamp(20px,5vw,48px); background: #F1F5F9;">
+    <div style="max-width: 720px; margin: 0 auto; text-align: center;">
+      <div data-reveal style="opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <div style="font-weight: 700; color: #0EA5E9; letter-spacing: .06em; text-transform: uppercase; font-size: 13.5px; margin-bottom: 14px;">Цена</div>
+        <h2 style="font-size: clamp(26px,4.2vw,40px); font-weight: 900; letter-spacing: -.025em; line-height: 1.14; margin: 0 0 clamp(28px,4vw,40px); color: #1B2E4B;">Один тариф. Без звёздочек.</h2>
+      </div>
 
-        <label for="f-hostel">Хостел и город</label>
-        <input id="f-hostel" type="text" placeholder="Например: Almaty Backpackers, Алматы" required />
+      <div data-reveal style="position: relative; background: #1B2E4B; color: #fff; border-radius: 24px; padding: clamp(34px,5vw,48px); box-shadow: 0 28px 60px rgba(27,46,75,.28); overflow: hidden; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <div style="position: absolute; top: -40%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(14,165,233,.4), transparent 65%); pointer-events:none;"></div>
+        <div style="position: relative;">
+          <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-bottom: 6px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(46px,9vw,72px); line-height: 1; letter-spacing: -.02em;">15 000</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 26px; color: #38BDF8; font-weight: 700;">₸</span>
+          </div>
+          <div style="color: #B6C2D6; font-size: 16px; margin-bottom: 28px;">в месяц · безлимит мест и гостей</div>
 
-        <label for="f-beds">Сколько мест / комнат</label>
-        <select id="f-beds" required>
-          <option value="" disabled selected>Выберите размер</option>
-          <option>До 20 мест</option>
-          <option>20–50 мест</option>
-          <option>50–100 мест</option>
-          <option>Больше 100 мест</option>
-          <option>Гостевой дом / баня (посменно)</option>
-        </select>
+          <div style="display: flex; flex-direction: column; gap: 13px; text-align: left; max-width: 380px; margin: 0 auto 30px;">
+            <div style="display: flex; gap: 11px; align-items: flex-start; font-size: 15.5px; color: #E2E8F0;"><span style="color:#34D399; font-weight:800;">✓</span> Все функции сразу — ничего не докупаешь</div>
+            <div style="display: flex; gap: 11px; align-items: flex-start; font-size: 15.5px; color: #E2E8F0;"><span style="color:#34D399; font-weight:800;">✓</span> МПИС-трекер, шахматка, долги, чёрный список</div>
+            <div style="display: flex; gap: 11px; align-items: flex-start; font-size: 15.5px; color: #E2E8F0;"><span style="color:#34D399; font-weight:800;">✓</span> Оплата через Kaspi, отменить можно когда хочешь</div>
+          </div>
 
-        <button type="submit" class="btn-primary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24z"/></svg>
+          <a href="https://wa.me/77054054706?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%B5%D1%81%D1%83%D0%B5%D1%82%20Sheber%20Qonaq%20%D0%B4%D0%BB%D1%8F%20%D0%BC%D0%BE%D0%B5%D0%B3%D0%BE%20%D1%85%D0%BE%D1%81%D1%82%D0%B5%D0%BB%D0%B0" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 10px; padding: 16px 30px; border-radius: 14px; background: #25D366; color: #04391f; text-decoration: none; font-weight: 800; font-size: 16.5px;" style-hover="transform: translateY(-2px);">Попробовать — написать в WhatsApp</a>
+        </div>
+      </div>
+
+      <p data-reveal style="font-size: clamp(18px,2.6vw,23px); font-weight: 800; color: #1B2E4B; margin: clamp(28px,4vw,40px) auto 0; max-width: 28ch; line-height: 1.4; letter-spacing: -.01em; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <span style="font-family:'JetBrains Mono',monospace; color:#0EA5E9;">15 000 ₸/мес</span> — это не счёт за один прогулянный день простоя.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ FOUNDER ============ -->
+  <section data-screen-label="Founder" style="padding: clamp(64px,9vw,110px) clamp(20px,5vw,48px); background: #fff;">
+    <div data-reveal style="max-width: 880px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: clamp(28px,5vw,56px); align-items: center; opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+      <div style="flex: 0 0 auto; width: clamp(120px,28vw,170px); height: clamp(120px,28vw,170px); border-radius: 24px; background: linear-gradient(150deg,#1B2E4B,#0EA5E9); display: grid; place-items: center; color: rgba(255,255,255,.5); font-weight: 800; font-size: 13px; text-align:center; box-shadow: 0 16px 40px rgba(27,46,75,.25);">фото<br>основателя</div>
+      <div style="flex: 1; min-width: 260px;">
+        <div style="font-weight: 700; color: #0EA5E9; letter-spacing: .06em; text-transform: uppercase; font-size: 13px; margin-bottom: 14px;">Кто за этим стоит</div>
+        <p style="font-size: clamp(19px,2.8vw,25px); line-height: 1.45; font-weight: 700; color: #1B2E4B; margin: 0 0 16px; letter-spacing: -.01em;">«Я сам держу хостел в Алматы. Сделал Sheber для себя — потому что устал терять деньги и забывать про МПИС. Теперь открываю для своих.»</p>
+        <p style="font-size: 16px; line-height: 1.6; color: #475569; margin: 0;">Это не айтишники, которые прочитали про хостелы в интернете. Это тот же ночной ресепшен, та же тетрадь, те же штрафы — только однажды надоело. Если что-то непонятно — пиши напрямую, отвечу сам.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FORM ============ -->
+  <section id="form" data-screen-label="Form" style="padding: clamp(64px,9vw,110px) clamp(20px,5vw,48px); background: #0F172A; color: #fff;">
+    <div style="max-width: 620px; margin: 0 auto;">
+      <div data-reveal style="text-align: center; margin-bottom: clamp(30px,4vw,42px); opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <h2 style="font-size: clamp(26px,4.2vw,40px); font-weight: 900; letter-spacing: -.025em; line-height: 1.14; margin: 0 0 12px;">Оставь заявку — напишем в WhatsApp</h2>
+        <p style="font-size: 16.5px; color: #94A3B8; margin: 0; line-height: 1.5;">Пара полей, и мы продолжим в WhatsApp. Без созвонов и спама.</p>
+      </div>
+
+      <div data-reveal style="background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 22px; padding: clamp(24px,4vw,36px); opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease;">
+        <label style="display: block; font-size: 13.5px; font-weight: 600; color: #CBD5E1; margin-bottom: 8px;">Как тебя зовут</label>
+        <input id="sq-name" type="text" placeholder="Имя" style="width: 100%; padding: 14px 16px; border-radius: 13px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: #fff; font-size: 16px; margin-bottom: 20px; outline: none;" style-focus="border-color: #0EA5E9;" />
+
+        <label style="display: block; font-size: 13.5px; font-weight: 600; color: #CBD5E1; margin-bottom: 8px;">Название хостела и город</label>
+        <input id="sq-hostel" type="text" placeholder="Напр. Almaty Hostel, Алматы" style="width: 100%; padding: 14px 16px; border-radius: 13px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: #fff; font-size: 16px; margin-bottom: 20px; outline: none;" style-focus="border-color: #0EA5E9;" />
+
+        <label style="display: block; font-size: 13.5px; font-weight: 600; color: #CBD5E1; margin-bottom: 11px;">Размер</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px;">
+          <button type="button" data-size  style="padding: 11px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #E2E8F0; font-size: 14.5px; font-weight: 600; cursor: pointer;">до 20 мест</button>
+          <button type="button" data-size  style="padding: 11px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #E2E8F0; font-size: 14.5px; font-weight: 600; cursor: pointer;">20–50 мест</button>
+          <button type="button" data-size  style="padding: 11px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #E2E8F0; font-size: 14.5px; font-weight: 600; cursor: pointer;">50–100 мест</button>
+          <button type="button" data-size  style="padding: 11px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #E2E8F0; font-size: 14.5px; font-weight: 600; cursor: pointer;">100+ мест</button>
+          <button type="button" data-size  style="padding: 11px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #E2E8F0; font-size: 14.5px; font-weight: 600; cursor: pointer;">Гостевой дом / баня</button>
+        </div>
+
+        <button type="button" id="sq-submit" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 17px; border-radius: 14px; border: none; background: #25D366; color: #04391f; font-weight: 800; font-size: 17px; cursor: pointer; box-shadow: 0 14px 34px rgba(37,211,102,.35);" style-hover="transform: translateY(-2px);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zM6.597 20.13c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-.999zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
           Отправить в WhatsApp
         </button>
-        <p class="form-note">Нажимая кнопку, вы откроете WhatsApp с готовым сообщением. Никакого спама.</p>
-      </form>
+        <p style="text-align: center; font-size: 13px; color: #64748B; margin: 16px 0 0;">Откроется WhatsApp с готовым сообщением — просто нажми «отправить».</p>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Footer -->
-<footer>
-  <div class="wrap foot">
-    <div class="logo"><span class="dot" style="width:26px;height:26px;border-radius:8px;font-size:14px">S</span> Sheber Qonaq</div>
-    <div>Инструменты для мастеров своего дела · Казахстан</div>
-    <a id="wa-foot" href="#" target="_blank" rel="noopener">WhatsApp: +7 705 405 4706</a>
-  </div>
-</footer>
+  <!-- ============ FOOTER ============ -->
+  <footer style="background: #0B1220; color: #64748B; padding: clamp(40px,6vw,56px) clamp(20px,5vw,48px);">
+    <div style="max-width: 1080px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 11px; color: #E2E8F0; font-weight: 800; font-size: 17px;">
+        <span style="display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#0EA5E9,#1B2E4B); font-weight: 900; color:#fff;">SQ</span>
+        Sheber Qonaq
+      </div>
+      <div style="font-size: 14px; line-height: 1.6; max-width: 40ch;">Система управления для хостелов, мотелей и гостевых домов Казахстана. Сделано хостельерами для хостельеров.</div>
+      <a href="https://wa.me/77054054706?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%B5%D1%81%D1%83%D0%B5%D1%82%20Sheber%20Qonaq%20%D0%B4%D0%BB%D1%8F%20%D0%BC%D0%BE%D0%B5%D0%B3%D0%BE%20%D1%85%D0%BE%D1%81%D1%82%D0%B5%D0%BB%D0%B0" target="_blank" rel="noopener" style="color: #38BDF8; text-decoration: none; font-weight: 600; font-size: 15px;">+7 705 405 47 06 · WhatsApp</a>
+    </div>
+    <div style="max-width: 1080px; margin: 28px auto 0; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.06); font-size: 12.5px; color: #475569;">© 2026 Sheber Qonaq. Все права защищены.</div>
+  </footer>
 
-<!-- Floating WhatsApp -->
-<a class="fab" id="wa-fab" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
-  <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-</a>
+  <!-- ============ FLOATING WHATSAPP ============ -->
+  <a href="https://wa.me/77054054706?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%B5%D1%81%D1%83%D0%B5%D1%82%20Sheber%20Qonaq%20%D0%B4%D0%BB%D1%8F%20%D0%BC%D0%BE%D0%B5%D0%B3%D0%BE%20%D1%85%D0%BE%D1%81%D1%82%D0%B5%D0%BB%D0%B0" target="_blank" rel="noopener" aria-label="WhatsApp" style="position: fixed; bottom: 22px; right: 22px; z-index: 50; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: #25D366; color: #fff; text-decoration: none; animation: sq-pulse 2.4s ease-in-out infinite;" style-hover="transform: scale(1.07);">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zM6.597 20.13c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-.999zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+  </a>
+
+</div>
 
 <script>
-  // ── WhatsApp routing ──
-  var WA_PHONE = '77054054706'; // +7 705 405 4706
+(function () {
+  "use strict";
+  var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  function waLink(text) {
-    return 'https://wa.me/' + WA_PHONE + '?text=' + encodeURIComponent(text);
+  // ---- hover: apply styles from style-hover on enter, revert on leave ----
+  function parseDecls(str) {
+    var out = [];
+    (str || "").split(";").forEach(function (d) {
+      var i = d.indexOf(":");
+      if (i > -1) {
+        var prop = d.slice(0, i).trim();
+        var val = d.slice(i + 1).trim();
+        if (prop) out.push([prop, val]);
+      }
+    });
+    return out;
   }
-
-  // Generic CTA buttons
-  var generic = 'Здравствуйте! Интересует Sheber Qonaq для моего хостела. Расскажите подробнее про MPIS и подключение.';
-  ['wa-header','wa-hero','wa-price','wa-foot','wa-fab'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.href = waLink(generic);
+  document.querySelectorAll("[style-hover]").forEach(function (el) {
+    var decls = parseDecls(el.getAttribute("style-hover"));
+    var prev = {};
+    el.addEventListener("mouseenter", function () {
+      decls.forEach(function (d) {
+        prev[d[0]] = el.style.getPropertyValue(d[0]);
+        el.style.setProperty(d[0], d[1]);
+      });
+    });
+    el.addEventListener("mouseleave", function () {
+      decls.forEach(function (d) { el.style.setProperty(d[0], prev[d[0]] || ""); });
+    });
   });
 
-  // Lead form → structured WhatsApp message
-  function sendLead(e) {
-    e.preventDefault();
-    var name   = document.getElementById('f-name').value.trim();
-    var hostel = document.getElementById('f-hostel').value.trim();
-    var beds   = document.getElementById('f-beds').value;
-    var msg =
-      'Заявка с сайта Sheber Qonaq\n\n' +
-      'Имя: ' + name + '\n' +
-      'Хостел: ' + hostel + '\n' +
-      'Размер: ' + beds + '\n\n' +
-      'Хочу узнать про подключение и MPIS.';
-    window.open(waLink(msg), '_blank');
-    return false;
+  // ---- focus: style-focus on inputs ----
+  document.querySelectorAll("[style-focus]").forEach(function (el) {
+    var decls = parseDecls(el.getAttribute("style-focus"));
+    var prev = {};
+    el.addEventListener("focus", function () {
+      decls.forEach(function (d) {
+        prev[d[0]] = el.style.getPropertyValue(d[0]);
+        el.style.setProperty(d[0], d[1]);
+      });
+    });
+    el.addEventListener("blur", function () {
+      decls.forEach(function (d) { el.style.setProperty(d[0], prev[d[0]] || ""); });
+    });
+  });
+
+  // ---- scroll reveal ----
+  var reveals = document.querySelectorAll("[data-reveal]");
+  if (prefersReduced || !("IntersectionObserver" in window)) {
+    reveals.forEach(function (el) { el.style.opacity = "1"; el.style.transform = "none"; });
+  } else {
+    var ro = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.style.opacity = "1"; e.target.style.transform = "none"; ro.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+    reveals.forEach(function (el) { ro.observe(el); });
   }
+
+  // ---- animated counters ----
+  function fmt(n, group) { return group ? n.toLocaleString("ru-RU").replace(/,/g, " ") : String(n); }
+  function animateCount(el) {
+    var target = parseInt(el.getAttribute("data-target"), 10);
+    var suffix = el.getAttribute("data-suffix") || "";
+    var group = el.getAttribute("data-group") === "1";
+    if (prefersReduced) { el.textContent = fmt(target, group) + suffix; return; }
+    var dur = 1300, start = performance.now();
+    function step(now) {
+      var p = Math.min((now - start) / dur, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(Math.round(target * eased), group) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var counters = document.querySelectorAll("[data-counter]");
+  if (!("IntersectionObserver" in window)) {
+    counters.forEach(animateCount);
+  } else {
+    var co = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { animateCount(e.target); co.unobserve(e.target); } });
+    }, { threshold: 0.4 });
+    counters.forEach(function (el) { co.observe(el); });
+  }
+
+  // ---- size pills ----
+  var selectedSize = "";
+  var pills = document.querySelectorAll("[data-size]");
+  pills.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      selectedSize = btn.textContent.trim();
+      pills.forEach(function (b) {
+        b.style.background = "rgba(255,255,255,.05)";
+        b.style.borderColor = "rgba(255,255,255,.16)";
+        b.style.color = "#E2E8F0";
+      });
+      btn.style.background = "rgba(245,158,11,.18)";
+      btn.style.borderColor = "#F59E0B";
+      btn.style.color = "#FBBF24";
+    });
+  });
+
+  // ---- WhatsApp submit ----
+  var WA = "77054054706";
+  var submit = document.getElementById("sq-submit");
+  if (submit) {
+    submit.addEventListener("click", function () {
+      var name = (document.getElementById("sq-name") || {}).value || "";
+      var hostel = (document.getElementById("sq-hostel") || {}).value || "";
+      name = name.trim(); hostel = hostel.trim();
+      var msg = "Здравствуйте! Интересует Sheber Qonaq для моего хостела.";
+      if (name) msg += "\nИмя: " + name;
+      if (hostel) msg += "\nХостел и город: " + hostel;
+      if (selectedSize) msg += "\nРазмер: " + selectedSize;
+      window.open("https://wa.me/" + WA + "?text=" + encodeURIComponent(msg), "_blank", "noopener");
+    });
+  }
+})();
 </script>
+
 </body>
 </html>
