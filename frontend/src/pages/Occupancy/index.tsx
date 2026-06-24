@@ -414,7 +414,7 @@ export default function OccupancyPage() {
 
   return (
     <div className="px-4 py-4 space-y-3">
-      <PageHeader title="Карта размещения" subtitle={`${occupied} из ${total} мест занято`} />
+      <PageHeader title="Карта размещения" />
 
       <SegmentControl
         value={view}
@@ -440,7 +440,6 @@ export default function OccupancyPage() {
       <div className="bg-white rounded-2xl shadow-card px-4 py-3">
         <div className="flex items-end justify-between mb-2">
           <div><span className="text-3xl font-extrabold text-gray-900">{pct}%</span><span className="text-sm text-gray-400 ml-1.5">заполнено</span></div>
-          <span className="text-xs text-gray-500 text-right leading-relaxed">{occupied} занято<br />{available} своб.</span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden mb-2.5">
           <div className="h-full bg-primary-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -450,7 +449,6 @@ export default function OccupancyPage() {
 
       {filteredRooms.map(room => {
         const isDorm = room.units.some(u => u.unit_type === 'bed')
-        const roomOcc = room.units.filter(u => u.status === 'occupied').length
         const roomAvail = room.units.filter(u => u.status === 'available').length
         const bunks: Array<[Unit, Unit | undefined]> = []
         if (isDorm) for (let i = 0; i < room.units.length; i += 2) bunks.push([room.units[i], room.units[i + 1]])
@@ -465,7 +463,6 @@ export default function OccupancyPage() {
                 <span className="font-semibold text-sm text-gray-800 truncate">{room.roomName}</span>
               </div>
               <div className="flex items-center gap-2 text-xs shrink-0">
-                {roomOcc > 0 && <span className="flex items-center gap-1 text-primary-600 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />{roomOcc} зан.</span>}
                 {roomAvail > 0 && <span className="flex items-center gap-1 text-emerald-600 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />{roomAvail} св.</span>}
               </div>
             </div>

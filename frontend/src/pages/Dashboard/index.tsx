@@ -163,27 +163,6 @@ export default function DashboardPage() {
         onClick={() => navigate('/finances')}
       />
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {[
-          { icon: Plus,       label: 'Заселить',    color: 'bg-emerald-500', to: '/stays' },
-          { icon: LogOut,     label: 'Выселить',    color: 'bg-red-500',     to: '/stays' },
-          { icon: User,       label: 'Новый гость', color: 'bg-primary-500', to: '/guests' },
-          { icon: CreditCard, label: 'Платёж',      color: 'bg-amber-500',   to: '/finances' },
-        ].map((a, i) => (
-          <button
-            key={i}
-            onClick={() => navigate(a.to)}
-            className="tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card text-left"
-          >
-            <div className={`w-9 h-9 rounded-xl ${a.color}/10 flex items-center justify-center`}>
-              <a.icon size={18} className={`${a.color.replace('bg-', 'text-')}`} />
-            </div>
-            <span className="text-sm font-semibold text-gray-900">{a.label}</span>
-          </button>
-        ))}
-      </div>
-
       {/* Today Activity */}
       {(todayData?.checkins?.length || todayData?.checkouts?.length) ? (
         <section>
