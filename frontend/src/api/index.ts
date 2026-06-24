@@ -9,8 +9,7 @@ import type {
   DashboardData,
   PaginatedResponse,
   BlacklistEntry, BlacklistCreate, BlacklistCheck,
-  NotificationsResponse,
-} from '../types'
+  NotificationsResponse, OccupancyCalendar, AvailabilityResponse, } from '../types'
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 export const authApi = {
@@ -102,6 +101,16 @@ export const staysApi = {
     api.patch<{ id: number; mpis_status: MpisStatus; mpis_status_display: string }>(
       `/stays/${id}/mpis/`, { mpis_status }
     ).then(r => r.data),
+
+  occupancyCalendar: (from: string, to: string, property?: number) =>
+    api.get<OccupancyCalendar>('/stays/occupancy-calendar/', {
+      params: { from, to, ...(property ? { property } : {}) },
+    }).then(r => r.data),
+
+  availability: (from: string, to: string, opts?: { unit_type?: string; property?: number }) =>
+    api.get<AvailabilityResponse>('/stays/availability/', {
+      params: { from, to, ...(opts || {}) },
+    }).then(r => r.data),
 }
 
 // ─── Payments ────────────────────────────────────────────────────────────────

@@ -7,7 +7,8 @@ import {
   Phone, CalendarDays, LogOut, Plus, X, Search,
   UserPlus, AlertTriangle, User,
 } from 'lucide-react'
-import { PageHeader, FilterPills, Avatar } from '../../components/ui'
+import { PageHeader, FilterPills, Avatar, SegmentControl } from '../../components/ui'
+import MonthHeatmap from './MonthHeatmap'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { format } from 'date-fns'
 
@@ -367,6 +368,7 @@ export default function OccupancyPage() {
   const qc = useQueryClient()
   const [panel, setPanel] = useState<PanelState>(null)
   const [filter, setFilter] = useState('all')
+  const [view, setView] = useState<'now' | 'month'>('now')
 
   const { data: units = [], isLoading } = useQuery({
     queryKey: ['units'], queryFn: propertiesApi.allUnits, staleTime: 30_000,
@@ -413,6 +415,20 @@ export default function OccupancyPage() {
   return (
     <div className="px-4 py-4 space-y-3">
       <PageHeader title="Карта размещения" subtitle={`${occupied} из ${total} мест занято`} />
+
+      <SegmentControl
+        value={view}
+        onChange={(v) => setView(v as 'now' | 'month')}
+        options={[
+          { value: 'now', label: 'Сейчас' },
+          { value: 'month', label: 'Месяц' },
+        ]}
+      />
+
+      {view === 'month' && <MonthHeatmap />}
+
+      {view === 'now' && (
+        <>
 
       <FilterPills value={filter} onChange={setFilter} options={[
         { value: 'all', label: 'Все', count: counts.all },
@@ -495,6 +511,9 @@ export default function OccupancyPage() {
           <p className="text-base font-semibold text-gray-500">Нет мест</p>
           <p className="text-sm mt-1">Попробуйте другой фильтр</p>
         </div>
+      )}
+
+      </>
       )}
 
       {/* Panels */}

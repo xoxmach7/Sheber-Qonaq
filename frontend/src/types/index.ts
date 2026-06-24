@@ -397,3 +397,31 @@ export interface NotificationsResponse {
   results: Notification[]
   unread_count: number
 }
+
+
+// ─── Occupancy / Availability (heatmap, Шаг 5) ───────────────────────────────
+export interface OccupancyDay { occupied: number; total: number; rate: number }
+export interface OccupancyCalendar {
+  from: string
+  to: string
+  total_units: number
+  days: Record<string, OccupancyDay>
+}
+export interface AvailabilityUnit {
+  unit: number
+  name: string
+  room_name: string
+  unit_type: string
+  unit_type_display: string
+  property: number
+  rates: Record<string, number>
+  nights: number
+  total: string | null
+}
+export interface AvailabilityResponse {
+  from: string
+  to: string
+  nights: number
+  count: number
+  results: AvailabilityUnit[]
+}
