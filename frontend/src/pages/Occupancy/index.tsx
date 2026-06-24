@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { propertiesApi, staysApi, guestsApi, blacklistApi } from '../../api'
+import { propertiesApi, staysApi, guestsApi, blacklistApi, paymentsApi } from '../../api'
 import type { Unit, UnitStatus, StayCreate, RateType, GuestCreate } from '../../types'
 import {
   Wrench, Moon, CheckCircle2, Clock, Ban, Sparkles,
@@ -31,6 +31,7 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
     expected_check_out_date: format(new Date(Date.now() + 30 * 86400000), 'yyyy-MM-dd'),
     rate_type: 'monthly' as RateType,
     rate_amount: '',
+    prepay: '',
   })
   const [guestSearch, setGuestSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
@@ -64,9 +65,33 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
       onClose()
     },
   })
+  const { mutate: book, isPending: booking, error: bookError } = useMutation({
+    mutationFn: async (prepay: number) => {
+      const stay = await staysApi.create({
+        unit: unit.id, guest: Number(form.guest),
+        check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date,
+        rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: 0,
+        status: 'reserved',
+      })
+      if (prepay > 0) {
+        await paymentsApi.create({
+          stay: stay.id, amount: prepay,
+          payment_date: format(new Date(), 'yyyy-MM-dd'), method: 'kaspi',
+        })
+        // confirm подтвердит, только если предоплата >= порога; иначе бронь остаётся reserved
+        try { await staysApi.confirm(stay.id) } catch { /* недобор предоплаты — остаётся резервом */ }
+      }
+      return stay
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['units'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      onClose()
+    },
+  })
 
   const isBlacklisted = blCheck?.is_blacklisted ?? false
-  const canSubmit = form.guest && form.check_in_date && form.expected_check_out_date && (mode === 'booking' || form.rate_amount) && !isPending
+  const canSubmit = form.guest && form.check_in_date && form.expected_check_out_date && form.rate_amount && !isPending && !booking
   const rateLabels: Record<RateType, string> = { daily: 'Суточно', weekly: 'Понедельно', monthly: 'Помесячно' }
 
   return (
@@ -91,7 +116,7 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
             ]}
           />
 
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3 py-2">{(error as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка'}</div>}
+          {(error || bookError) && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3 py-2">{((error || bookError) as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка'}</div>}
 
           {isBlacklisted && (
             <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
@@ -174,7 +199,6 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
             </div>
           </div>
 
-          {mode === 'checkin' && (
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Тариф *</label>
             <div className="grid grid-cols-3 gap-1.5 mb-2">
@@ -188,20 +212,26 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
             <input type="number" className="input-field" placeholder="Сумма ₸" value={form.rate_amount}
               onChange={e => setForm(f => ({ ...f, rate_amount: e.target.value }))} />
           </div>
-          )}
 
           {mode === 'booking' && (
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Бронь занимает даты без оплаты. Тариф и оплату внесёте при заселении.
-            </p>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Предоплата ₸</label>
+              <input type="number" className="input-field" placeholder="0 — можно без предоплаты" value={form.prepay}
+                onChange={e => setForm(f => ({ ...f, prepay: e.target.value }))} />
+              <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+                Внесёте от 50% суммы — бронь станет «подтверждённой». Иначе останется резервом.
+              </p>
+            </div>
           )}
         </div>
 
         <div className="px-5 py-4 border-t border-gray-100 shrink-0">
-          <button onClick={() => checkIn({ unit: unit.id, guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: mode === 'booking' ? '0' : form.rate_amount, deposit_amount: 0, ...(mode === 'booking' ? { status: 'reserved' as const } : {}) })}
+          <button onClick={() => mode === 'booking'
+            ? book(Number(form.prepay || 0))
+            : checkIn({ unit: unit.id, guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: 0 })}
             disabled={!canSubmit}
             className={`w-full py-3.5 text-white rounded-2xl text-sm font-bold disabled:opacity-40 ${mode === 'booking' ? 'bg-violet-500' : 'bg-primary-500'}`}>
-            {isPending ? (mode === 'booking' ? 'Бронируем...' : 'Заселяем...') : (mode === 'booking' ? 'Забронировать' : 'Заселить')}
+            {(isPending || booking) ? (mode === 'booking' ? 'Бронируем...' : 'Заселяем...') : (mode === 'booking' ? 'Забронировать' : 'Заселить')}
           </button>
         </div>
       </div>
