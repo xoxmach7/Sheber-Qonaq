@@ -10,10 +10,13 @@ const unitStatusConfig: Record<UnitStatus, { label: string; className: string }>
 }
 
 const stayStatusConfig: Record<StayStatus, { label: string; className: string }> = {
+  reserved:    { label: 'Бронь',      className: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200' },
+  confirmed:   { label: 'Подтв.',     className: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
   active:      { label: 'Активен',   className: 'bg-primary-50 text-primary-700 ring-1 ring-primary-200' },
   checked_out: { label: 'Выехал',    className: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200' },
   cancelled:   { label: 'Отменён',   className: 'bg-red-50 text-red-700 ring-1 ring-red-200' },
   no_show:     { label: 'Не приехал',className: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' },
+  expired:     { label: 'Истёк',      className: 'bg-gray-100 text-gray-500 ring-1 ring-gray-200' },
 }
 
 const leadStatusConfig: Record<LeadStatus, { label: string; className: string }> = {

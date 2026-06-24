@@ -90,6 +90,10 @@ export interface Unit {
   current_guest_phone?: string
   check_in?: string
   check_out?: string
+  // Будущая бронь на юните (reserved/confirmed), независимо от unit.status
+  has_booking?: boolean
+  next_check_in?: string
+  next_check_out?: string
 }
 
 // ─── Guest ───────────────────────────────────────────────────────────────────
@@ -123,7 +127,7 @@ export interface GuestCreate {
 
 // ─── Stay ────────────────────────────────────────────────────────────────────
 export type RateType = 'daily' | 'weekly' | 'monthly'
-export type StayStatus = 'active' | 'checked_out' | 'cancelled' | 'no_show'
+export type StayStatus = 'reserved' | 'confirmed' | 'active' | 'checked_out' | 'cancelled' | 'no_show' | 'expired'
 export type MpisStatus = 'not_required' | 'pending' | 'submitted' | 'confirmed'
 export type StaySource =
   | 'direct'
@@ -186,6 +190,7 @@ export interface StayCreate {
   rate_amount: string | number
   deposit_amount?: string | number
   source?: StaySource
+  status?: StayStatus
 }
 
 // ─── Payment ─────────────────────────────────────────────────────────────────

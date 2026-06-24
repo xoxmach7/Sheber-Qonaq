@@ -36,6 +36,7 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
   const [newGuest, setNewGuest] = useState<GuestCreate>({ first_name: '', last_name: '', phone: '', nationality: '', is_foreigner: false })
+  const [mode, setMode] = useState<'checkin' | 'booking'>('checkin')
 
   const { data: guestResults } = useQuery({
     queryKey: ['guests-search', guestSearch],
@@ -65,7 +66,7 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
   })
 
   const isBlacklisted = blCheck?.is_blacklisted ?? false
-  const canSubmit = form.guest && form.check_in_date && form.expected_check_out_date && form.rate_amount && !isPending
+  const canSubmit = form.guest && form.check_in_date && form.expected_check_out_date && (mode === 'booking' || form.rate_amount) && !isPending
   const rateLabels: Record<RateType, string> = { daily: 'Суточно', weekly: 'Понедельно', monthly: 'Помесячно' }
 
   return (
@@ -75,12 +76,21 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 shrink-0">
           <div>
-            <h3 className="font-bold text-lg">Заселить</h3>
+            <h3 className="font-bold text-lg">{mode === 'booking' ? 'Забронировать' : 'Заселить'}</h3>
             <p className="text-xs text-gray-400">{unit.room_name} — {unit.name}</p>
           </div>
           <button onClick={onClose}><X size={20} className="text-gray-400" /></button>
         </div>
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
+          <SegmentControl
+            value={mode}
+            onChange={(v) => setMode(v as 'checkin' | 'booking')}
+            options={[
+              { value: 'checkin', label: 'Заселение' },
+              { value: 'booking', label: 'Бронь' },
+            ]}
+          />
+
           {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3 py-2">{(error as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка'}</div>}
 
           {isBlacklisted && (
@@ -164,7 +174,7 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
             </div>
           </div>
 
-          {/* Rate */}
+          {mode === 'checkin' && (
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Тариф *</label>
             <div className="grid grid-cols-3 gap-1.5 mb-2">
@@ -178,13 +188,20 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
             <input type="number" className="input-field" placeholder="Сумма ₸" value={form.rate_amount}
               onChange={e => setForm(f => ({ ...f, rate_amount: e.target.value }))} />
           </div>
+          )}
+
+          {mode === 'booking' && (
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Бронь занимает даты без оплаты. Тариф и оплату внесёте при заселении.
+            </p>
+          )}
         </div>
 
         <div className="px-5 py-4 border-t border-gray-100 shrink-0">
-          <button onClick={() => checkIn({ unit: unit.id, guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: 0 })}
+          <button onClick={() => checkIn({ unit: unit.id, guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: mode === 'booking' ? '0' : form.rate_amount, deposit_amount: 0, ...(mode === 'booking' ? { status: 'reserved' as const } : {}) })}
             disabled={!canSubmit}
-            className="w-full py-3.5 bg-primary-500 text-white rounded-2xl text-sm font-bold disabled:opacity-40">
-            {isPending ? 'Заселяем...' : 'Заселить'}
+            className={`w-full py-3.5 text-white rounded-2xl text-sm font-bold disabled:opacity-40 ${mode === 'booking' ? 'bg-violet-500' : 'bg-primary-500'}`}>
+            {isPending ? (mode === 'booking' ? 'Бронируем...' : 'Заселяем...') : (mode === 'booking' ? 'Забронировать' : 'Заселить')}
           </button>
         </div>
       </div>
