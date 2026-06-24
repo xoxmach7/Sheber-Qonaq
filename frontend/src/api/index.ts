@@ -91,6 +91,9 @@ export const staysApi = {
   create: (data: StayCreate) =>
     api.post<Stay>('/stays/', data).then(r => r.data),
 
+  confirm: (id: number) =>
+    api.post<Stay>(`/stays/${id}/confirm/`).then(r => r.data),
+
   checkout: (id: number, date?: string) =>
     api.post(`/stays/${id}/checkout/`, date ? { actual_check_out_date: date } : {}).then(r => r.data),
 
