@@ -15,6 +15,10 @@ User = get_user_model()
 
 class RoomInputSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
+    # Тип комнаты в онбординге: dorm — дорм с койками, private — отдельная, family — семейный номер.
+    # Применяется только в режиме hostel; в cottage каждая запись = 1 домик-юнит.
+    type = serializers.ChoiceField(choices=['dorm', 'private', 'family'], default='private')
+    beds = serializers.IntegerField(min_value=1, max_value=50, default=1, required=False)
 
 
 class OnboardingSerializer(serializers.Serializer):
@@ -106,23 +110,52 @@ class OnboardingView(APIView):
 
             # 3. Rooms + Units
             unit_count = 0
+            is_cottage = data['booking_mode'] == 'cottage'
             for room_data in data['rooms']:
-                room = Room.objects.create(
-                    organization=org,
-                    property=prop,
-                    name=room_data['name'],
-                    room_type='private',
-                    floor=1,
-                    max_capacity=1,
-                )
-                Unit.objects.create(
-                    organization=org,
-                    room=room,
-                    name=room_data['name'],
-                    unit_type='private_room',
-                    status='available',
-                )
-                unit_count += 1
+                name = room_data['name']
+
+                # Cottage: каждая запись = один домик-юнит (тип/койки не применяются)
+                if is_cottage:
+                    room = Room.objects.create(
+                        organization=org, property=prop, name=name,
+                        room_type='private', floor=1, max_capacity=1,
+                    )
+                    Unit.objects.create(
+                        organization=org, room=room, name=name,
+                        unit_type='private_room', status='available',
+                    )
+                    unit_count += 1
+                    continue
+
+                rtype = room_data.get('type', 'private')
+                beds = room_data.get('beds') or 1
+
+                if rtype == 'dorm':
+                    # Дорм: N койко-мест (отдельные юниты bed)
+                    room = Room.objects.create(
+                        organization=org, property=prop, name=name,
+                        room_type='dorm', floor=1, max_capacity=beds,
+                    )
+                    for i in range(beds):
+                        Unit.objects.create(
+                            organization=org, room=room,
+                            name=f'Место {i + 1}',
+                            unit_type='bed', status='available',
+                            sort_order=i + 1,
+                        )
+                        unit_count += 1
+                else:
+                    # Отдельная комната или семейный номер — один юнит
+                    room = Room.objects.create(
+                        organization=org, property=prop, name=name,
+                        room_type='private', floor=1, max_capacity=1,
+                    )
+                    Unit.objects.create(
+                        organization=org, room=room, name=name,
+                        unit_type='family_room' if rtype == 'family' else 'private_room',
+                        status='available',
+                    )
+                    unit_count += 1
 
             # 4. Manager user
             manager = User.objects.create_user(

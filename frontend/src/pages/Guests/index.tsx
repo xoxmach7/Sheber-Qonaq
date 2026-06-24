@@ -106,30 +106,49 @@ function GuestForm({
         </button>
 
         <div className="space-y-3">
-          <input className="input-field" placeholder="Фамилия *" value={form.last_name} onChange={e => set('last_name', e.target.value)} />
-          <input className="input-field" placeholder="Имя *" value={form.first_name} onChange={e => set('first_name', e.target.value)} />
-          <input className="input-field" placeholder="Отчество" value={form.middle_name ?? ''} onChange={e => set('middle_name', e.target.value)} />
-          <input className="input-field" placeholder={PHONE_PLACEHOLDER} type="tel" value={form.phone} onChange={e => set('phone', formatPhoneKZ(e.target.value))} />
-          <input className="input-field" placeholder="Email" type="email" value={form.email ?? ''} onChange={e => set('email', e.target.value)} />
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Фамилия *</label>
+            <input className="input-field" value={form.last_name} onChange={e => set('last_name', e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Имя *</label>
+            <input className="input-field" value={form.first_name} onChange={e => set('first_name', e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Отчество</label>
+            <input className="input-field" value={form.middle_name ?? ''} onChange={e => set('middle_name', e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Телефон</label>
+            <input className="input-field" placeholder={PHONE_PLACEHOLDER} type="tel" value={form.phone} onChange={e => set('phone', formatPhoneKZ(e.target.value))} />
+          </div>
 
           {form.is_foreigner ? (
-            <input
-              className="input-field border-blue-200 focus:ring-blue-300"
-              placeholder="Гражданство (Россия, Узбекистан...)"
-              value={form.nationality ?? ''}
-              onChange={e => set('nationality', e.target.value)}
-            />
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Гражданство</label>
+              <input
+                className="input-field border-blue-200 focus:ring-blue-300"
+                placeholder="Россия, Узбекистан..."
+                value={form.nationality ?? ''}
+                onChange={e => set('nationality', e.target.value)}
+              />
+            </div>
           ) : (
-            <input className="input-field" placeholder="ИИН (12 цифр)" value={form.iin ?? ''} onChange={e => set('iin', e.target.value)} />
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">ИИН</label>
+              <input className="input-field" placeholder="12 цифр" value={form.iin ?? ''} onChange={e => set('iin', e.target.value)} />
+            </div>
           )}
 
-          <textarea
-            className="input-field resize-none"
-            placeholder="Заметки"
-            rows={2}
-            value={form.notes ?? ''}
-            onChange={e => set('notes', e.target.value)}
-          />
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Заметки</label>
+            <textarea
+              className="input-field resize-none"
+              rows={2}
+              value={form.notes ?? ''}
+              onChange={e => set('notes', e.target.value)}
+            />
+          </div>
         </div>
 
         <button

@@ -101,9 +101,6 @@ export default function DashboardPage() {
       {/* Требует внимания — заметная сводка сверху */}
       {topAlerts.length > 0 && (
         <section className="space-y-2">
-          <h3 className="text-[13px] font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-            <AlertCircle size={14} className="text-amber-500" /> Требует внимания
-          </h3>
           {topAlerts.map(a => (
             <button
               key={a.key}
