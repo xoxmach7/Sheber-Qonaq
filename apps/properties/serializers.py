@@ -11,6 +11,9 @@ class UnitSerializer(serializers.ModelSerializer):
     current_guest_phone = serializers.SerializerMethodField()
     check_in          = serializers.SerializerMethodField()
     check_out         = serializers.SerializerMethodField()
+    has_booking       = serializers.SerializerMethodField()
+    next_check_in     = serializers.SerializerMethodField()
+    next_check_out    = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit
@@ -19,6 +22,7 @@ class UnitSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'description', 'sort_order',
             'room', 'room_name', 'current_guest', 'current_stay_id',
             'current_guest_phone', 'check_in', 'check_out',
+            'has_booking', 'next_check_in', 'next_check_out',
         ]
         read_only_fields = ['id']
 
@@ -46,6 +50,32 @@ class UnitSerializer(serializers.ModelSerializer):
     def get_check_out(self, obj):
         stay = self._active_stay(obj)
         return str(stay.expected_check_out_date) if stay else None
+
+    def _next_booking(self, obj):
+        """Ближайшая будущая/текущая бронь (reserved/confirmed), не считая заселения."""
+        if not hasattr(obj, '_next_booking_cache'):
+            from datetime import date
+            obj._next_booking_cache = (
+                obj.stays.filter(
+                    status__in=['reserved', 'confirmed'],
+                    shift_type__isnull=True,
+                    expected_check_out_date__gte=date.today(),
+                )
+                .order_by('check_in_date')
+                .first()
+            )
+        return obj._next_booking_cache
+
+    def get_has_booking(self, obj):
+        return self._next_booking(obj) is not None
+
+    def get_next_check_in(self, obj):
+        b = self._next_booking(obj)
+        return str(b.check_in_date) if b else None
+
+    def get_next_check_out(self, obj):
+        b = self._next_booking(obj)
+        return str(b.expected_check_out_date) if b else None
 
 
 class UnitStatusSerializer(serializers.Serializer):

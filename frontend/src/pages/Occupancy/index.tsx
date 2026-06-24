@@ -213,6 +213,11 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
 function FreePanel({ unit, onCheckIn, onChangeStatus, onClose }: {
   unit: Unit; onCheckIn: () => void; onChangeStatus: () => void; onClose: () => void
 }) {
+  const fmtD = (d?: string) => {
+    if (!d) return '—'
+    const [y, m, day] = d.split('-')
+    return `${day}.${m}.${y}`
+  }
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30 animate-fade-in" />
@@ -220,6 +225,14 @@ function FreePanel({ unit, onCheckIn, onChangeStatus, onClose }: {
         onClick={e => e.stopPropagation()}>
         <div className="flex justify-center mb-3"><div className="w-9 h-1 rounded-full bg-gray-300" /></div>
         <p className="text-xs font-semibold text-gray-400 uppercase mb-4">{unit.room_name} — {unit.name}</p>
+        {unit.has_booking && (
+          <div className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 mb-4 flex items-center gap-2">
+            <Clock size={14} className="text-violet-500 shrink-0" />
+            <p className="text-xs text-violet-700 font-medium">
+              Есть бронь: {fmtD(unit.next_check_in)} → {fmtD(unit.next_check_out)}
+            </p>
+          </div>
+        )}
         <div className="flex gap-2">
           <button onClick={onCheckIn}
             className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-primary-500 text-white rounded-2xl text-sm font-bold">
@@ -336,6 +349,11 @@ function BedCell({ unit, position, onClick }: { unit: Unit; position: 'lower' | 
       className={`relative flex flex-col w-full rounded-xl border p-2 text-left transition tap-card ${cfg.bg} ${cfg.border}`}
       style={{ minHeight: 72 }}>
       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
+      {unit.has_booking && (
+        <span className="absolute top-1 left-1 w-3.5 h-3.5 rounded-full bg-violet-100 flex items-center justify-center" title="Есть бронь">
+          <Clock size={9} className="text-violet-500" />
+        </span>
+      )}
       <span className={`text-[9px] font-semibold ${posColor} leading-none mb-1`}>{posLabel}</span>
       <span className={`text-xs font-bold ${cfg.text} leading-none`}>{shortName}</span>
       <div className="mt-1">{cfg.icon}</div>
@@ -386,6 +404,15 @@ export default function OccupancyPage() {
   const [panel, setPanel] = useState<PanelState>(null)
   const [filter, setFilter] = useState('all')
   const [view, setView] = useState<'now' | 'month'>('now')
+  const [pFrom, setPFrom] = useState('')
+  const [pTo, setPTo] = useState('')
+  const [period, setPeriod] = useState<{ from: string; to: string } | null>(null)
+
+  const { data: avail, isFetching: availLoading } = useQuery({
+    queryKey: ['availability-map', period?.from, period?.to],
+    queryFn: () => staysApi.availability(period!.from, period!.to),
+    enabled: !!period,
+  })
 
   const { data: units = [], isLoading } = useQuery({
     queryKey: ['units'], queryFn: propertiesApi.allUnits, staleTime: 30_000,
@@ -447,6 +474,51 @@ export default function OccupancyPage() {
       {view === 'now' && (
         <>
 
+      <div className="bg-white rounded-2xl shadow-card px-4 py-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <CalendarDays size={16} className="text-gray-400 shrink-0" />
+          <span className="text-sm font-semibold text-gray-700">Свободно на даты</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <input type="date" className="input-field text-sm" value={pFrom} onChange={e => setPFrom(e.target.value)} />
+          <input type="date" className="input-field text-sm" value={pTo} onChange={e => setPTo(e.target.value)} />
+        </div>
+        <div className="flex gap-2">
+          <button disabled={!pFrom || !pTo || pTo <= pFrom}
+            onClick={() => setPeriod({ from: pFrom, to: pTo })}
+            className="flex-1 py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold disabled:opacity-40">
+            Показать свободные
+          </button>
+          {period && (
+            <button onClick={() => { setPeriod(null); setPFrom(''); setPTo('') }}
+              className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-semibold">Сброс</button>
+          )}
+        </div>
+      </div>
+
+      {period && (
+        <div className="bg-white rounded-2xl shadow-card p-4 space-y-2">
+          <p className="text-sm font-bold text-gray-900">Свободно {period.from} → {period.to}</p>
+          {availLoading || !avail ? (
+            <p className="text-sm text-gray-400">Загрузка...</p>
+          ) : avail.results.length === 0 ? (
+            <p className="text-sm text-gray-400">Нет свободных мест на этот период</p>
+          ) : (
+            <div className="space-y-1.5">
+              {avail.results.map(u => (
+                <div key={u.unit} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{u.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{u.room_name} · {u.unit_type_display}</p>
+                  </div>
+                  {u.total != null && <span className="text-xs font-medium text-gray-600 shrink-0">{Number(u.total).toLocaleString('ru-RU')} ₸</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <FilterPills value={filter} onChange={setFilter} options={[
         { value: 'all', label: 'Все', count: counts.all },
         { value: 'available', label: 'Свободно', count: counts.available },
@@ -504,6 +576,11 @@ export default function OccupancyPage() {
                       className={`relative flex flex-col items-center justify-center rounded-xl border p-2 transition tap-card ${cfg.bg} ${cfg.border}`}
                       style={{ minHeight: 72 }}>
                       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
+                      {unit.has_booking && (
+                        <span className="absolute top-1 left-1 w-3.5 h-3.5 rounded-full bg-violet-100 flex items-center justify-center" title="Есть бронь">
+                          <Clock size={9} className="text-violet-500" />
+                        </span>
+                      )}
                       <p className={`text-xs font-bold ${cfg.text}`}>{shortName}</p>
                       <div className="mt-1">{cfg.icon}</div>
                       {unit.status === 'occupied' && unit.current_guest && (
