@@ -45,10 +45,23 @@ class DashboardView(APIView):
             available = max(0, total_units - occupied)
             reserved = dirty = maintenance = 0
         else:
+            # Хостел: занятость считаем ИЗ БРОНЕЙ, а не из unit.status (Шаг 6).
+            # Юнит занят сегодня, если есть блокирующая бронь (reserved/confirmed/active),
+            # покрывающая ночь [today, today+1). Согласовано с тепловой картой /occupancy.
+            occupied = (
+                Stay.objects.filter(
+                    organization=org,
+                    shift_type__isnull=True,
+                    status__in=Stay.BLOCKING_STATUSES,
+                    check_in_date__lte=today,
+                    expected_check_out_date__gt=today,
+                )
+                .values('unit_id').distinct().count()
+            )
+            available = max(0, total_units - occupied)
+            # Операционные состояния — из unit.status (реальные «грязь» / «ремонт»)
             unit_stats = units.values('status').annotate(count=Count('id'))
             status_map = {s['status']: s['count'] for s in unit_stats}
-            occupied = status_map.get('occupied', 0)
-            available = status_map.get('available', 0)
             reserved = status_map.get('reserved', 0)
             dirty = status_map.get('dirty', 0)
             maintenance = status_map.get('maintenance', 0)

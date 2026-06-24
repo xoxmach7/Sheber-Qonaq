@@ -20,4 +20,9 @@ app.conf.beat_schedule = {
         'task': 'apps.notifications.tasks.check_overdue_payments',
         'schedule': crontab(hour=10, minute=0),
     },
+    # Каждый час — снятие протухших резервов без предоплаты (12ч)
+    'expire-stale-reservations-hourly': {
+        'task': 'apps.notifications.tasks.expire_stale_reservations',
+        'schedule': crontab(minute=0),
+    },
 }
