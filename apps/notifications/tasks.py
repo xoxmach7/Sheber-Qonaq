@@ -114,3 +114,12 @@ def send_viewing_reminder(self, viewing_id: int):
         viewing.save(update_fields=['reminder_sent'])
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
+
+
+@shared_task
+def expire_stale_reservations(hours: int = 12):
+    """Ежечасно: снимает протухшие резервы без предоплаты (Шаг 7)."""
+    from apps.stays.services import expire_stale_reservations as _expire
+    n = _expire(hours)
+    logger.info('expire_stale_reservations: %s резерв(ов) -> expired', n)
+    return n

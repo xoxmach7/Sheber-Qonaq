@@ -15,6 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('=== run_daily_checks start ===')
+        self._expire_reservations()
         self._check_expiring()
         self._check_overdue()
         self._check_debts()
