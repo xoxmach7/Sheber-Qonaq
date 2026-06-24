@@ -447,7 +447,6 @@ export default function OccupancyPage() {
                   <span className="text-[10px] font-bold text-gray-500">{room.roomName.match(/\d+/)?.[0] ?? '?'}</span>
                 </div>
                 <span className="font-semibold text-sm text-gray-800 truncate">{room.roomName}</span>
-                {isDorm && <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{Math.ceil(room.units.length / 2)} кр.</span>}
               </div>
               <div className="flex items-center gap-2 text-xs shrink-0">
                 {roomOcc > 0 && <span className="flex items-center gap-1 text-primary-600 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />{roomOcc} зан.</span>}

@@ -6,7 +6,7 @@ import api from '../../api/client'
 import { useAuthStore } from '../../store/auth'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 
-interface RoomInput { name: string }
+interface RoomInput { name: string; type?: 'dorm' | 'private' | 'family'; beds?: number }
 
 interface OnboardingPayload {
   org_name: string; city: string; address: string; plan: string
@@ -60,7 +60,7 @@ export default function OnboardingPage() {
   const [address, setAddress] = useState('')
   const [plan, setPlan] = useState('free')
   const [bookingMode, setBookingMode] = useState<'hostel' | 'cottage'>('hostel')
-  const [rooms, setRooms] = useState<RoomInput[]>([{ name: 'Комната 1' }])
+  const [rooms, setRooms] = useState<RoomInput[]>([{ name: 'Комната 1', type: 'private', beds: 1 }])
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [username, setUsername] = useState('')
@@ -81,10 +81,10 @@ export default function OnboardingPage() {
     )
   }
 
-  const addRoom = () => setRooms(r => [...r, { name: `Комната ${r.length + 1}` }])
+  const addRoom = () => setRooms(r => [...r, { name: `Комната ${r.length + 1}`, type: 'private', beds: 1 }])
   const removeRoom = (i: number) => setRooms(r => r.filter((_, idx) => idx !== i))
-  const updateRoom = (i: number, name: string) =>
-    setRooms(r => r.map((room, idx) => idx === i ? { name } : room))
+  const updateRoom = (i: number, patch: Partial<RoomInput>) =>
+    setRooms(r => r.map((room, idx) => idx === i ? { ...room, ...patch } : room))
 
   const handleSubmit = () => {
     mutation.mutate({
@@ -165,7 +165,7 @@ export default function OnboardingPage() {
                 type="button"
                 onClick={() => {
                   setBookingMode('hostel')
-                  setRooms([{ name: 'Комната 1' }])
+                  setRooms([{ name: 'Комната 1', type: 'private', beds: 1 }])
                 }}
                 className={`flex flex-col items-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all ${
                   bookingMode === 'hostel'
@@ -180,7 +180,7 @@ export default function OnboardingPage() {
                 type="button"
                 onClick={() => {
                   setBookingMode('cottage')
-                  setRooms([{ name: 'Домик 1' }])
+                  setRooms([{ name: 'Домик 1', type: 'private', beds: 1 }])
                 }}
                 className={`flex flex-col items-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all ${
                   bookingMode === 'cottage'
@@ -218,15 +218,47 @@ export default function OnboardingPage() {
           </div>
           <div className="space-y-2">
             {rooms.map((room, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <input className="input-field flex-1" value={room.name}
-                  onChange={e => updateRoom(i, e.target.value)}
-                  placeholder={bookingMode === 'cottage' ? `Домик ${i + 1}` : `Комната ${i + 1}`} />
-                {rooms.length > 1 && (
-                  <button onClick={() => removeRoom(i)}
-                    className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                    <X size={16} className="text-red-500" />
-                  </button>
+              <div key={i} className="rounded-xl border border-gray-200 p-2.5 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <input className="input-field flex-1" value={room.name}
+                    onChange={e => updateRoom(i, { name: e.target.value })}
+                    placeholder={bookingMode === 'cottage' ? `Домик ${i + 1}` : `Комната ${i + 1}`} />
+                  {rooms.length > 1 && (
+                    <button onClick={() => removeRoom(i)}
+                      className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                      <X size={16} className="text-red-500" />
+                    </button>
+                  )}
+                </div>
+
+                {bookingMode === 'hostel' && (
+                  <>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {([
+                        ['dorm', 'Дорм с койками'],
+                        ['private', 'Отдельная'],
+                        ['family', 'Семейный'],
+                      ] as const).map(([val, label]) => (
+                        <button key={val} type="button"
+                          onClick={() => updateRoom(i, { type: val, beds: val === 'dorm' ? (room.beds && room.beds > 1 ? room.beds : 4) : 1 })}
+                          className={`py-2 px-1 rounded-lg border text-[11px] font-semibold leading-tight transition-all ${
+                            (room.type ?? 'private') === val
+                              ? 'border-primary-500 bg-primary-50 text-primary-700'
+                              : 'border-gray-200 bg-white text-gray-500'
+                          }`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {room.type === 'dorm' && (
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-medium text-gray-500 shrink-0">Койко-мест в комнате</label>
+                        <input type="number" min={1} max={50} className="input-field w-20"
+                          value={room.beds ?? 1}
+                          onChange={e => updateRoom(i, { beds: Math.max(1, Math.min(50, parseInt(e.target.value) || 1)) })} />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ))}
@@ -236,7 +268,9 @@ export default function OnboardingPage() {
             <Plus size={16} /> {bookingMode === 'cottage' ? 'Добавить домик' : 'Добавить комнату'}
           </button>
           <p className="text-xs text-gray-400 text-center">
-            {rooms.length} {bookingMode === 'cottage' ? 'объектов добавлено' : 'комнат добавлено'}
+            {bookingMode === 'cottage'
+              ? `${rooms.length} объектов добавлено`
+              : `${rooms.length} комнат · ${rooms.reduce((sum, r) => sum + (r.type === 'dorm' ? (r.beds ?? 1) : 1), 0)} мест`}
           </p>
         </div>
       )}
