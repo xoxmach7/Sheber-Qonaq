@@ -490,6 +490,13 @@ export default function OccupancyPage() {
     ...r, units: r.units.filter(u => filter === 'maintenance' ? (u.status === 'maintenance' || u.status === 'dirty') : u.status === filter),
   })).filter(r => r.units.length > 0)
 
+  // Режим периода: на карте показываем только юниты, свободные на выбранные даты (по availability)
+  const freeIds = new Set((avail?.results ?? []).map(r => r.unit))
+  const periodRooms = rooms
+    .map(r => ({ ...r, units: r.units.filter(u => freeIds.has(u.id)) }))
+    .filter(r => r.units.length > 0)
+  const displayRooms = period ? periodRooms : filteredRooms
+
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
@@ -537,28 +544,14 @@ export default function OccupancyPage() {
       </div>
 
       {period && (
-        <div className="bg-white rounded-2xl shadow-card p-4 space-y-2">
-          <p className="text-sm font-bold text-gray-900">Свободно {period.from} → {period.to}</p>
-          {availLoading || !avail ? (
-            <p className="text-sm text-gray-400">Загрузка...</p>
-          ) : avail.results.length === 0 ? (
-            <p className="text-sm text-gray-400">Нет свободных мест на этот период</p>
-          ) : (
-            <div className="space-y-1.5">
-              {avail.results.map(u => (
-                <div key={u.unit} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{u.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{u.room_name} · {u.unit_type_display}</p>
-                  </div>
-                  {u.total != null && <span className="text-xs font-medium text-gray-600 shrink-0">{Number(u.total).toLocaleString('ru-RU')} ₸</span>}
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="bg-violet-50 border border-violet-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-2">
+          <p className="text-sm font-bold text-violet-800">Свободно: {period.from} → {period.to}</p>
+          {!availLoading && avail && <span className="text-sm font-extrabold text-violet-700 shrink-0">{avail.count} мест</span>}
         </div>
       )}
 
+      {!period && (
+      <>
       <FilterPills value={filter} onChange={setFilter} options={[
         { value: 'all', label: 'Все', count: counts.all },
         { value: 'available', label: 'Свободно', count: counts.available },
@@ -583,8 +576,16 @@ export default function OccupancyPage() {
           {freeBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" /><span className="text-xs text-gray-500">Свободно</span><span className="text-xs font-bold text-emerald-700">{freeBar}</span></div>}
         </div>
       </div>
+      </>
+      )}
 
-      {filteredRooms.map(room => {
+      {period && availLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-7 h-7 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {displayRooms.map(room => {
         const isDorm = room.units.some(u => u.unit_type === 'bed')
         const roomAvail = room.units.filter(u => u.status === 'available').length
         const bunks: Array<[Unit, Unit | undefined]> = []
@@ -645,10 +646,10 @@ export default function OccupancyPage() {
         )
       })}
 
-      {filteredRooms.length === 0 && (
+      {displayRooms.length === 0 && !(period && availLoading) && (
         <div className="text-center py-12 text-gray-400">
-          <p className="text-base font-semibold text-gray-500">Нет мест</p>
-          <p className="text-sm mt-1">Попробуйте другой фильтр</p>
+          <p className="text-base font-semibold text-gray-500">{period ? 'Нет свободных мест' : 'Нет мест'}</p>
+          <p className="text-sm mt-1">{period ? 'На выбранные даты всё занято' : 'Попробуйте другой фильтр'}</p>
         </div>
       )}
 
