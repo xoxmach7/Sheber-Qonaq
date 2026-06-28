@@ -14,6 +14,8 @@ class GuestSerializer(serializers.ModelSerializer):
             'phone', 'email', 'iin',
             'document_type', 'document_number', 'document_photo',
             'date_of_birth', 'city_of_origin', 'nationality', 'is_foreigner',
+            'sex', 'document_issue_date', 'document_expiry_date',
+            'entry_date', 'migration_card_number',
             'notes', 'is_active', 'is_blacklisted', 'created_at',
         ]
         read_only_fields = ['id', 'full_name', 'is_blacklisted', 'created_at']
@@ -68,6 +70,8 @@ class GuestShortSerializer(serializers.ModelSerializer):
             'id', 'full_name', 'phone',
             'nationality', 'is_foreigner',
             'document_type', 'document_number',
+            'sex', 'date_of_birth', 'document_issue_date', 'document_expiry_date',
+            'entry_date', 'migration_card_number',
         ]
 
 

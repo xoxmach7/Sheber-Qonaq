@@ -34,6 +34,14 @@ function GuestForm({
           notes: initial.notes ?? '',
           nationality: initial.nationality ?? '',
           is_foreigner: initial.is_foreigner ?? false,
+          document_type: initial.document_type,
+          document_number: initial.document_number ?? '',
+          sex: initial.sex ?? '',
+          date_of_birth: initial.date_of_birth ?? '',
+          document_issue_date: initial.document_issue_date ?? '',
+          document_expiry_date: initial.document_expiry_date ?? '',
+          entry_date: initial.entry_date ?? '',
+          migration_card_number: initial.migration_card_number ?? '',
         }
       : { first_name: '', last_name: '', phone: '', is_foreigner: false }
   )
@@ -65,7 +73,7 @@ function GuestForm({
 
   const isPending = creating || updating
   const set = (k: keyof GuestCreate, v: string) => setForm(f => ({ ...f, [k]: v }))
-  const toggleForeigner = () => setForm(f => ({ ...f, is_foreigner: !f.is_foreigner, iin: '' }))
+  const toggleForeigner = () => setForm(f => ({ ...f, is_foreigner: !f.is_foreigner, iin: '', document_type: !f.is_foreigner ? 'passport_foreign' : undefined }))
   const handleSave = () => isEdit ? update(form) : create(form)
   const handleDelete = () => {
     if (confirm(`Удалить гостя «${initial!.full_name}»? Если есть история заселений — он будет архивирован.`)) remove()
@@ -124,14 +132,55 @@ function GuestForm({
           </div>
 
           {form.is_foreigner ? (
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Гражданство</label>
-              <input
-                className="input-field border-blue-200 focus:ring-blue-300"
-                placeholder="Россия, Узбекистан..."
-                value={form.nationality ?? ''}
-                onChange={e => set('nationality', e.target.value)}
-              />
+            <div className="space-y-3 rounded-xl border border-blue-200 bg-blue-50/40 p-3">
+              <p className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
+                <span>&#127757;</span> Данные для МПИС / eQonaq
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Гражданство *</label>
+                <input className="input-field" placeholder="Россия, Узбекистан..."
+                  value={form.nationality ?? ''} onChange={e => set('nationality', e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Номер паспорта</label>
+                  <input className="input-field" placeholder="N1234567"
+                    value={form.document_number ?? ''} onChange={e => set('document_number', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Пол</label>
+                  <select className="input-field" value={form.sex ?? ''} onChange={e => set('sex', e.target.value)}>
+                    <option value="">—</option>
+                    <option value="M">Мужской</option>
+                    <option value="F">Женский</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Дата рождения</label>
+                  <input type="date" className="input-field" value={form.date_of_birth ?? ''} onChange={e => set('date_of_birth', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Паспорт выдан</label>
+                  <input type="date" className="input-field" value={form.document_issue_date ?? ''} onChange={e => set('document_issue_date', e.target.value)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Действует до</label>
+                  <input type="date" className="input-field" value={form.document_expiry_date ?? ''} onChange={e => set('document_expiry_date', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Въезд в РК</label>
+                  <input type="date" className="input-field" value={form.entry_date ?? ''} onChange={e => set('entry_date', e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Номер миграционной карты</label>
+                <input className="input-field" placeholder="Талон / миграционная карта"
+                  value={form.migration_card_number ?? ''} onChange={e => set('migration_card_number', e.target.value)} />
+              </div>
             </div>
           ) : (
             <div>

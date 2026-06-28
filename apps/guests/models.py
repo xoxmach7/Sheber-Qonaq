@@ -48,6 +48,15 @@ class Guest(OrganizationScopedModel):
         default=False, verbose_name='Иностранец',
         help_text='Требуется регистрация в MPIS/eQonaq'
     )
+
+    # ── Данные для МПИС/eQonaq (иностранные гости) ──
+    SEX_CHOICES = [('M', 'Мужской'), ('F', 'Женский')]
+    sex = models.CharField(max_length=1, choices=SEX_CHOICES, blank=True, verbose_name='Пол')
+    document_issue_date = models.DateField(null=True, blank=True, verbose_name='Дата выдачи документа')
+    document_expiry_date = models.DateField(null=True, blank=True, verbose_name='Срок действия документа')
+    entry_date = models.DateField(null=True, blank=True, verbose_name='Дата въезда в РК')
+    migration_card_number = models.CharField(max_length=50, blank=True, verbose_name='Номер миграционной карты')
+
     notes = models.TextField(blank=True, verbose_name='Заметки')
     is_active = models.BooleanField(default=True, verbose_name='Активен')
 
