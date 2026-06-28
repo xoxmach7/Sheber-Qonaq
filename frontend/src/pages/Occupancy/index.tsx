@@ -178,6 +178,25 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
                   <input className="input-field text-sm" placeholder="Фамилия *" value={newGuest.last_name} onChange={e => setNewGuest(g => ({ ...g, last_name: e.target.value }))} />
                 </div>
                 <input className="input-field text-sm" placeholder={PHONE_PLACEHOLDER} value={newGuest.phone} onChange={e => setNewGuest(g => ({ ...g, phone: formatPhoneKZ(e.target.value) }))} />
+                <button type="button" onClick={() => setNewGuest(g => ({ ...g, is_foreigner: !g.is_foreigner }))}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-semibold ${newGuest.is_foreigner ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>
+                  <span className="flex items-center gap-1.5"><span>&#127757;</span> Иностранный гость</span>
+                  <span className={`w-8 h-4 rounded-full relative shrink-0 ${newGuest.is_foreigner ? 'bg-blue-500' : 'bg-gray-300'}`}><span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${newGuest.is_foreigner ? 'translate-x-4' : 'translate-x-0.5'}`} /></span>
+                </button>
+                {newGuest.is_foreigner && (
+                  <div className="space-y-2">
+                    <input className="input-field text-sm" placeholder="Гражданство (Россия...)" value={newGuest.nationality ?? ''} onChange={e => setNewGuest(g => ({ ...g, nationality: e.target.value }))} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input className="input-field text-sm" placeholder="Номер паспорта" value={newGuest.document_number ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_number: e.target.value, document_type: 'passport_foreign' }))} />
+                      <select className="input-field text-sm" value={newGuest.sex ?? ''} onChange={e => setNewGuest(g => ({ ...g, sex: e.target.value as 'M' | 'F' | '' }))}>
+                        <option value="">Пол</option>
+                        <option value="M">Мужской</option>
+                        <option value="F">Женский</option>
+                      </select>
+                    </div>
+                    <p className="text-[11px] text-blue-600">Остальное по паспорту дозаполните в карточке гостя.</p>
+                  </div>
+                )}
                 <button onClick={() => createGuest(newGuest)}
                   disabled={!newGuest.first_name || !newGuest.last_name || !newGuest.phone || creatingGuest}
                   className="w-full py-2.5 bg-primary-500 text-white rounded-xl text-sm font-semibold disabled:opacity-40">

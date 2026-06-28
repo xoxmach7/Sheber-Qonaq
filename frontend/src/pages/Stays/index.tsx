@@ -256,7 +256,35 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1"><Globe size={11} />Гражданство</label>
                     <input className="input-field text-sm" placeholder="напр. Россия, Германия" value={newGuest.nationality ?? ''} onChange={e => setNewGuest(g => ({ ...g, nationality: e.target.value }))} />
-                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1"><Clock size={11} />Потребуется регистрация в MPIS/eQonaq</p>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Номер паспорта</label>
+                        <input className="input-field text-sm" placeholder="N1234567" value={newGuest.document_number ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_number: e.target.value, document_type: 'passport_foreign' }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Пол</label>
+                        <select className="input-field text-sm" value={newGuest.sex ?? ''} onChange={e => setNewGuest(g => ({ ...g, sex: e.target.value as 'M' | 'F' | '' }))}>
+                          <option value="">—</option>
+                          <option value="M">Мужской</option>
+                          <option value="F">Женский</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Дата рождения</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Въезд в РК</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <label className="text-xs text-gray-500 mb-1 block">Миграционная карта</label>
+                      <input className="input-field text-sm" placeholder="Талон / миграционная карта" value={newGuest.migration_card_number ?? ''} onChange={e => setNewGuest(g => ({ ...g, migration_card_number: e.target.value }))} />
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1"><Clock size={11} />Регистрация в MPIS/eQonaq</p>
                   </div>
                 )}
                 <button onClick={() => createGuest(newGuest)}

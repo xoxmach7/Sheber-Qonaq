@@ -29,14 +29,29 @@ function MpisPanel({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   const g = stay.guest_detail
   const [copied, setCopied] = useState(false)
 
+  const docTypeLabel: Record<string, string> = {
+    passport_foreign: 'Иностранный паспорт',
+    passport_kz: 'Паспорт РК',
+    id_card: 'Удостоверение РК',
+    residence_permit: 'ВНЖ',
+    other: 'Документ',
+  }
+  const sexLabel = g?.sex === 'M' ? 'Мужской' : g?.sex === 'F' ? 'Женский' : ''
   const clipboardText = [
     `ФИО: ${g?.full_name ?? '—'}`,
-    `Телефон: ${g?.phone ?? '—'}`,
+    sexLabel && `Пол: ${sexLabel}`,
+    g?.date_of_birth && `Дата рождения: ${g.date_of_birth}`,
     `Гражданство: ${g?.nationality || '—'}`,
-    `Документ: ${g?.document_type ? g.document_type.toUpperCase() : '—'} ${g?.document_number ?? ''}`.trim(),
+    (g?.document_number || g?.document_type) &&
+      `Документ: ${docTypeLabel[g?.document_type ?? ''] ?? g?.document_type ?? ''} ${g?.document_number ?? ''}`.trim(),
+    (g?.document_issue_date || g?.document_expiry_date) &&
+      `Паспорт: выдан ${g?.document_issue_date ?? '—'}, действует до ${g?.document_expiry_date ?? '—'}`,
+    g?.entry_date && `Въезд в РК: ${g.entry_date}`,
+    g?.migration_card_number && `Миграционная карта: ${g.migration_card_number}`,
+    `Телефон: ${g?.phone ?? '—'}`,
     `Дата заезда: ${stay.check_in_date}`,
     `Место: ${stay.unit_detail?.name ?? `#${stay.unit}`}`,
-  ].join('\n')
+  ].filter(Boolean).join('\n')
 
   const handleCopy = () => {
     navigator.clipboard.writeText(clipboardText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
