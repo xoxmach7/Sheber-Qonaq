@@ -368,28 +368,63 @@ function StatusPicker({ unit, onSelect, onClose }: { unit: Unit; onSelect: (s: U
   )
 }
 
+// ── Booking info panel ──
+function BookingPanel({ unit, onChangeStatus, onClose }: { unit: Unit; onChangeStatus: () => void; onClose: () => void }) {
+  const fmtD = (d?: string) => {
+    if (!d) return '—'
+    const [y, m, day] = d.split('-')
+    return `${day}.${m}.${y}`
+  }
+  const statusLabel = unit.next_booking_status === 'confirmed' ? 'Подтверждена (есть предоплата)' : 'Резерв (без предоплаты)'
+  return (
+    <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/30 animate-fade-in" />
+      <div className="relative w-full bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-center mb-3"><div className="w-9 h-1 rounded-full bg-gray-300" /></div>
+        <p className="text-xs font-semibold text-gray-400 uppercase mb-3">{unit.room_name} — {unit.name}</p>
+
+        <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock size={15} className="text-violet-500 shrink-0" />
+            <span className="text-sm font-bold text-violet-700">Бронь · {statusLabel}</span>
+          </div>
+          <p className="text-base font-bold text-gray-900">{unit.next_booking_guest ?? 'Гость'}</p>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <CalendarDays size={13} className="text-gray-400" />
+            <span className="text-sm text-gray-600">{fmtD(unit.next_check_in)} → {fmtD(unit.next_check_out)}</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={onChangeStatus}
+            className="flex-1 py-3.5 bg-gray-100 text-gray-600 rounded-2xl text-sm font-semibold">Статус места</button>
+          <button onClick={onClose}
+            className="flex-1 py-3.5 bg-primary-500 text-white rounded-2xl text-sm font-bold">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Bed cell ──
 function BedCell({ unit, position, onClick }: { unit: Unit; position: 'lower' | 'upper'; onClick: () => void }) {
-  const cfg = STATUS[unit.status]
+  const booked = !!unit.has_booking && unit.status !== 'occupied'
+  const cfg = STATUS[booked ? 'reserved' : unit.status]
   const posLabel = position === 'lower' ? '↓ Нижн.' : '↑ Верхн.'
   const posColor = position === 'lower' ? 'text-gray-400' : 'text-primary-400'
   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
+  const guest = unit.status === 'occupied' ? unit.current_guest : (booked ? unit.next_booking_guest : undefined)
   return (
     <button onClick={onClick}
       className={`relative flex flex-col w-full rounded-xl border p-2 text-left transition tap-card ${cfg.bg} ${cfg.border}`}
       style={{ minHeight: 72 }}>
       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
-      {unit.has_booking && (
-        <span className="absolute top-1 left-1 w-3.5 h-3.5 rounded-full bg-violet-100 flex items-center justify-center" title="Есть бронь">
-          <Clock size={9} className="text-violet-500" />
-        </span>
-      )}
       <span className={`text-[9px] font-semibold ${posColor} leading-none mb-1`}>{posLabel}</span>
       <span className={`text-xs font-bold ${cfg.text} leading-none`}>{shortName}</span>
       <div className="mt-1">{cfg.icon}</div>
-      {unit.status === 'occupied' && unit.current_guest && (
-        <p className="text-[9px] text-primary-600 font-medium mt-0.5 leading-tight truncate w-full">
-          {unit.current_guest.split(' ')[0]}
+      {guest && (
+        <p className={`text-[9px] font-medium mt-0.5 leading-tight truncate w-full ${booked ? 'text-violet-600' : 'text-primary-600'}`}>
+          {guest.split(' ')[0]}
         </p>
       )}
     </button>
@@ -427,7 +462,7 @@ function Legend({ units }: { units: Unit[] }) {
 }
 
 // ── Page ──
-type PanelState = { type: 'free' | 'occupied' | 'status' | 'checkin'; unit: Unit } | null
+type PanelState = { type: 'free' | 'occupied' | 'status' | 'checkin' | 'booking'; unit: Unit } | null
 
 export default function OccupancyPage() {
   const qc = useQueryClient()
@@ -460,6 +495,7 @@ export default function OccupancyPage() {
 
   const handleUnitClick = (unit: Unit) => {
     if (unit.status === 'occupied') setPanel({ type: 'occupied', unit })
+    else if (unit.has_booking) setPanel({ type: 'booking', unit })
     else setPanel({ type: 'free', unit })
   }
 
@@ -618,23 +654,20 @@ export default function OccupancyPage() {
             ) : (
               <div className="p-3 grid grid-cols-3 gap-2">
                 {room.units.map(unit => {
-                  const cfg = STATUS[unit.status]
+                  const booked = !!unit.has_booking && unit.status !== 'occupied'
+                  const cfg = STATUS[booked ? 'reserved' : unit.status]
                   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
+                  const guest = unit.status === 'occupied' ? unit.current_guest : (booked ? unit.next_booking_guest : undefined)
                   return (
                     <button key={unit.id} onClick={() => handleUnitClick(unit)}
                       className={`relative flex flex-col items-center justify-center rounded-xl border p-2 transition tap-card ${cfg.bg} ${cfg.border}`}
                       style={{ minHeight: 72 }}>
                       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
-                      {unit.has_booking && (
-                        <span className="absolute top-1 left-1 w-3.5 h-3.5 rounded-full bg-violet-100 flex items-center justify-center" title="Есть бронь">
-                          <Clock size={9} className="text-violet-500" />
-                        </span>
-                      )}
                       <p className={`text-xs font-bold ${cfg.text}`}>{shortName}</p>
                       <div className="mt-1">{cfg.icon}</div>
-                      {unit.status === 'occupied' && unit.current_guest && (
-                        <p className="text-[9px] text-primary-600 font-medium mt-1 text-center leading-tight truncate w-full px-1">
-                          {unit.current_guest.split(' ')[0]}
+                      {guest && (
+                        <p className={`text-[9px] font-medium mt-1 text-center leading-tight truncate w-full px-1 ${booked ? 'text-violet-600' : 'text-primary-600'}`}>
+                          {guest.split(' ')[0]}
                         </p>
                       )}
                     </button>
@@ -665,6 +698,11 @@ export default function OccupancyPage() {
       )}
       {panel?.type === 'checkin' && (
         <CheckInSheet unit={panel.unit} onClose={() => setPanel(null)} />
+      )}
+      {panel?.type === 'booking' && (
+        <BookingPanel unit={panel.unit}
+          onChangeStatus={() => setPanel({ type: 'status', unit: panel.unit })}
+          onClose={() => setPanel(null)} />
       )}
       {panel?.type === 'occupied' && (
         <OccupiedPanel unit={panel.unit}
