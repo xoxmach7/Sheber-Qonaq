@@ -165,6 +165,12 @@ export interface GuestShort {
   is_foreigner?: boolean
   document_type?: string
   document_number?: string
+  sex?: 'M' | 'F' | ''
+  date_of_birth?: string
+  document_issue_date?: string
+  document_expiry_date?: string
+  entry_date?: string
+  migration_card_number?: string
 }
 
 export interface UnitShort {
