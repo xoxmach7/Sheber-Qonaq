@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Sheber Qonaq — демо</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#4f46e5; --primary-50:#eef2ff; --primary-100:#e0e7ff;
+    --violet:#8b5cf6; --violet-50:#f5f3ff; --violet-200:#ddd6fe;
+    --emerald:#10b981; --emerald-50:#ecfdf5; --emerald-200:#a7f3d0;
+    --amber:#f59e0b; --amber-50:#fffbeb;
+    --red:#ef4444; --red-50:#fef2f2; --red-200:#fecaca;
+    --gray-50:#f8fafc; --gray-100:#f1f5f9; --gray-200:#e2e8f0; --gray-400:#94a3b8; --gray-500:#64748b; --gray-700:#334155; --gray-900:#0f172a;
+    --bg:#eef1f6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--gray-900);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:100%;max-width:430px;background:var(--gray-50);min-height:100vh;position:relative;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(15,23,42,.12)}
+  .topbar{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--gray-100);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+  .topbar .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
+  .topbar .sq{display:grid;place-items:center;width:45px;height:45px;border-radius:13px;background:linear-gradient(135deg,#0EA5E9,#1B2E4B)}
+  .topbar .sq img{width:70%;height:70%;object-fit:contain}
+  .demo-pill{font-size:10px;font-weight:700;color:var(--violet);background:var(--violet-50);padding:3px 8px;border-radius:999px;border:1px solid var(--violet-200)}
+  .scroll{flex:1;overflow-y:auto;padding:16px 16px 90px}
+  .nav{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--gray-100);display:flex;justify-content:space-around;padding:8px 4px 10px;z-index:20}
+  .nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--gray-400);font-size:10.5px;font-weight:600;cursor:pointer;flex:1;padding:4px 0}
+  .nav button.active{color:var(--primary)}
+  .nav svg{width:22px;height:22px}
+  .card{background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:14px}
+  .row{display:flex;gap:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  h2.page{font-size:21px;font-weight:800;margin-bottom:2px}
+  .muted{color:var(--gray-400);font-size:13px}
+  .seg{display:flex;background:var(--gray-100);border-radius:13px;padding:4px;gap:3px;margin-bottom:12px}
+  .seg button{flex:1;border:none;background:none;padding:8px;border-radius:10px;font-size:13px;font-weight:700;color:var(--gray-500);cursor:pointer}
+  .seg button.active{background:#fff;color:var(--gray-900);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .pills{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+  .pills::-webkit-scrollbar{display:none}
+  .pill{border:none;white-space:nowrap;padding:8px 13px;border-radius:999px;background:#fff;color:var(--gray-500);font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .pill.active{background:var(--primary);color:#fff}
+  .kpi{background:#fff;border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,.06);cursor:pointer}
+  .kpi .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;margin-bottom:8px}
+  .kpi .lbl{font-size:12px;color:var(--gray-400);font-weight:600}
+  .kpi .val{font-size:22px;font-weight:800;margin-top:2px}
+  .kpi .sub{font-size:11px;color:var(--gray-400);margin-top:1px}
+  .alert{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:16px;border:1px solid;cursor:pointer}
+  .alert .t{font-weight:700;font-size:13px;line-height:1.2}
+  .alert .s{font-size:11px;opacity:.85;margin-top:2px}
+  .cellgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+  .cell{position:relative;border-radius:12px;border:1px solid;padding:8px;min-height:70px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .cell .dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%}
+  .cell .nm{font-size:12px;font-weight:700}
+  .cell .gn{font-size:9px;font-weight:600;margin-top:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-available{background:var(--emerald-50);border-color:var(--emerald-200);color:#047857}
+  .st-occupied{background:var(--primary-50);border-color:var(--primary-100);color:#3730a3}
+  .st-reserved{background:var(--violet-50);border-color:var(--violet-200);color:#6d28d9}
+  .st-out_of_order{background:var(--gray-100);border-color:var(--gray-200);color:var(--gray-500)}
+  .dot-available{background:var(--emerald)}.dot-occupied{background:var(--primary)}.dot-reserved{background:var(--violet)}.dot-out_of_order{background:var(--gray-400)}
+  .roomhdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fbfcfe;border-bottom:1px solid var(--gray-100);font-weight:700;font-size:14px}
+  .roomhdr .free{font-size:11px;color:var(--emerald);font-weight:700}
+  .badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px}
+  .b-violet{background:var(--violet-50);color:#6d28d9}
+  .b-blue{background:#eff6ff;color:#1d4ed8}
+  .b-emerald{background:var(--emerald-50);color:#047857}
+  .b-orange{background:#fff7ed;color:#c2410c}
+  .b-red{background:var(--red-50);color:#b91c1c}
+  .avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+  .staycard{background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(15,23,42,.06);overflow:hidden}
+  .staycard .acts{display:flex;border-top:1px solid var(--gray-100)}
+  .staycard .acts button{flex:1;border:none;background:none;padding:11px 4px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+  .sep{width:1px;background:var(--gray-100)}
+  .info3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--gray-50);border-radius:12px;padding:10px;margin-top:10px;font-size:12px}
+  .info3 .k{color:var(--gray-400);margin-bottom:2px}
+  .info3 .v{font-weight:600;color:var(--gray-700)}
+  .paybar{display:flex;align-items:center;justify-content:space-between;border-radius:12px;padding:8px 12px;margin-top:8px;font-size:13px}
+  .btn{border:none;border-radius:14px;font-weight:700;cursor:pointer;padding:14px;font-size:15px;width:100%}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-violet{background:var(--violet);color:#fff}
+  .btn-gray{background:var(--gray-100);color:var(--gray-700)}
+  .btn-red{background:var(--red);color:#fff}
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:40;display:none;align-items:flex-end;justify-content:center}
+  .ov.show{display:flex}
+  .sheet{width:100%;max-width:430px;background:#fff;border-radius:20px 20px 0 0;padding:20px;max-height:92vh;overflow-y:auto;animation:up .25s ease}
+  @keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .sheet h3{font-size:18px;font-weight:800;margin-bottom:12px}
+  .handle{width:38px;height:4px;border-radius:99px;background:var(--gray-200);margin:0 auto 12px}
+  label.fl{font-size:12px;font-weight:700;color:var(--gray-500);display:block;margin-bottom:5px;margin-top:10px}
+  input.inp,select.inp{width:100%;padding:12px;border:1px solid var(--gray-200);border-radius:12px;font-size:15px;font-family:inherit;background:var(--gray-50)}
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--gray-900);color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:600;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .mpisbox{background:var(--blue-50,#eff6ff);border:1px solid #bfdbfe;border-radius:14px;padding:12px;margin-top:10px}
+  .seg.small button{padding:7px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="topbar">
+    <div class="logo"><span class="sq"><img src="logo.svg" alt="Sheber Qonaq"></span> Sheber Qonaq</div>
+    <span class="demo-pill">ДЕМО</span>
+  </div>
+  <div class="scroll" id="screen"></div>
+  <div class="nav" id="nav"></div>
+</div>
+<div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+//// ───────── ФЕЙК-ДАННЫЕ: хостел Алматы, ~30 мест ─────────
+const RU = {available:'Свободно',occupied:'Занято',reserved:'Бронь',out_of_order:'Закрыто'};
+function uid(){return Math.random().toString(36).slice(2,8)}
+
+// гости
+const guests = [
+  {id:'g1',name:'Бахытжан Сейтказы',phone:'+7 701 234 56 78',foreign:false,debt:0},
+  {id:'g2',name:'Жанболат Омарханов',phone:'+7 705 111 22 33',foreign:false,debt:0},
+  {id:'g3',name:'Дмитрий Соколов',phone:'+7 707 555 44 11',foreign:true,nat:'Россия',passport:'75 1234567',sex:'M',dob:'1992-04-18',mpis:'pending'},
+  {id:'g4',name:'Aziz Karimov',phone:'+998 90 123 45 67',foreign:true,nat:'Узбекистан',passport:'AB 7654321',sex:'M',dob:'1995-09-02',mpis:'confirmed'},
+  {id:'g5',name:'Айгерим Нурлан',phone:'+7 700 888 99 00',foreign:false,debt:35000},
+  {id:'g6',name:'Lukas Weber',phone:'+49 151 234 5678',foreign:true,nat:'Германия',passport:'C01X4P7',sex:'M',dob:'1990-01-30',mpis:'pending'},
+  {id:'g7',name:'Санат Конкоджаев',phone:'+7 702 333 22 11',foreign:false,debt:0},
+  {id:'g8',name:'Мария Попова',phone:'+7 705 777 66 55',foreign:true,nat:'Россия',passport:'45 9988776',sex:'F',dob:'1998-12-12',mpis:'submitted'},
+];
+const gById = id => guests.find(g=>g.id===id);
+
+// комнаты и места (дормы + номера) = 30 юнитов
+const rooms = [];
+function mkRoom(name, type, n){
+  const r={id:uid(),name,units:[]};
+  for(let i=1;i<=n;i++){
+    r.units.push({id:uid(),name:type==='bed'?('Место '+i):name,room:name,type,status:'available',guest:null,ci:null,co:null,rate:type==='bed'?6000:15000});
+  }
+  rooms.push(r);
+}
+mkRoom('Женская 4-местная','bed',4);
+mkRoom('Мужская 6-местная','bed',6);
+mkRoom('Мужская 8-местная','bed',8);
+mkRoom('Смешанная 6-местная','bed',6);
+mkRoom('Номер 1 (двухместный)','private_room',1);
+mkRoom('Номер 2 (двухместный)','private_room',1);
+mkRoom('Семейный номер','family_room',1);
+mkRoom('Студия','private_room',1);
+// добиваем до 30
+mkRoom('Доп. дорм','bed',2);
+
+const allUnits = () => rooms.flatMap(r=>r.units);
+
+// стартовые брони/заселения (проживания)
+const stays = []; // {id,unitId,guestId,ci,co,rate,status:'active|reserved|confirmed',paid,total}
+function place(unitId,guestId,status,ci,co,rate,paid){
+  const u=allUnits().find(x=>x.id===unitId);
+  const total=rate*Math.max(1,daysBetween(ci,co));
+  const s={id:uid(),unitId,guestId,ci,co,rate,status,paid,total};
+  stays.push(s);
+  if(status==='active'){u.status='occupied';u.guest=guestId;u.ci=ci;u.co=co;}
+  return s;
+}
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/86400000)||30}
+const T=(d)=>{const x=new Date();x.setDate(x.getDate()+d);return x.toISOString().slice(0,10)};
+
+// заселяем часть мест (17 занято), пара броней, пара закрытых
+const U=allUnits();
+const occMap=[[0,'g1'],[1,'g7'],[2,'g4'],[4,'g3'],[5,'g6'],[6,'g2'],[7,'g8'],[8,'g5'],[10,'g1'],[11,'g7'],[12,'g4'],[14,'g2'],[15,'g3'],[16,'g6'],[18,'g8'],[19,'g5'],[20,'g1']];
+occMap.forEach(([i,g])=>{ if(U[i]) place(U[i].id,g,'active',T(-Math.floor(Math.random()*20)-3),T(20+Math.floor(Math.random()*40)),U[i].rate,U[i].rate); });
+// брони (reserved/confirmed)
+if(U[3]){const s=place(U[3].id,'g3','confirmed',T(2),T(7),U[3].rate,U[3].rate*3);}
+if(U[9]){const s=place(U[9].id,'g8','reserved',T(1),T(4),U[9].rate,0);}
+if(U[13]){const s=place(U[13].id,'g6','reserved',T(3),T(10),U[13].rate,0);}
+// закрытые
+if(U[22]){U[22].status='out_of_order'}
+if(U[23]){U[23].status='out_of_order'}
+
+// связь юнит->ближайшая бронь
+function unitBooking(unitId){
+  return stays.find(s=>s.unitId===unitId && (s.status==='reserved'||s.status==='confirmed'));
+}
+function unitDisplayStatus(u){
+  if(u.status==='occupied') return 'occupied';
+  if(u.status==='out_of_order') return 'out_of_order';
+  if(unitBooking(u.id)) return 'reserved';
+  return 'available';
+}
+
+//// ───────── НАВИГАЦИЯ ─────────
+let current='dash';
+const ICONS={
+  dash:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  map:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11"/>',
+  stays:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>',
+  guests:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 7a3 3 0 0 1 0 6"/><path d="M21 20a5.5 5.5 0 0 0-4-5"/>'
+};
+const TABS=[['dash','Главная'],['map','Карта'],['stays','Заезды'],['guests','Гости']];
+function renderNav(){
+  document.getElementById('nav').innerHTML=TABS.map(([k,l])=>
+    `<button class="${current===k?'active':''}" onclick="go('${k}')">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg>${l}</button>`).join('');
+}
+function go(k){current=k;document.getElementById('screen').scrollTop=0;render();}
+function render(){renderNav();const s=document.getElementById('screen');
+  s.innerHTML=({dash:dashView,map:mapView,stays:staysView,guests:guestsView})[current]();
+}
+
+//// ───────── helpers ─────────
+function tg(n){return Number(n).toLocaleString('ru-KZ')+' ₸'}
+function initials(name){return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}
+function avColor(name){const c=['#0ea5e9','#8b5cf6','#10b981','#f59e0b','#ef4444','#6366f1','#ec4899'];let h=0;for(const ch of name)h=ch.charCodeAt(0)+h*31;return c[Math.abs(h)%c.length]}
+function av(name,size){size=size||40;return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${size/2.8}px;background:${avColor(name)}">${initials(name)}</div>`}
+
+let toastTimer;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1900)}
+function openSheet(html){document.getElementById('sheet').innerHTML='<div class="handle"></div>'+html;document.getElementById('ov').classList.add('show')}
+function closeSheet(){document.getElementById('ov').classList.remove('show')}
+document.getElementById('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeSheet()});
+
+//// ───────── ДАШБОРД ─────────
+function dashView(){
+  const units=allUnits();
+  const total=units.length;
+  const occ=units.filter(u=>unitDisplayStatus(u)==='occupied').length;
+  const free=units.filter(u=>unitDisplayStatus(u)==='available').length;
+  const rate=Math.round(occ/total*100);
+  const income=stays.reduce((a,s)=>a+(s.status==='active'?s.paid:0),0);
+  const expenses=148000;
+  const debtors=guests.filter(g=>g.debt>0);
+  const mpisPending=guests.filter(g=>g.foreign&&g.mpis!=='confirmed').length;
+  const hour=new Date().getHours();
+  const greet=hour<12?'Доброе утро':hour<18?'Добрый день':'Добрый вечер';
+  const today=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+    <div><div class="muted">${greet}, Администратор</div><div style="font-size:13px;color:var(--gray-500);margin-top:2px">Сегодня ${today}</div></div>
+  </div>
+  ${mpisPending>0?`<div class="alert" style="background:var(--amber-50);border-color:#fde68a;color:#b45309;margin-bottom:8px" onclick="go('guests')">
+     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+     <div><div class="t">${mpisPending} гостя без регистрации МПИС</div><div class="s">Штраф 180 000 ₸ за каждого — оформите в eQonaq</div></div></div>`:''}
+  ${debtors.length>0?`<div class="alert" style="background:var(--red-50);border-color:var(--red-200);color:#b91c1c;margin-bottom:14px" onclick="go('guests')">
+     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+     <div><div class="t">${debtors.length} должник · ${tg(debtors.reduce((a,g)=>a+g.debt,0))}</div><div class="s">Не оплатили проживание</div></div></div>`:''}
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="kpi" onclick="go('map')"><div class="ic" style="background:var(--primary-50)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></div><div class="lbl">Занято мест</div><div class="val">${occ}/${total}</div><div class="sub">${rate}% загрузка</div></div>
+    <div class="kpi" onclick="go('map')"><div class="ic" style="background:var(--emerald-50)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg></div><div class="lbl">Свободно</div><div class="val">${free}</div><div class="sub">${units.filter(u=>u.status==='out_of_order').length} закрытых</div></div>
+    <div class="kpi" onclick="go('stays')"><div class="ic" style="background:#eff6ff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div><div class="lbl">Заезды сегодня</div><div class="val">3</div></div>
+    <div class="kpi" onclick="go('stays')"><div class="ic" style="background:var(--red-50)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div><div class="lbl">Выезды сегодня</div><div class="val">2</div></div>
+  </div>
+  <div class="kpi" style="margin-bottom:10px" onclick="toast('Финансы — в полной версии')"><div class="ic" style="background:var(--emerald-50)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div><div class="lbl">Доход за месяц</div><div class="val">${tg(income)}</div></div>
+  <div class="kpi" onclick="toast('Финансы — в полной версии')"><div class="ic" style="background:var(--red-50)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div><div class="lbl">Расходы за месяц</div><div class="val">${tg(expenses)}</div></div>
+  `;
+}
+
+//// ───────── КАРТА ─────────
+let mapFilter='all';
+function mapView(){
+  const units=allUnits();
+  const total=units.length;
+  let occ=0,booked=0,closed=0,free=0;
+  units.forEach(u=>{const d=unitDisplayStatus(u);if(d==='occupied')occ++;else if(d==='reserved')booked++;else if(d==='out_of_order')closed++;else free++});
+  const rate=Math.round(occ/total*100);
+  const seg=n=>total?n/total*100:0;
+  const FILTERS=[['all','Все',total],['available','Свободно',free],['occupied','Занято',occ],['booking','Бронь',booked],['closed','Закрыто',closed]];
+  const match=u=>{const d=unitDisplayStatus(u);if(mapFilter==='all')return true;if(mapFilter==='available')return d==='available';if(mapFilter==='occupied')return d==='occupied';if(mapFilter==='booking')return d==='reserved';if(mapFilter==='closed')return d==='out_of_order';return true};
+  let html=`<h2 class="page">Карта размещения</h2><div class="muted" style="margin-bottom:12px">${occ} из ${total} занято</div>
+  <div class="pills">${FILTERS.map(([k,l,c])=>`<button class="pill ${mapFilter===k?'active':''}" onclick="setMapFilter('${k}')">${l} (${c})</button>`).join('')}</div>
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px"><div><span style="font-size:30px;font-weight:800">${rate}%</span><span class="muted"> заполнено</span></div></div>
+    <div style="display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--gray-100);margin-bottom:8px">
+      <div style="width:${seg(occ)}%;background:var(--primary)"></div><div style="width:${seg(booked)}%;background:var(--violet)"></div><div style="width:${seg(closed)}%;background:var(--gray-400)"></div><div style="width:${seg(free)}%;background:var(--emerald)"></div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--gray-500)">
+      <span><b style="color:var(--primary)">●</b> Занято ${occ}</span><span><b style="color:var(--violet)">●</b> Бронь ${booked}</span><span><b style="color:var(--gray-400)">●</b> Закрыто ${closed}</span><span><b style="color:var(--emerald)">●</b> Свободно ${free}</span></div>
+  </div>`;
+  rooms.forEach(r=>{
+    const us=r.units.filter(match);
+    if(!us.length)return;
+    const freeN=r.units.filter(u=>unitDisplayStatus(u)==='available').length;
+    html+=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+      <div class="roomhdr"><span>${r.name}</span>${freeN>0?`<span class="free">● ${freeN} свободно</span>`:''}</div>
+      <div class="cellgrid">${us.map(u=>{
+        const d=unitDisplayStatus(u);const bk=unitBooking(u.id);
+        const gname=d==='occupied'?gById(stays.find(s=>s.unitId===u.id&&s.status==='active')?.guestId)?.name : (d==='reserved'&&bk?gById(bk.guestId)?.name:null);
+        const short=u.name.replace('Место ','№');
+        return `<div class="cell st-${d}" onclick="cellTap('${u.id}')"><span class="dot dot-${d}"></span><span class="nm">${short}</span>${gname?`<span class="gn">${gname.split(' ')[0]}</span>`:''}</div>`;
+      }).join('')}</div></div>`;
+  });
+  return html;
+}
+function setMapFilter(k){mapFilter=k;render()}
+function cellTap(uid){
+  const u=allUnits().find(x=>x.id===uid);
+  const d=unitDisplayStatus(u);
+  if(d==='occupied'){
+    const s=stays.find(s=>s.unitId===uid&&s.status==='active');const g=gById(s.guestId);
+    openSheet(`<h3>${u.room} — ${u.name}</h3>
+      <div class="card" style="background:var(--primary-50);display:flex;gap:10px;align-items:center"><span>${av(g.name,40)}</span><div><div style="font-weight:700">${g.name}</div><div class="muted">${g.phone}</div><div class="muted" style="margin-top:2px">📅 ${s.ci} → ${s.co}</div></div></div>
+      <div class="row" style="margin-top:14px"><button class="btn btn-red" onclick="checkout('${s.id}')">Выселить</button><button class="btn btn-gray" onclick="closeSheet()">Закрыть</button></div>`);
+  } else if(d==='reserved'){
+    const bk=unitBooking(uid);const g=gById(bk.guestId);
+    openSheet(`<h3>${u.room} — ${u.name}</h3>
+      <div class="card" style="background:var(--violet-50);border:1px solid var(--violet-200)">
+        <div style="font-weight:700;color:#6d28d9;margin-bottom:6px">🕐 Бронь · ${bk.status==='confirmed'?'Подтверждена (есть предоплата)':'Резерв (без предоплаты)'}</div>
+        <div style="font-weight:700">${g.name}</div><div class="muted" style="margin-top:3px">📅 ${bk.ci} → ${bk.co}</div></div>
+      <button class="btn btn-gray" style="margin-top:14px" onclick="closeSheet()">Закрыть</button>`);
+  } else if(d==='out_of_order'){
+    openSheet(`<h3>${u.room} — ${u.name}</h3><div class="muted">Место закрыто (не сдаётся).</div>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="reopen('${uid}')">Открыть место</button>`);
+  } else {
+    openSheet(`<h3>${u.room} — ${u.name}</h3><div class="muted">Свободно</div>
+      <div class="grid2" style="margin-top:14px"><button class="btn btn-primary" onclick="checkinForm('${uid}','checkin')">Заселить</button><button class="btn btn-violet" onclick="checkinForm('${uid}','booking')">Забронировать</button></div>
+      <button class="btn btn-gray" style="margin-top:8px" onclick="closeMap('${uid}')">Закрыть место</button>`);
+  }
+}
+function reopen(uid){allUnits().find(u=>u.id===uid).status='available';closeSheet();render();toast('Место открыто')}
+function closeMap(uid){allUnits().find(u=>u.id===uid).status='out_of_order';closeSheet();render();toast('Место закрыто')}
+
+//// ───────── ФОРМА ЗАСЕЛИТЬ / ЗАБРОНИРОВАТЬ ─────────
+function checkinForm(unitId,mode){
+  const u=allUnits().find(x=>x.id===unitId);
+  const opts=guests.map(g=>`<option value="${g.id}">${g.name} · ${g.phone}</option>`).join('');
+  openSheet(`<h3>${mode==='booking'?'Забронировать':'Заселить'}</h3>
+    <div class="muted" style="margin-top:-6px">${u.room} — ${u.name}</div>
+    <label class="fl">Гость</label><select class="inp" id="f_guest">${opts}</select>
+    <div class="grid2"><div><label class="fl">Заезд</label><input class="inp" type="date" id="f_ci" value="${T(0)}"></div><div><label class="fl">Выезд</label><input class="inp" type="date" id="f_co" value="${T(30)}"></div></div>
+    <label class="fl">Ставка (₸)</label><input class="inp" type="number" id="f_rate" value="${u.rate}">
+    ${mode==='booking'?`<label class="fl">Предоплата (₸)</label><input class="inp" type="number" id="f_prepay" placeholder="0 — можно без предоплаты"><div class="muted" style="font-size:11px;margin-top:4px">Внесёте от 50% — бронь станет подтверждённой.</div>`:''}
+    <button class="btn ${mode==='booking'?'btn-violet':'btn-primary'}" style="margin-top:16px" onclick="doCheckin('${unitId}','${mode}')">${mode==='booking'?'Забронировать':'Заселить'}</button>`);
+}
+function doCheckin(unitId,mode){
+  const u=allUnits().find(x=>x.id===unitId);
+  const gid=document.getElementById('f_guest').value;
+  const ci=document.getElementById('f_ci').value,co=document.getElementById('f_co').value;
+  const rate=Number(document.getElementById('f_rate').value)||u.rate;
+  if(mode==='booking'){
+    const prepay=Number((document.getElementById('f_prepay')||{}).value||0);
+    const total=rate*Math.max(1,daysBetween(ci,co));
+    const status=prepay>=total*0.5?'confirmed':'reserved';
+    stays.push({id:uid(),unitId,guestId:gid,ci,co,rate,status,paid:prepay,total});
+    closeSheet();render();toast(status==='confirmed'?'Бронь подтверждена':'Бронь создана');
+  } else {
+    place(unitId,gid,'active',ci,co,rate,rate);
+    closeSheet();render();toast('Гость заселён');
+  }
+}
+function checkout(sid){const s=stays.find(x=>x.id===sid);const u=allUnits().find(x=>x.id===s.unitId);u.status='available';u.guest=null;s.status='checked_out';closeSheet();render();toast('Гость выселен')}
+
+//// ───────── ЗАЕЗДЫ / БРОНЬ ─────────
+let stTab='stays';
+function staysView(){
+  const active=stays.filter(s=>s.status==='active'||s.status==='confirmed');
+  const booking=stays.filter(s=>s.status==='reserved');
+  const list=stTab==='stays'?active:booking;
+  let html=`<h2 class="page">Заезды</h2>
+  <div class="seg" style="margin-top:10px"><button class="${stTab==='stays'?'active':''}" onclick="setStTab('stays')">Заезды (${active.length})</button><button class="${stTab==='bookings'?'active':''}" onclick="setStTab('bookings')">Бронь (${booking.length})</button></div>`;
+  if(!list.length){html+=`<div class="muted" style="text-align:center;padding:40px">${stTab==='bookings'?'Нет броней':'Нет активных заездов'}</div>`;return html}
+  list.sort((a,b)=>b.ci.localeCompare(a.ci));
+  list.forEach(s=>{
+    const g=gById(s.guestId);const u=allUnits().find(x=>x.id===s.unitId);
+    const isBk=s.status==='reserved',isConf=s.status==='confirmed';
+    const debt=s.total-s.paid;
+    html+=`<div class="staycard" style="margin-bottom:10px"><div style="padding:14px 14px 10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center;min-width:0">${av(g.name)}<div style="min-width:0"><div style="font-weight:700">${g.name}</div><div class="muted">${u.name}</div></div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${s.status!=='active'?`<span class="badge ${isConf?'b-blue':'b-violet'}">${isConf?'Подтв.':'Бронь'}</span>`:''}
+          ${g.foreign?`<span class="badge ${g.mpis==='confirmed'?'b-emerald':'b-orange'}">МПИС: ${g.mpis==='confirmed'?'ОК':'ждёт'}</span>`:''}
+        </div></div>
+      <div class="info3"><div><div class="k">Заезд</div><div class="v">${s.ci}</div></div><div><div class="k">Выезд</div><div class="v">${s.co}</div></div><div><div class="k">Ставка</div><div class="v">${tg(s.rate)}</div></div></div>
+      <div class="paybar" style="background:${debt>0?'var(--red-50)':'var(--emerald-50)'}"><span style="font-weight:700;color:${debt>0?'#b91c1c':'#047857'}">${debt>0?'Долг: '+tg(debt):'Оплачено'}</span><span class="muted">${tg(s.paid)} / ${tg(s.total)}</span></div>
+      </div>
+      <div class="acts">
+        <button style="color:var(--primary)" onclick="payForm('${s.id}')">💳 Оплата</button><div class="sep"></div>
+        ${isBk?`<button style="color:#2563eb" onclick="transferForm('${s.id}')">📅 Перенести</button>`:isConf?`<button style="color:#047857" onclick="doCheckinFromBooking('${s.id}')">＋ Заселить</button>`:`<button style="color:#2563eb" onclick="toast('Продление — выберите новую дату')">📅 Продлить</button>`}
+        <div class="sep"></div>
+        ${(isBk||isConf)?`<button style="color:var(--red)" onclick="delBooking('${s.id}')">✕ Удалить</button>`:`<button style="color:var(--red)" onclick="checkout('${s.id}')">⎋ Выселить</button>`}
+      </div></div>`;
+  });
+  return html;
+}
+function setStTab(t){stTab=t;render()}
+function payForm(sid){
+  const s=stays.find(x=>x.id===sid);const debt=s.total-s.paid;
+  openSheet(`<h3>Принять оплату</h3><label class="fl">Сумма (₸)</label><input class="inp" type="number" id="p_amt" value="${debt>0?debt:''}" placeholder="Сумма">
+    <div class="muted" style="font-size:12px;margin-top:6px">${s.status==='reserved'?'Если внесёте от 50% — бронь перейдёт в Заезды.':''}</div>
+    <button class="btn btn-primary" style="margin-top:16px;background:var(--emerald)" onclick="doPay('${sid}')">Принять</button>`);
+}
+function doPay(sid){
+  const s=stays.find(x=>x.id===sid);const amt=Number(document.getElementById('p_amt').value)||0;
+  s.paid+=amt;
+  let msg='Оплата принята';
+  if(s.status==='reserved'&&s.paid>=s.total*0.5){s.status='confirmed';msg='Оплата принята — бронь в Заездах';if(stTab==='bookings')stTab='stays';}
+  closeSheet();render();toast(msg);
+}
+function transferForm(sid){
+  const s=stays.find(x=>x.id===sid);const g=gById(s.guestId);
+  openSheet(`<h3>Перенести бронь</h3><div class="muted" style="margin-top:-6px">${g.name}</div>
+    <div class="grid2" style="margin-top:8px"><div><label class="fl">Заезд</label><input class="inp" type="date" id="t_ci" value="${s.ci}"></div><div><label class="fl">Выезд</label><input class="inp" type="date" id="t_co" value="${s.co}"></div></div>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="doTransfer('${sid}')">Перенести</button>`);
+}
+function doTransfer(sid){const s=stays.find(x=>x.id===sid);s.ci=document.getElementById('t_ci').value;s.co=document.getElementById('t_co').value;closeSheet();render();toast('Бронь перенесена')}
+function delBooking(sid){const s=stays.find(x=>x.id===sid);s.status='cancelled';closeSheet?.();render();toast('Бронь удалена')}
+function doCheckinFromBooking(sid){const s=stays.find(x=>x.id===sid);const u=allUnits().find(x=>x.id===s.unitId);s.status='active';u.status='occupied';u.guest=s.guestId;u.ci=s.ci;u.co=s.co;render();toast('Гость заселён')}
+
+//// ───────── ГОСТИ + МПИС ─────────
+function guestsView(){
+  let html=`<h2 class="page">Гости</h2><div class="muted" style="margin-bottom:12px">${guests.length} гостей · ${guests.filter(g=>g.foreign).length} иностранных</div>`;
+  guests.forEach(g=>{
+    html+=`<div class="card" style="display:flex;gap:12px;align-items:center;margin-bottom:8px;cursor:pointer" onclick="guestSheet('${g.id}')">
+      ${av(g.name,44)}<div style="flex:1;min-width:0"><div style="display:flex;gap:6px;align-items:center"><span style="font-weight:700">${g.name}</span>
+      ${g.foreign?`<span class="badge b-blue">${g.nat}</span>`:''}${g.debt>0?`<span class="badge b-red">Долг</span>`:''}</div>
+      <div class="muted" style="margin-top:2px">${g.phone}</div></div>
+      ${g.foreign?`<span class="badge ${g.mpis==='confirmed'?'b-emerald':'b-orange'}">МПИС: ${g.mpis==='confirmed'?'ОК':'ждёт'}</span>`:''}</div>`;
+  });
+  return html;
+}
+function guestSheet(gid){
+  const g=gById(gid);
+  let mpis='';
+  if(g.foreign){
+    mpis=`<div class="mpisbox"><div style="font-weight:700;color:#1d4ed8;margin-bottom:8px">🌍 Данные для МПИС / eQonaq</div>
+      <div class="info3" style="grid-template-columns:1fr 1fr;background:#fff"><div><div class="k">Гражданство</div><div class="v">${g.nat}</div></div><div><div class="k">Паспорт</div><div class="v">${g.passport}</div></div>
+      <div><div class="k">Пол</div><div class="v">${g.sex==='M'?'Мужской':'Женский'}</div></div><div><div class="k">Дата рождения</div><div class="v">${g.dob}</div></div></div>
+      <div class="grid2" style="margin-top:10px"><button class="btn btn-gray" style="font-size:13px;padding:10px" onclick="copyMpis('${gid}')">📋 Копировать</button><a class="btn btn-primary" style="font-size:13px;padding:10px;text-align:center;text-decoration:none;display:block" href="https://eqonaq.kz" target="_blank">↗ Открыть eQonaq</a></div>
+      <div style="margin-top:10px"><div class="muted" style="font-size:11px;margin-bottom:5px">Статус МПИС</div>
+      <div class="seg small" style="margin:0"><button class="${g.mpis==='pending'?'active':''}" onclick="setMpis('${gid}','pending')">Ожидает</button><button class="${g.mpis==='submitted'?'active':''}" onclick="setMpis('${gid}','submitted')">Отправлено</button><button class="${g.mpis==='confirmed'?'active':''}" onclick="setMpis('${gid}','confirmed')">Подтверждено</button></div></div></div>`;
+  }
+  openSheet(`<h3>${g.name}</h3>
+    <div class="card" style="display:flex;gap:10px;align-items:center"><span>${av(g.name,44)}</span><div><div class="muted">${g.phone}</div>${g.debt>0?`<div style="color:#b91c1c;font-weight:700;margin-top:2px">Долг: ${tg(g.debt)}</div>`:''}</div></div>
+    ${mpis}
+    <button class="btn btn-gray" style="margin-top:14px" onclick="closeSheet()">Закрыть</button>`);
+}
+function setMpis(gid,st){gById(gid).mpis=st;render();guestSheet(gid);toast('Статус МПИС обновлён')}
+function copyMpis(gid){const g=gById(gid);const txt=`ФИО: ${g.name}\nГражданство: ${g.nat}\nПаспорт: ${g.passport}\nПол: ${g.sex==='M'?'Мужской':'Женский'}\nДата рождения: ${g.dob}\nТелефон: ${g.phone}`;navigator.clipboard&&navigator.clipboard.writeText(txt);toast('Скопировано для eQonaq')}
+
+//// старт
+render();
+</script>
+</body>
+</html>
