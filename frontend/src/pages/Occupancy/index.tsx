@@ -341,7 +341,7 @@ function OccupiedPanel({ unit, onClose, onChangeStatus, onCheckout }: {
 
 // ── Status Picker ──
 function StatusPicker({ unit, onSelect, onClose }: { unit: Unit; onSelect: (s: UnitStatus) => void; onClose: () => void }) {
-  const clickable: UnitStatus[] = ['available', 'dirty', 'maintenance', 'out_of_order']
+  const clickable: UnitStatus[] = ['available', 'reserved', 'dirty', 'maintenance']
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30 animate-fade-in" />
@@ -469,6 +469,16 @@ export default function OccupancyPage() {
   const total = units.length
   const pct = total > 0 ? Math.round((occupied / total) * 100) : 0
 
+  // Сегменты линейного бара: занято / бронь / обслуживание / свободно
+  let occBar = 0, bookedBar = 0, servBar = 0, freeBar = 0
+  units.forEach(u => {
+    if (u.status === 'occupied') occBar++
+    else if (u.status === 'reserved' || (u.status === 'available' && u.has_booking)) bookedBar++
+    else if (u.status === 'maintenance' || u.status === 'dirty' || u.status === 'out_of_order') servBar++
+    else freeBar++
+  })
+  const seg = (n: number) => (total > 0 ? (n / total) * 100 : 0)
+
   const counts: Record<string, number> = {
     all: total,
     available: units.filter(u => u.status === 'available').length,
@@ -560,10 +570,18 @@ export default function OccupancyPage() {
         <div className="flex items-end justify-between mb-2">
           <div><span className="text-3xl font-extrabold text-gray-900">{pct}%</span><span className="text-sm text-gray-400 ml-1.5">заполнено</span></div>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden mb-2.5">
-          <div className="h-full bg-primary-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+        <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden mb-2.5 flex">
+          {occBar > 0 && <div className="h-full bg-primary-500 transition-all duration-500" style={{ width: `${seg(occBar)}%` }} title={`Занято: ${occBar}`} />}
+          {bookedBar > 0 && <div className="h-full bg-violet-400 transition-all duration-500" style={{ width: `${seg(bookedBar)}%` }} title={`Бронь: ${bookedBar}`} />}
+          {servBar > 0 && <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${seg(servBar)}%` }} title={`Обслуживание: ${servBar}`} />}
+          {freeBar > 0 && <div className="h-full bg-emerald-400 transition-all duration-500" style={{ width: `${seg(freeBar)}%` }} title={`Свободно: ${freeBar}`} />}
         </div>
-        <Legend units={units} />
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {occBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary-500 shrink-0" /><span className="text-xs text-gray-500">Занято</span><span className="text-xs font-bold text-primary-700">{occBar}</span></div>}
+          {bookedBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400 shrink-0" /><span className="text-xs text-gray-500">Бронь</span><span className="text-xs font-bold text-violet-700">{bookedBar}</span></div>}
+          {servBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" /><span className="text-xs text-gray-500">Обслуж.</span><span className="text-xs font-bold text-amber-700">{servBar}</span></div>}
+          {freeBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" /><span className="text-xs text-gray-500">Свободно</span><span className="text-xs font-bold text-emerald-700">{freeBar}</span></div>}
+        </div>
       </div>
 
       {filteredRooms.map(room => {
