@@ -147,7 +147,7 @@ function ExtendForm({ stay, onClose }: { stay: Stay; onClose: () => void }) {
 }
 
 // ── Payment Form ──
-function PaymentForm({ stayId, onClose }: { stayId: number; onClose: () => void }) {
+function PaymentForm({ stayId, onClose, confirmAfter = false }: { stayId: number; onClose: () => void; confirmAfter?: boolean }) {
   const qc = useQueryClient()
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('cash')
@@ -158,7 +158,11 @@ function PaymentForm({ stayId, onClose }: { stayId: number; onClose: () => void 
   ]
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: PaymentCreate) => paymentsApi.create(data),
+    mutationFn: async (data: PaymentCreate) => {
+      await paymentsApi.create(data)
+      // Для брони: если предоплата достигла порога — confirm переведёт её в Заезды
+      if (confirmAfter) { try { await staysApi.confirm(stayId) } catch { /* недобор — остаётся бронью */ } }
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); onClose() },
   })
 
@@ -192,4 +196,39 @@ function PaymentForm({ stayId, onClose }: { stayId: number; onClose: () => void 
   )
 }
 
-export { MpisBadge, MpisPanel, ExtendForm, PaymentForm }
+// ── Transfer Form (перенос дат брони) ──
+function TransferForm({ stay, onClose }: { stay: Stay; onClose: () => void }) {
+  const qc = useQueryClient()
+  const [ci, setCi] = useState(stay.check_in_date)
+  const [co, setCo] = useState(stay.expected_check_out_date)
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: () => staysApi.updateDates(stay.id, ci, co),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); onClose() },
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up">
+        <div className="flex justify-center mb-3"><div className="w-9 h-1 rounded-full bg-gray-300" /></div>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-bold text-lg">Перенести бронь</h3>
+          <button onClick={onClose} className="p-1"><X size={20} className="text-gray-400" /></button>
+        </div>
+        <p className="text-sm text-gray-400 mb-4">{stay.guest_detail?.full_name} · {stay.unit_detail?.name}</p>
+        {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-3 py-2 mb-3">{(error as any)?.response?.data?.non_field_errors?.[0] ?? 'Эти даты заняты или некорректны'}</div>}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд</label><input type="date" className="input-field" value={ci} onChange={e => setCi(e.target.value)} /></div>
+          <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Выезд</label><input type="date" className="input-field" value={co} onChange={e => setCo(e.target.value)} /></div>
+        </div>
+        <button onClick={() => mutate()} disabled={!ci || !co || isPending}
+          className="w-full bg-primary-500 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 tap-card">
+          {isPending ? 'Сохраняем...' : 'Перенести'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export { MpisBadge, MpisPanel, ExtendForm, PaymentForm, TransferForm }

@@ -94,6 +94,15 @@ export const staysApi = {
   confirm: (id: number) =>
     api.post<Stay>(`/stays/${id}/confirm/`).then(r => r.data),
 
+  cancel: (id: number) =>
+    api.post<Stay>(`/stays/${id}/cancel/`).then(r => r.data),
+
+  checkIn: (id: number) =>
+    api.post<Stay>(`/stays/${id}/check-in/`).then(r => r.data),
+
+  updateDates: (id: number, check_in_date: string, expected_check_out_date: string) =>
+    api.patch<Stay>(`/stays/${id}/`, { check_in_date, expected_check_out_date }).then(r => r.data),
+
   checkout: (id: number, date?: string) =>
     api.post(`/stays/${id}/checkout/`, date ? { actual_check_out_date: date } : {}).then(r => r.data),
 

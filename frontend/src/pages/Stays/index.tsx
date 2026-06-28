@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader, SegmentControl } from '../../components/ui'
-import { MpisBadge, MpisPanel, ExtendForm, PaymentForm } from './_helpers'
+import { MpisBadge, MpisPanel, ExtendForm, PaymentForm, TransferForm } from './_helpers'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import type { StayCreate, Stay, RateType, GuestCreate } from '../../types'
 
@@ -46,7 +46,7 @@ function CheckoutBadge({ date }: { date: string }) {
 }
 
 // ── CheckIn Form ──
-function CheckInForm({ onClose }: { onClose: () => void }) {
+function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void; initialMode?: 'checkin' | 'booking' }) {
   const qc = useQueryClient()
   const [form, setForm] = useState(() => {
     const today = format(new Date(), 'yyyy-MM-dd')
@@ -57,7 +57,7 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
       rate_type: 'monthly' as RateType, rate_amount: '', deposit_amount: '', prepay: '',
     }
   })
-  const [mode, setMode] = useState<'checkin' | 'booking'>('checkin')
+  const [mode, setMode] = useState<'checkin' | 'booking'>(initialMode)
   const [guestSearch, setGuestSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
@@ -364,44 +364,60 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
 // ── Main page ──
 export default function StaysPage() {
   const qc = useQueryClient()
-  const [showCheckin, setShowCheckin] = useState(false)
-  const [payStayId, setPayStayId] = useState<number | null>(null)
+  const [tab, setTab] = useState<'stays' | 'bookings'>('stays')
+  const [checkinMode, setCheckinMode] = useState<'checkin' | 'booking' | null>(null)
+  const [payStay, setPayStay] = useState<Stay | null>(null)
   const [extendStay, setExtendStay] = useState<Stay | null>(null)
+  const [transferStay, setTransferStay] = useState<Stay | null>(null)
   const [mpisStay, setMpisStay] = useState<Stay | null>(null)
 
-  const { data: stays = [], isLoading } = useQuery({ queryKey: ['stays'], queryFn: staysApi.active })
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] })
+  }
 
-  const { mutate: checkout } = useMutation({
-    mutationFn: (id: number) => staysApi.checkout(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }) },
-  })
+  const { data: page, isLoading } = useQuery({ queryKey: ['stays'], queryFn: () => staysApi.list() })
+  const allStays = page?.results ?? []
+  // Заезды = активные + подтверждённые (оплаченные брони); Бронь = резервы без предоплаты
+  const stays = allStays.filter(s => s.status === 'active' || s.status === 'confirmed')
+  const bookings = allStays.filter(s => s.status === 'reserved')
+  const list = tab === 'stays' ? stays : bookings
+
+  const { mutate: checkout } = useMutation({ mutationFn: (id: number) => staysApi.checkout(id), onSuccess: invalidate })
+  const { mutate: doCheckIn } = useMutation({ mutationFn: (id: number) => staysApi.checkIn(id), onSuccess: invalidate })
+  const { mutate: doCancel } = useMutation({ mutationFn: (id: number) => staysApi.cancel(id), onSuccess: invalidate })
 
   const fmt = (n: string | number) => Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
 
-  // Сначала новые заезды: сортировка по дате заезда убыванию (при равенстве — по id)
-  const sortedStays = [...stays].sort((a, b) =>
+  const sortedList = [...list].sort((a, b) =>
     b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id
   )
 
   return (
     <div className="px-4 py-4 space-y-3">
-      <PageHeader title="Заезды" subtitle={`${stays.length} активных`} action="Заселить" actionIcon={Plus}
-        onAction={() => setShowCheckin(true)} />
+      <PageHeader title="Заезды"
+        action={tab === 'bookings' ? 'Забронировать' : 'Заселить'} actionIcon={Plus}
+        onAction={() => setCheckinMode(tab === 'bookings' ? 'booking' : 'checkin')} />
+
+      <SegmentControl value={tab} onChange={v => setTab(v as 'stays' | 'bookings')}
+        options={[
+          { value: 'stays', label: `Заезды${stays.length ? ` (${stays.length})` : ''}` },
+          { value: 'bookings', label: `Бронь${bookings.length ? ` (${bookings.length})` : ''}` },
+        ]} />
 
       {isLoading ? (
         <div className="flex items-center justify-center h-40">
           <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : stays.length === 0 ? (
+      ) : sortedList.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
             <CalendarClock size={28} className="text-gray-400" />
           </div>
-          <p className="font-semibold text-gray-500">Нет активных заездов</p>
+          <p className="font-semibold text-gray-500">{tab === 'bookings' ? 'Нет броней' : 'Нет активных заездов'}</p>
         </div>
       ) : (
         <div className="space-y-2.5">
-          {sortedStays.map(stay => {
+          {sortedList.map(stay => {
             const balance = Number(stay.balance)
             const paid = Number(stay.total_paid)
             const expected = Number(stay.total_expected)
@@ -410,6 +426,8 @@ export default function StaysPage() {
             const unitName = stay.unit_detail?.name ?? `Место #${stay.unit}`
             const isForeigner = stay.guest_detail?.is_foreigner ?? false
             const needsMpis = isForeigner && stay.mpis_status !== 'confirmed'
+            const isBooking = stay.status === 'reserved'
+            const isConfirmed = stay.status === 'confirmed'
 
             return (
               <div key={stay.id} className={`bg-white rounded-2xl shadow-card overflow-hidden ${
@@ -425,7 +443,7 @@ export default function StaysPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <StatusBadge type="stay" status={stay.status} size="xs" />
+                      {stay.status !== 'active' && <StatusBadge type="stay" status={stay.status} size="xs" />}
                       {stay.mpis_status !== 'not_required' && <MpisBadge status={stay.mpis_status} />}
                     </div>
                   </div>
@@ -445,24 +463,43 @@ export default function StaysPage() {
                 </div>
 
                 <div className="flex border-t border-gray-100">
-                  <button onClick={() => setPayStayId(stay.id)}
+                  <button onClick={() => setPayStay(stay)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-primary-600 hover:bg-primary-50 transition tap-card">
                     <CreditCard size={15} /> Оплата
                   </button>
                   <div className="w-px bg-gray-100" />
-                  <button onClick={() => setExtendStay(stay)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition tap-card">
-                    <CalendarClock size={15} /> Продлить
-                  </button>
+                  {isBooking ? (
+                    <button onClick={() => setTransferStay(stay)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition tap-card">
+                      <CalendarClock size={15} /> Перенести
+                    </button>
+                  ) : isConfirmed ? (
+                    <button onClick={() => doCheckIn(stay.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition tap-card">
+                      <Plus size={15} /> Заселить
+                    </button>
+                  ) : (
+                    <button onClick={() => setExtendStay(stay)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition tap-card">
+                      <CalendarClock size={15} /> Продлить
+                    </button>
+                  )}
                   {isForeigner && (<><div className="w-px bg-gray-100" /><button onClick={() => setMpisStay(stay)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition tap-card ${needsMpis ? 'text-orange-600 hover:bg-orange-50' : 'text-emerald-600 hover:bg-emerald-50'}`}>
                     <Globe size={15} /> {needsMpis ? 'MPIS!' : 'MPIS'}
                   </button></>)}
                   <div className="w-px bg-gray-100" />
-                  <button onClick={() => { if (confirm(`Выселить ${guestName}?`)) checkout(stay.id) }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition tap-card">
-                    <LogOut size={15} /> Выселить
-                  </button>
+                  {(isBooking || isConfirmed) ? (
+                    <button onClick={() => { if (confirm(`Удалить бронь ${guestName}?`)) doCancel(stay.id) }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition tap-card">
+                      <X size={15} /> Удалить
+                    </button>
+                  ) : (
+                    <button onClick={() => { if (confirm(`Выселить ${guestName}?`)) checkout(stay.id) }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition tap-card">
+                      <LogOut size={15} /> Выселить
+                    </button>
+                  )}
                 </div>
               </div>
             )
@@ -470,9 +507,10 @@ export default function StaysPage() {
         </div>
       )}
 
-      {showCheckin && <CheckInForm onClose={() => setShowCheckin(false)} />}
-      {payStayId !== null && <PaymentForm stayId={payStayId} onClose={() => setPayStayId(null)} />}
+      {checkinMode && <CheckInForm initialMode={checkinMode} onClose={() => setCheckinMode(null)} />}
+      {payStay !== null && <PaymentForm stayId={payStay.id} confirmAfter={payStay.status === 'reserved'} onClose={() => setPayStay(null)} />}
       {extendStay !== null && <ExtendForm stay={extendStay} onClose={() => setExtendStay(null)} />}
+      {transferStay !== null && <TransferForm stay={transferStay} onClose={() => setTransferStay(null)} />}
       {mpisStay !== null && <MpisPanel stay={mpisStay} onClose={() => setMpisStay(null)} />}
     </div>
   )
