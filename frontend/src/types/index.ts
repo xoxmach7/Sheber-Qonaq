@@ -94,6 +94,9 @@ export interface Unit {
   has_booking?: boolean
   next_check_in?: string
   next_check_out?: string
+  next_booking_guest?: string
+  next_booking_status?: 'reserved' | 'confirmed'
+  next_stay_id?: number
 }
 
 // ─── Guest ───────────────────────────────────────────────────────────────────

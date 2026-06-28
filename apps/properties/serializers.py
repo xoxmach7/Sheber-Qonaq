@@ -11,9 +11,12 @@ class UnitSerializer(serializers.ModelSerializer):
     current_guest_phone = serializers.SerializerMethodField()
     check_in          = serializers.SerializerMethodField()
     check_out         = serializers.SerializerMethodField()
-    has_booking       = serializers.SerializerMethodField()
-    next_check_in     = serializers.SerializerMethodField()
-    next_check_out    = serializers.SerializerMethodField()
+    has_booking         = serializers.SerializerMethodField()
+    next_check_in       = serializers.SerializerMethodField()
+    next_check_out      = serializers.SerializerMethodField()
+    next_booking_guest  = serializers.SerializerMethodField()
+    next_booking_status = serializers.SerializerMethodField()
+    next_stay_id        = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit
@@ -23,6 +26,7 @@ class UnitSerializer(serializers.ModelSerializer):
             'room', 'room_name', 'current_guest', 'current_stay_id',
             'current_guest_phone', 'check_in', 'check_out',
             'has_booking', 'next_check_in', 'next_check_out',
+            'next_booking_guest', 'next_booking_status', 'next_stay_id',
         ]
         read_only_fields = ['id']
 
@@ -61,6 +65,7 @@ class UnitSerializer(serializers.ModelSerializer):
                     shift_type__isnull=True,
                     expected_check_out_date__gte=date.today(),
                 )
+                .select_related('guest')
                 .order_by('check_in_date')
                 .first()
             )
@@ -76,6 +81,18 @@ class UnitSerializer(serializers.ModelSerializer):
     def get_next_check_out(self, obj):
         b = self._next_booking(obj)
         return str(b.expected_check_out_date) if b else None
+
+    def get_next_booking_guest(self, obj):
+        b = self._next_booking(obj)
+        return b.guest.full_name if b else None
+
+    def get_next_booking_status(self, obj):
+        b = self._next_booking(obj)
+        return b.status if b else None
+
+    def get_next_stay_id(self, obj):
+        b = self._next_booking(obj)
+        return b.id if b else None
 
 
 class UnitStatusSerializer(serializers.Serializer):
