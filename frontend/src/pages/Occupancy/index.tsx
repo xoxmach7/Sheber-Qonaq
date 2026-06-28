@@ -22,8 +22,13 @@ const STATUS: Record<UnitStatus, { label: string; dot: string; bg: string; text:
   out_of_order: { label: 'Закрыто',   dot: 'bg-gray-400',    bg: 'bg-gray-100',    text: 'text-gray-500',    border: 'border-gray-200',    icon: <Ban size={12} className="text-gray-400" /> },
 }
 
+// На карте только 4 статуса: Свободно / Занято / Бронь / Закрыто.
+// Уборку и ремонт показываем как «Закрыто».
+const CLOSED: UnitStatus[] = ['dirty', 'maintenance', 'out_of_order']
+const dispStatus = (s: UnitStatus): UnitStatus => (CLOSED.includes(s) ? 'out_of_order' : s)
+
 // ── Check-In Sheet (pre-selected unit) ──
-function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
+function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; onClose: () => void; initialMode?: 'checkin' | 'booking' }) {
   const qc = useQueryClient()
   const [form, setForm] = useState({
     guest: '', guestName: '', guestPhone: '',
@@ -37,7 +42,7 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
   const [newGuest, setNewGuest] = useState<GuestCreate>({ first_name: '', last_name: '', phone: '', nationality: '', is_foreigner: false })
-  const [mode, setMode] = useState<'checkin' | 'booking'>('checkin')
+  const [mode, setMode] = useState<'checkin' | 'booking'>(initialMode)
 
   const { data: guestResults } = useQuery({
     queryKey: ['guests-search', guestSearch],
@@ -259,8 +264,8 @@ function CheckInSheet({ unit, onClose }: { unit: Unit; onClose: () => void }) {
 }
 
 // ── Free unit panel ──
-function FreePanel({ unit, onCheckIn, onChangeStatus, onClose }: {
-  unit: Unit; onCheckIn: () => void; onChangeStatus: () => void; onClose: () => void
+function FreePanel({ unit, onCheckIn, onBook, onChangeStatus, onClose }: {
+  unit: Unit; onCheckIn: () => void; onBook: () => void; onChangeStatus: () => void; onClose: () => void
 }) {
   const fmtD = (d?: string) => {
     if (!d) return '—'
@@ -282,16 +287,20 @@ function FreePanel({ unit, onCheckIn, onChangeStatus, onClose }: {
             </p>
           </div>
         )}
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button onClick={onCheckIn}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-primary-500 text-white rounded-2xl text-sm font-bold">
+            className="flex items-center justify-center gap-2 py-3.5 bg-primary-500 text-white rounded-2xl text-sm font-bold">
             <Plus size={18} /> Заселить
           </button>
-          <button onClick={onChangeStatus}
-            className="px-5 py-3.5 bg-gray-100 text-gray-600 rounded-2xl text-sm font-semibold">
-            Статус
+          <button onClick={onBook}
+            className="flex items-center justify-center gap-2 py-3.5 bg-violet-500 text-white rounded-2xl text-sm font-bold">
+            <Clock size={16} /> Забронировать
           </button>
         </div>
+        <button onClick={onChangeStatus}
+          className="w-full mt-2 py-3 bg-gray-100 text-gray-600 rounded-2xl text-sm font-semibold">
+          Статус места
+        </button>
       </div>
     </div>
   )
@@ -360,7 +369,7 @@ function OccupiedPanel({ unit, onClose, onChangeStatus, onCheckout }: {
 
 // ── Status Picker ──
 function StatusPicker({ unit, onSelect, onClose }: { unit: Unit; onSelect: (s: UnitStatus) => void; onClose: () => void }) {
-  const clickable: UnitStatus[] = ['available', 'reserved', 'dirty', 'maintenance']
+  const clickable: UnitStatus[] = ['available', 'out_of_order']
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30 animate-fade-in" />
@@ -428,7 +437,7 @@ function BookingPanel({ unit, onChangeStatus, onClose }: { unit: Unit; onChangeS
 // ── Bed cell ──
 function BedCell({ unit, position, onClick }: { unit: Unit; position: 'lower' | 'upper'; onClick: () => void }) {
   const booked = !!unit.has_booking && unit.status !== 'occupied'
-  const cfg = STATUS[booked ? 'reserved' : unit.status]
+  const cfg = STATUS[booked ? 'reserved' : dispStatus(unit.status)]
   const posLabel = position === 'lower' ? '↓ Нижн.' : '↑ Верхн.'
   const posColor = position === 'lower' ? 'text-gray-400' : 'text-primary-400'
   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
@@ -481,7 +490,7 @@ function Legend({ units }: { units: Unit[] }) {
 }
 
 // ── Page ──
-type PanelState = { type: 'free' | 'occupied' | 'status' | 'checkin' | 'booking'; unit: Unit } | null
+type PanelState = { type: 'free' | 'occupied' | 'status' | 'checkin' | 'book' | 'booking'; unit: Unit } | null
 
 export default function OccupancyPage() {
   const qc = useQueryClient()
@@ -534,15 +543,25 @@ export default function OccupancyPage() {
   })
   const seg = (n: number) => (total > 0 ? (n / total) * 100 : 0)
 
+  const isBooked = (u: Unit) => !!u.has_booking && u.status !== 'occupied'
   const counts: Record<string, number> = {
     all: total,
-    available: units.filter(u => u.status === 'available').length,
+    available: units.filter(u => u.status === 'available' && !u.has_booking).length,
     occupied: units.filter(u => u.status === 'occupied').length,
-    maintenance: units.filter(u => u.status === 'maintenance' || u.status === 'dirty').length,
+    booking: units.filter(isBooked).length,
+    closed: units.filter(u => CLOSED.includes(u.status)).length,
   }
 
+  const matchFilter = (u: Unit): boolean => {
+    if (filter === 'all') return true
+    if (filter === 'available') return u.status === 'available' && !u.has_booking
+    if (filter === 'occupied') return u.status === 'occupied'
+    if (filter === 'booking') return isBooked(u)
+    if (filter === 'closed') return CLOSED.includes(u.status)
+    return u.status === filter
+  }
   const filteredRooms = filter === 'all' ? rooms : rooms.map(r => ({
-    ...r, units: r.units.filter(u => filter === 'maintenance' ? (u.status === 'maintenance' || u.status === 'dirty') : u.status === filter),
+    ...r, units: r.units.filter(matchFilter),
   })).filter(r => r.units.length > 0)
 
   // Режим периода: на карте показываем только юниты, свободные на выбранные даты (по availability)
@@ -611,7 +630,8 @@ export default function OccupancyPage() {
         { value: 'all', label: 'Все', count: counts.all },
         { value: 'available', label: 'Свободно', count: counts.available },
         { value: 'occupied', label: 'Занято', count: counts.occupied },
-        { value: 'maintenance', label: 'Обслуж.', count: counts.maintenance },
+        { value: 'booking', label: 'Бронь', count: counts.booking },
+        { value: 'closed', label: 'Закрыто', count: counts.closed },
       ]} />
 
       <div className="bg-white rounded-2xl shadow-card px-4 py-3">
@@ -621,13 +641,13 @@ export default function OccupancyPage() {
         <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden mb-2.5 flex">
           {occBar > 0 && <div className="h-full bg-primary-500 transition-all duration-500" style={{ width: `${seg(occBar)}%` }} title={`Занято: ${occBar}`} />}
           {bookedBar > 0 && <div className="h-full bg-violet-400 transition-all duration-500" style={{ width: `${seg(bookedBar)}%` }} title={`Бронь: ${bookedBar}`} />}
-          {servBar > 0 && <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${seg(servBar)}%` }} title={`Обслуживание: ${servBar}`} />}
+          {servBar > 0 && <div className="h-full bg-gray-400 transition-all duration-500" style={{ width: `${seg(servBar)}%` }} title={`Закрыто: ${servBar}`} />}
           {freeBar > 0 && <div className="h-full bg-emerald-400 transition-all duration-500" style={{ width: `${seg(freeBar)}%` }} title={`Свободно: ${freeBar}`} />}
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {occBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary-500 shrink-0" /><span className="text-xs text-gray-500">Занято</span><span className="text-xs font-bold text-primary-700">{occBar}</span></div>}
           {bookedBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400 shrink-0" /><span className="text-xs text-gray-500">Бронь</span><span className="text-xs font-bold text-violet-700">{bookedBar}</span></div>}
-          {servBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" /><span className="text-xs text-gray-500">Обслуж.</span><span className="text-xs font-bold text-amber-700">{servBar}</span></div>}
+          {servBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400 shrink-0" /><span className="text-xs text-gray-500">Закрыто</span><span className="text-xs font-bold text-gray-600">{servBar}</span></div>}
           {freeBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" /><span className="text-xs text-gray-500">Свободно</span><span className="text-xs font-bold text-emerald-700">{freeBar}</span></div>}
         </div>
       </div>
@@ -656,7 +676,7 @@ export default function OccupancyPage() {
                 <span className="font-semibold text-sm text-gray-800 truncate">{room.roomName}</span>
               </div>
               <div className="flex items-center gap-2 text-xs shrink-0">
-                {roomAvail > 0 && <span className="flex items-center gap-1 text-emerald-600 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />{roomAvail} св.</span>}
+                {roomAvail > 0 && <span className="flex items-center gap-1 text-emerald-600 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />{roomAvail} свободно</span>}
               </div>
             </div>
 
@@ -674,7 +694,7 @@ export default function OccupancyPage() {
               <div className="p-3 grid grid-cols-3 gap-2">
                 {room.units.map(unit => {
                   const booked = !!unit.has_booking && unit.status !== 'occupied'
-                  const cfg = STATUS[booked ? 'reserved' : unit.status]
+                  const cfg = STATUS[booked ? 'reserved' : dispStatus(unit.status)]
                   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
                   const guest = unit.status === 'occupied' ? unit.current_guest : (booked ? unit.next_booking_guest : undefined)
                   return (
@@ -712,11 +732,15 @@ export default function OccupancyPage() {
       {panel?.type === 'free' && (
         <FreePanel unit={panel.unit}
           onCheckIn={() => setPanel({ type: 'checkin', unit: panel.unit })}
+          onBook={() => setPanel({ type: 'book', unit: panel.unit })}
           onChangeStatus={() => setPanel({ type: 'status', unit: panel.unit })}
           onClose={() => setPanel(null)} />
       )}
       {panel?.type === 'checkin' && (
         <CheckInSheet unit={panel.unit} onClose={() => setPanel(null)} />
+      )}
+      {panel?.type === 'book' && (
+        <CheckInSheet unit={panel.unit} initialMode="booking" onClose={() => setPanel(null)} />
       )}
       {panel?.type === 'booking' && (
         <BookingPanel unit={panel.unit}
