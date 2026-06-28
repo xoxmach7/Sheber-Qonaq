@@ -110,6 +110,14 @@ export interface Guest {
   is_blacklisted?: boolean
   nationality?: string
   is_foreigner?: boolean
+  document_type?: string
+  document_number?: string
+  sex?: 'M' | 'F' | ''
+  date_of_birth?: string
+  document_issue_date?: string
+  document_expiry_date?: string
+  entry_date?: string
+  migration_card_number?: string
   created_at: string
 }
 
@@ -123,6 +131,14 @@ export interface GuestCreate {
   notes?: string
   nationality?: string
   is_foreigner?: boolean
+  document_type?: string
+  document_number?: string
+  sex?: 'M' | 'F' | ''
+  date_of_birth?: string
+  document_issue_date?: string
+  document_expiry_date?: string
+  entry_date?: string
+  migration_card_number?: string
 }
 
 // ─── Stay ────────────────────────────────────────────────────────────────────
