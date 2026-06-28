@@ -87,7 +87,7 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between pb-1">
         <div>
           <p className="text-sm text-gray-400">{greeting}, {userName}</p>
-          <p className="text-[13px] text-gray-500 mt-0.5">Сегодня, {today}</p>
+          <p className="text-[13px] text-gray-500 mt-0.5">Сегодня {today}</p>
         </div>
         <button
           onClick={() => { logout(); navigate('/login') }}
@@ -133,7 +133,7 @@ export default function DashboardPage() {
           icon={CheckCircle2}
           label="Свободно"
           value={occ?.available ?? 0}
-          sub={`${occ?.maintenance ?? 0} на ремонте`}
+          sub={`${occ?.out_of_order ?? 0} закрытых`}
           color="emerald"
           onClick={() => navigate('/occupancy')}
         />
@@ -158,49 +158,18 @@ export default function DashboardPage() {
         icon={Banknote}
         label="Доход за месяц"
         value={fmt(fin?.income_this_month ?? 0)}
-        sub={Number(fin?.expenses_this_month ?? 0) > 0 ? `Расходы: ${fmt(fin?.expenses_this_month ?? 0)}` : undefined}
         color="emerald"
         onClick={() => navigate('/finances')}
       />
 
-      {/* Today Activity */}
-      {(todayData?.checkins?.length || todayData?.checkouts?.length) ? (
-        <section>
-          <h3 className="text-[15px] font-bold text-gray-900 mb-2.5">Сегодня</h3>
-          <div className="flex flex-col gap-2">
-            {todayData?.checkouts?.map((s, i) => (
-              <div key={`out-${i}`} className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl shadow-card">
-                <Avatar name={`${s.guest__first_name} ${s.guest__last_name}`} size={36} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
-                    {s.guest__first_name} {s.guest__last_name}
-                  </p>
-                  <p className="text-xs text-gray-400">{s.unit__name}</p>
-                </div>
-                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold">
-                  <ArrowUpCircle size={12} />
-                  Выезд
-                </div>
-              </div>
-            ))}
-            {todayData?.checkins?.map((s, i) => (
-              <div key={`in-${i}`} className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl shadow-card">
-                <Avatar name={`${s.guest__first_name} ${s.guest__last_name}`} size={36} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
-                    {s.guest__first_name} {s.guest__last_name}
-                  </p>
-                  <p className="text-xs text-gray-400">{s.unit__name}</p>
-                </div>
-                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold">
-                  <ArrowDownCircle size={12} />
-                  Заезд
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      {/* Expenses card */}
+      <KPICard
+        icon={ArrowUpCircle}
+        label="Расходы за месяц"
+        value={fmt(fin?.expenses_this_month ?? 0)}
+        color="red"
+        onClick={() => navigate('/finances')}
+      />
 
       {/* Debtors */}
       {alerts?.debtors && alerts.debtors.length > 0 && (

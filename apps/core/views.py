@@ -43,7 +43,7 @@ class DashboardView(APIView):
                 shift_type__isnull=False
             ).count()
             available = max(0, total_units - occupied)
-            reserved = dirty = maintenance = 0
+            reserved = dirty = maintenance = out_of_order = 0
         else:
             # Хостел: занятость считаем ИЗ БРОНЕЙ, а не из unit.status (Шаг 6).
             # Юнит занят сегодня, если есть блокирующая бронь (reserved/confirmed/active),
@@ -65,6 +65,8 @@ class DashboardView(APIView):
             reserved = status_map.get('reserved', 0)
             dirty = status_map.get('dirty', 0)
             maintenance = status_map.get('maintenance', 0)
+            # «Закрыто» = выведено из эксплуатации + уборка + ремонт (всё нерабочее)
+            out_of_order = status_map.get('out_of_order', 0) + dirty + maintenance
 
         occupancy_rate = round(occupied / total_units * 100, 1) if total_units else 0
 
@@ -157,6 +159,7 @@ class DashboardView(APIView):
                 'reserved': reserved,
                 'dirty': dirty,
                 'maintenance': maintenance,
+                'out_of_order': out_of_order,
                 'rate': occupancy_rate,
             },
 

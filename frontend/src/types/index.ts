@@ -315,6 +315,7 @@ export interface DashboardData {
     reserved: number
     dirty: number
     maintenance: number
+    out_of_order: number
     rate: number
   }
   finances: {
