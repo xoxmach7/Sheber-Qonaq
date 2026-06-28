@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { staysApi, guestsApi, propertiesApi, blacklistApi } from '../../api'
+import { staysApi, guestsApi, propertiesApi, blacklistApi, paymentsApi } from '../../api'
 import { format, differenceInDays, differenceInMonths, addMonths, addDays } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import {
@@ -8,7 +8,7 @@ import {
   ChevronLeft, CreditCard, CalendarClock, Globe, Clock,
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
-import { Avatar, PageHeader } from '../../components/ui'
+import { Avatar, PageHeader, SegmentControl } from '../../components/ui'
 import { MpisBadge, MpisPanel, ExtendForm, PaymentForm } from './_helpers'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import type { StayCreate, Stay, RateType, GuestCreate } from '../../types'
@@ -54,9 +54,10 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
       unit: '', guest: '', guestName: '', guestPhone: '',
       check_in_date: today,
       expected_check_out_date: addPeriod(today, 'monthly'),
-      rate_type: 'monthly' as RateType, rate_amount: '', deposit_amount: '',
+      rate_type: 'monthly' as RateType, rate_amount: '', deposit_amount: '', prepay: '',
     }
   })
+  const [mode, setMode] = useState<'checkin' | 'booking'>('checkin')
   const [guestSearch, setGuestSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
@@ -86,9 +87,25 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
     mutationFn: (data: StayCreate) => staysApi.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); onClose() },
   })
+  const { mutate: book, isPending: booking, error: bookError } = useMutation({
+    mutationFn: async (prepay: number) => {
+      const stay = await staysApi.create({
+        unit: Number(form.unit), guest: Number(form.guest),
+        check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date,
+        rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: form.deposit_amount || 0,
+        status: 'reserved',
+      })
+      if (prepay > 0) {
+        await paymentsApi.create({ stay: stay.id, amount: prepay, payment_date: format(new Date(), 'yyyy-MM-dd'), method: 'kaspi' })
+        try { await staysApi.confirm(stay.id) } catch { /* недобор предоплаты — остаётся резервом */ }
+      }
+      return stay
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); onClose() },
+  })
 
   const rateLabels: Record<RateType, string> = { daily: 'Суточно', weekly: 'Понедельно', monthly: 'Помесячно' }
-  const canSubmit = form.unit && form.guest && form.check_in_date && form.expected_check_out_date && form.rate_amount && !isPending
+  const canSubmit = form.unit && form.guest && form.check_in_date && form.expected_check_out_date && form.rate_amount && !isPending && !booking
   const isBlacklisted = blacklistCheck?.is_blacklisted ?? false
 
   // Живой расчёт срока, диапазона дат и суммы (повторяет логику total_expected на бэке)
@@ -123,7 +140,15 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} className="p-1"><X size={20} className="text-gray-400" /></button>
         </div>
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
-          {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-3 py-2">{(error as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка при создании заезда'}</div>}
+          <SegmentControl
+            value={mode}
+            onChange={(v) => setMode(v as 'checkin' | 'booking')}
+            options={[
+              { value: 'checkin', label: 'Заселение' },
+              { value: 'booking', label: 'Бронь' },
+            ]}
+          />
+          {(error || bookError) && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-3 py-2">{((error || bookError) as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка при создании заезда'}</div>}
           {isBlacklisted && (
             <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
@@ -271,6 +296,14 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
             <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Депозит (₸)</label><input type="number" className="input-field" placeholder="0" value={form.deposit_amount} onChange={e => setForm(f => ({ ...f, deposit_amount: e.target.value }))} /></div>
           </div>
 
+          {mode === 'booking' && (
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Предоплата (₸)</label>
+              <input type="number" className="input-field" placeholder="0 — можно без предоплаты" value={form.prepay} onChange={e => setForm(f => ({ ...f, prepay: e.target.value }))} />
+              <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">Внесёте от 50% суммы — бронь станет «подтверждённой». Иначе останется резервом.</p>
+            </div>
+          )}
+
           {/* Живой расчёт срока и суммы */}
           {calc && (
             <div className="bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
@@ -287,10 +320,12 @@ function CheckInForm({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="px-5 pb-5 pt-3 border-t border-gray-100">
-          <button onClick={() => mutate({ unit: Number(form.unit), guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: form.deposit_amount || 0 })}
+          <button onClick={() => mode === 'booking'
+            ? book(Number(form.prepay || 0))
+            : mutate({ unit: Number(form.unit), guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: form.deposit_amount || 0 })}
             disabled={!canSubmit}
-            className={`w-full py-3.5 rounded-xl font-semibold transition tap-card ${isBlacklisted ? 'bg-red-600 text-white' : 'bg-primary-500 text-white disabled:bg-gray-200 disabled:text-gray-400'}`}>
-            {isPending ? 'Создаём заезд...' : isBlacklisted ? 'Заселить (гость в ЧС)' : 'Заселить'}
+            className={`w-full py-3.5 rounded-xl font-semibold transition tap-card ${mode === 'booking' ? 'bg-violet-500 text-white disabled:bg-gray-200 disabled:text-gray-400' : isBlacklisted ? 'bg-red-600 text-white' : 'bg-primary-500 text-white disabled:bg-gray-200 disabled:text-gray-400'}`}>
+            {(isPending || booking) ? (mode === 'booking' ? 'Бронируем...' : 'Создаём заезд...') : mode === 'booking' ? 'Забронировать' : isBlacklisted ? 'Заселить (гость в ЧС)' : 'Заселить'}
           </button>
         </div>
       </div>
@@ -315,6 +350,11 @@ export default function StaysPage() {
 
   const fmt = (n: string | number) => Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
 
+  // Сначала новые заезды: сортировка по дате заезда убыванию (при равенстве — по id)
+  const sortedStays = [...stays].sort((a, b) =>
+    b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id
+  )
+
   return (
     <div className="px-4 py-4 space-y-3">
       <PageHeader title="Заезды" subtitle={`${stays.length} активных`} action="Заселить" actionIcon={Plus}
@@ -333,7 +373,7 @@ export default function StaysPage() {
         </div>
       ) : (
         <div className="space-y-2.5">
-          {stays.map(stay => {
+          {sortedStays.map(stay => {
             const balance = Number(stay.balance)
             const paid = Number(stay.total_paid)
             const expected = Number(stay.total_expected)
