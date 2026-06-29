@@ -376,6 +376,8 @@ export interface BlacklistEntry {
   full_name: string
   iin?: string
   phone: string
+  guest?: number | null
+  guest_name?: string | null
   reason: BlacklistReason
   reason_display: string
   description: string
@@ -388,9 +390,10 @@ export interface BlacklistEntry {
 }
 
 export interface BlacklistCreate {
-  full_name: string
+  full_name?: string
   phone?: string
   iin?: string
+  guest?: number | null
   reason: BlacklistReason
   description: string
   evidence_url?: string

@@ -237,11 +237,14 @@ function BlacklistForm({ onClose, initial }: { onClose: () => void; initial?: Bl
     full_name: initial?.full_name ?? '',
     phone: initial?.phone ?? '',
     iin: '',
+    guest: initial?.guest ?? null,
     reason: initial?.reason ?? 'debt',
     description: initial?.description ?? '',
     evidence_url: initial?.evidence_url ?? '',
   })
   const [error, setError] = useState('')
+  const { data: guestList } = useQuery({ queryKey: ['guests', ''], queryFn: () => guestsApi.list() })
+  const guests = guestList?.results ?? []
 
   const { mutate, isPending } = useMutation({
     mutationFn: (data: BlacklistCreate) =>
@@ -257,7 +260,7 @@ function BlacklistForm({ onClose, initial }: { onClose: () => void; initial?: Bl
     if (isEdit && !payload.iin) delete (payload as any).iin
     mutate(payload)
   }
-  const canSubmit = form.full_name && (form.phone || form.iin || isEdit) && !isPending
+  const canSubmit = (form.guest || (isEdit && form.full_name)) && !isPending
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -266,7 +269,7 @@ function BlacklistForm({ onClose, initial }: { onClose: () => void; initial?: Bl
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-red-100">
           <div className="flex items-center gap-2">
             <ShieldAlert size={20} className="text-red-600" />
-            <h3 className="font-bold text-lg">{isEdit ? 'Редактировать запись' : 'Добавить в чёрный список'}</h3>
+            <h3 className="font-bold text-lg">{isEdit ? 'Редактировать нарушение' : 'Добавить нарушение'}</h3>
           </div>
           <button onClick={onClose} className="p-1"><X size={20} className="text-gray-400" /></button>
         </div>
@@ -275,10 +278,14 @@ function BlacklistForm({ onClose, initial }: { onClose: () => void; initial?: Bl
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-800">
             Запись видна всем объектам платформы. Убедитесь в достоверности.
           </div>
-          <input className="input-field" placeholder="ФИО *" value={form.full_name} onChange={e => set('full_name', e.target.value)} />
-          <input className="input-field" placeholder={PHONE_PLACEHOLDER} type="tel" value={form.phone ?? ''} onChange={e => set('phone', formatPhoneKZ(e.target.value))} />
-          <input className="input-field" placeholder={isEdit ? 'ИИН — оставьте пустым, чтобы не менять' : 'ИИН (12 цифр)'} value={form.iin ?? ''} onChange={e => set('iin', e.target.value)} />
-          <p className="text-xs text-gray-400 -mt-1">Укажите телефон и/или ИИН</p>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Гость *</label>
+            <select className="input-field" value={form.guest ?? ''} onChange={e => setForm(f => ({ ...f, guest: e.target.value ? Number(e.target.value) : null }))}>
+              <option value="">— Выберите гостя —</option>
+              {guests.map(g => <option key={g.id} value={g.id}>{g.full_name} · {g.phone}</option>)}
+            </select>
+            {isEdit && form.full_name && !form.guest && <p className="text-xs text-gray-400 mt-1">Запись по: {form.full_name}</p>}
+          </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Причина *</label>
             <div className="grid grid-cols-2 gap-2">
@@ -304,7 +311,7 @@ function BlacklistForm({ onClose, initial }: { onClose: () => void; initial?: Bl
         <div className="px-5 pb-5 pt-3 border-t border-gray-100">
           <button onClick={submit} disabled={!canSubmit}
             className="w-full bg-red-600 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 transition tap-card">
-            {isPending ? 'Сохраняем...' : isEdit ? 'Сохранить изменения' : 'Добавить в чёрный список'}
+            {isPending ? 'Сохраняем...' : isEdit ? 'Сохранить изменения' : 'Добавить нарушение'}
           </button>
         </div>
       </div>
@@ -376,7 +383,7 @@ function GuestsList({ search }: { search: string }) {
 // ─── Blacklist tab ────────────────────────────────────────────────────────────
 function BlacklistTab({ search }: { search: string }) {
   const qc = useQueryClient()
-  const [editEntry, setEditEntry] = useState<BlacklistEntry | null>(null)
+  const [viewKey, setViewKey] = useState<string | null>(null)
   const { data, isLoading } = useQuery({
     queryKey: ['blacklist', search],
     queryFn: () => blacklistApi.list(search || undefined),
@@ -398,56 +405,73 @@ function BlacklistTab({ search }: { search: string }) {
       <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
         <ShieldOff size={28} className="text-emerald-500" />
       </div>
-      <p className="font-semibold text-gray-600">Чёрный список пуст</p>
-      <p className="text-sm mt-1">Нет проблемных гостей</p>
+      <p className="font-semibold text-gray-600">Нарушений нет</p>
+      <p className="text-sm mt-1">Нет гостей с нарушениями</p>
     </div>
   )
 
+  // Группируем нарушения по гостю (или по ФИО, если гость не привязан)
+  const groups = new Map<string, BlacklistEntry[]>()
+  entries.forEach(e => {
+    const key = (e.guest_name ?? e.full_name) || '—'
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(e)
+  })
+  const groupList = Array.from(groups.entries())
+  const activeEntries = viewKey ? (groups.get(viewKey) ?? []) : []
+
   return (
     <div className="space-y-2">
-      {entries.map(entry => (
-        <div key={entry.id} className="bg-white rounded-2xl shadow-card overflow-hidden border-l-[3px] border-red-500">
-          <div className="px-4 py-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center shrink-0">
-                  <ShieldAlert size={18} className="text-red-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{entry.full_name}</p>
-                  <p className="text-xs text-gray-500">{entry.phone}</p>
-                </div>
-              </div>
-              <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-lg font-semibold shrink-0 ring-1 ring-red-200">
-                {entry.reason_display}
-              </span>
-            </div>
-            {entry.description && (
-              <p className="mt-2 text-sm text-gray-600 bg-red-50/60 rounded-xl px-3 py-2">{entry.description}</p>
-            )}
-            {entry.reported_by_name && (
-              <p className="text-xs text-gray-400 mt-1.5">
-                Добавлено: {entry.reported_by_name} · {entry.created_at.slice(0, 10)}
-              </p>
-            )}
+      {groupList.map(([name, list]) => (
+        <div key={name} onClick={() => setViewKey(name)}
+          className="tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card cursor-pointer border-l-[3px] border-red-500">
+          <div className="w-11 h-11 bg-red-50 rounded-full flex items-center justify-center shrink-0">
+            <ShieldAlert size={20} className="text-red-600" />
           </div>
-          <div className="border-t border-gray-100 px-4 py-2.5 flex items-center justify-between">
-            <button
-              onClick={() => setEditEntry(entry)}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
-              <Pencil size={14} /> Редактировать
-            </button>
-            <button
-              onClick={() => { if (confirm('Убрать из черного списка?')) deactivate(entry.id) }}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
-              <ShieldOff size={14} /> Убрать
-            </button>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900 truncate">{name}</p>
+            <p className="text-xs text-gray-400">{list[0].phone || '—'}</p>
           </div>
+          <span className="text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-lg font-bold shrink-0 ring-1 ring-red-200">
+            {list.length} наруш.
+          </span>
         </div>
       ))}
 
-      {editEntry && (
-        <BlacklistForm initial={editEntry} onClose={() => setEditEntry(null)} />
+      {viewKey && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setViewKey(null)}>
+          <div className="absolute inset-0 bg-black/30 animate-fade-in" />
+          <div className="relative bg-white rounded-t-[20px] shadow-sheet animate-slide-up max-h-[90vh] flex flex-col"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2 min-w-0">
+                <ShieldAlert size={20} className="text-red-600 shrink-0" />
+                <h3 className="font-bold text-lg truncate">{viewKey}</h3>
+              </div>
+              <button onClick={() => setViewKey(null)} className="p-1"><X size={20} className="text-gray-400" /></button>
+            </div>
+            <div className="overflow-y-auto px-5 py-4 space-y-2.5 flex-1">
+              <p className="text-xs text-gray-400">{activeEntries.length} наруш.</p>
+              {activeEntries.map(entry => (
+                <div key={entry.id} className="bg-red-50/50 border border-red-100 rounded-xl px-3.5 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-red-200">
+                      {entry.reason_display}
+                    </span>
+                    <span className="text-xs text-gray-400">{entry.created_at.slice(0, 10)}</span>
+                  </div>
+                  {entry.description && <p className="text-sm text-gray-600 mt-2">{entry.description}</p>}
+                  {entry.reported_by_name && <p className="text-xs text-gray-400 mt-1.5">Добавил: {entry.reported_by_name}</p>}
+                  <button
+                    onClick={() => { if (confirm('Убрать это нарушение?')) { deactivate(entry.id); if (activeEntries.length <= 1) setViewKey(null) } }}
+                    className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600">
+                    <ShieldOff size={13} /> Убрать
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -470,7 +494,7 @@ export default function GuestsPage() {
     <div className="px-4 py-4 space-y-3">
       <PageHeader
         title="Гости"
-        action={tab === 'blacklist' ? 'В ЧС' : 'Добавить'}
+        action="Добавить"
         actionIcon={Plus}
         actionVariant={tab === 'blacklist' ? 'danger' : 'primary'}
         onAction={() => tab === 'guests' ? setShowGuestForm(true) : setShowBlacklistForm(true)}
@@ -481,14 +505,14 @@ export default function GuestsPage() {
         onChange={v => { setTab(v as any); setSearch('') }}
         options={[
           { value: 'guests', label: 'Все гости' },
-          { value: 'blacklist', label: `Черный список${blacklistCount > 0 ? ` (${blacklistCount})` : ''}` },
+          { value: 'blacklist', label: `Нарушения${blacklistCount > 0 ? ` (${blacklistCount})` : ''}` },
         ]}
       />
 
       <SearchBar
         value={search}
         onChange={setSearch}
-        placeholder={tab === 'blacklist' ? 'Поиск в черном списке...' : 'Имя или телефон...'}
+        placeholder={tab === 'blacklist' ? 'Поиск в нарушениях...' : 'Имя или телефон...'}
       />
 
       {tab === 'guests' ? <GuestsList search={search} /> : <BlacklistTab search={search} />}

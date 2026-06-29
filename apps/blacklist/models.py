@@ -47,6 +47,14 @@ class BlacklistEntry(TimestampedModel):
         verbose_name='Добавлено организацией'
     )
 
+    # Привязка к карточке гостя (нарушение конкретного гостя)
+    guest = models.ForeignKey(
+        'guests.Guest',
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='violations',
+        verbose_name='Гость',
+    )
+
     # is_verified = True когда запись подтверждена 2+ организациями
     is_verified = models.BooleanField(default=False, verbose_name='Подтверждено')
     is_active = models.BooleanField(default=True, verbose_name='Активна')
