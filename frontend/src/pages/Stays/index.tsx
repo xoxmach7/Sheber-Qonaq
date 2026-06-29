@@ -365,6 +365,7 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
 export default function StaysPage() {
   const qc = useQueryClient()
   const [tab, setTab] = useState<'stays' | 'bookings'>('stays')
+  const [search, setSearch] = useState('')
   const [checkinMode, setCheckinMode] = useState<'checkin' | 'booking' | null>(null)
   const [payStay, setPayStay] = useState<Stay | null>(null)
   const [extendStay, setExtendStay] = useState<Stay | null>(null)
@@ -388,9 +389,10 @@ export default function StaysPage() {
 
   const fmt = (n: string | number) => Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
 
-  const sortedList = [...list].sort((a, b) =>
-    b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id
-  )
+  const q = search.trim().toLowerCase()
+  const sortedList = [...list]
+    .filter(s => !q || (s.guest_detail?.full_name ?? '').toLowerCase().includes(q) || (s.unit_detail?.name ?? '').toLowerCase().includes(q) || s.check_in_date.includes(q))
+    .sort((a, b) => b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id)
 
   return (
     <div className="px-4 py-4 space-y-3">
@@ -403,6 +405,12 @@ export default function StaysPage() {
           { value: 'stays', label: `Заезды${stays.length ? ` (${stays.length})` : ''}` },
           { value: 'bookings', label: `Бронь${bookings.length ? ` (${bookings.length})` : ''}` },
         ]} />
+
+      <div className="relative">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" placeholder="Поиск: гость, место или дата заезда…"
+          value={search} onChange={e => setSearch(e.target.value)} />
+      </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-40">

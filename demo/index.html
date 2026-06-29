@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>Sheber Qonaq — демо</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -264,13 +265,7 @@ function mapView(){
   const match=u=>{const d=unitDisplayStatus(u);if(mapFilter==='all')return true;if(mapFilter==='available')return d==='available';if(mapFilter==='occupied')return d==='occupied';if(mapFilter==='booking')return d==='reserved';if(mapFilter==='closed')return d==='out_of_order';return true};
   let html=`<h2 class="page">Карта размещения</h2><div class="muted" style="margin-bottom:12px">${occ} из ${total} занято</div>
   <div class="pills">${FILTERS.map(([k,l,c])=>`<button class="pill ${mapFilter===k?'active':''}" onclick="setMapFilter('${k}')">${l} (${c})</button>`).join('')}</div>
-  <div class="card" style="margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px"><div><span style="font-size:30px;font-weight:800">${rate}%</span><span class="muted"> заполнено</span></div></div>
-    <div style="display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--gray-100);margin-bottom:8px">
-      <div style="width:${seg(occ)}%;background:var(--primary)"></div><div style="width:${seg(booked)}%;background:var(--violet)"></div><div style="width:${seg(closed)}%;background:var(--gray-400)"></div><div style="width:${seg(free)}%;background:var(--emerald)"></div></div>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--gray-500)">
-      <span><b style="color:var(--primary)">●</b> Занято ${occ}</span><span><b style="color:var(--violet)">●</b> Бронь ${booked}</span><span><b style="color:var(--gray-400)">●</b> Закрыто ${closed}</span><span><b style="color:var(--emerald)">●</b> Свободно ${free}</span></div>
-  </div>`;
+  `;
   rooms.forEach(r=>{
     const us=r.units.filter(match);
     if(!us.length)return;

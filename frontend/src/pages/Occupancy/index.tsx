@@ -634,23 +634,6 @@ export default function OccupancyPage() {
         { value: 'closed', label: 'Закрыто', count: counts.closed },
       ]} />
 
-      <div className="bg-white rounded-2xl shadow-card px-4 py-3">
-        <div className="flex items-end justify-between mb-2">
-          <div><span className="text-3xl font-extrabold text-gray-900">{pct}%</span><span className="text-sm text-gray-400 ml-1.5">заполнено</span></div>
-        </div>
-        <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden mb-2.5 flex">
-          {occBar > 0 && <div className="h-full bg-primary-500 transition-all duration-500" style={{ width: `${seg(occBar)}%` }} title={`Занято: ${occBar}`} />}
-          {bookedBar > 0 && <div className="h-full bg-violet-400 transition-all duration-500" style={{ width: `${seg(bookedBar)}%` }} title={`Бронь: ${bookedBar}`} />}
-          {servBar > 0 && <div className="h-full bg-gray-400 transition-all duration-500" style={{ width: `${seg(servBar)}%` }} title={`Закрыто: ${servBar}`} />}
-          {freeBar > 0 && <div className="h-full bg-emerald-400 transition-all duration-500" style={{ width: `${seg(freeBar)}%` }} title={`Свободно: ${freeBar}`} />}
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {occBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary-500 shrink-0" /><span className="text-xs text-gray-500">Занято</span><span className="text-xs font-bold text-primary-700">{occBar}</span></div>}
-          {bookedBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400 shrink-0" /><span className="text-xs text-gray-500">Бронь</span><span className="text-xs font-bold text-violet-700">{bookedBar}</span></div>}
-          {servBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400 shrink-0" /><span className="text-xs text-gray-500">Закрыто</span><span className="text-xs font-bold text-gray-600">{servBar}</span></div>}
-          {freeBar > 0 && <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" /><span className="text-xs text-gray-500">Свободно</span><span className="text-xs font-bold text-emerald-700">{freeBar}</span></div>}
-        </div>
-      </div>
       </>
       )}
 
