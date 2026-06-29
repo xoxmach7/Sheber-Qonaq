@@ -5,7 +5,7 @@ import type { Unit, UnitStatus, StayCreate, RateType, GuestCreate } from '../../
 import {
   Wrench, Moon, CheckCircle2, Clock, Ban, Sparkles,
   Phone, CalendarDays, LogOut, Plus, X, Search,
-  UserPlus, AlertTriangle, User,
+  UserPlus, AlertTriangle, User, CalendarPlus,
 } from 'lucide-react'
 import { PageHeader, FilterPills, Avatar, SegmentControl } from '../../components/ui'
 import MonthHeatmap from './MonthHeatmap'
@@ -307,8 +307,8 @@ function FreePanel({ unit, onCheckIn, onBook, onChangeStatus, onClose }: {
 }
 
 // ── Occupied unit panel ──
-function OccupiedPanel({ unit, onClose, onChangeStatus, onCheckout }: {
-  unit: Unit; onClose: () => void; onChangeStatus: () => void; onCheckout: () => void
+function OccupiedPanel({ unit, onClose, onChangeStatus, onCheckout, onBook }: {
+  unit: Unit; onClose: () => void; onChangeStatus: () => void; onCheckout: () => void; onBook: () => void
 }) {
   const { data: blCheck } = useQuery({
     queryKey: ['bl-check', unit.current_guest_phone],
@@ -351,6 +351,11 @@ function OccupiedPanel({ unit, onClose, onChangeStatus, onCheckout }: {
             <span className="text-sm text-gray-600">{fmt(unit.check_in)} → {fmt(unit.check_out)}</span>
           </div>
         </div>
+
+        <button onClick={onBook}
+          className="w-full flex items-center justify-center gap-2 py-3 mb-2 bg-violet-50 text-violet-700 rounded-2xl text-sm font-bold ring-1 ring-violet-100">
+          <CalendarPlus size={16} /> Забронировать на будущие даты
+        </button>
 
         <div className="flex gap-2">
           <button onClick={onCheckout}
@@ -716,6 +721,7 @@ export default function OccupancyPage() {
       {panel?.type === 'occupied' && (
         <OccupiedPanel unit={panel.unit}
           onClose={() => setPanel(null)}
+          onBook={() => setPanel({ type: 'book', unit: panel.unit })}
           onChangeStatus={() => setPanel({ type: 'status', unit: panel.unit })}
           onCheckout={() => { if (panel.unit.current_stay_id) checkout(panel.unit.current_stay_id) }} />
       )}

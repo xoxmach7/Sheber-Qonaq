@@ -19,7 +19,7 @@ export default function BottomNav() {
   })
 
   const role = useAuthStore(s => s.user?.role)
-  const canFinance = ['superadmin', 'owner', 'manager', 'accountant'].includes(role ?? '')
+  const canFinance = ['superadmin', 'owner'].includes(role ?? '')
 
   const mapRoute = data?.property_mode === 'cottage' ? '/cottage' : '/occupancy'
 
