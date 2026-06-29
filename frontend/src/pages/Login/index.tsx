@@ -29,18 +29,18 @@ export default function LoginPage() {
 
       {/* Logo */}
       <div className="text-center mb-10">
-        <div className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg" style={{ background: '#60CCED' }}>
-          <img src="/logo.svg" alt="Sheber Qonaq" className="w-12 h-12 object-contain" />
+        <div className="w-[115px] h-[115px] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg" style={{ background: '#60CCED' }}>
+          <img src="/logo.svg" alt="Sheber Qonaq" className="w-[76px] h-[76px] object-contain" />
         </div>
         <h1 className="text-[28px] font-extrabold text-gray-900">Sheber Qonaq</h1>
-        <p className="text-[15px] text-gray-500 mt-1">Управление хостелом</p>
+        <p className="text-[15px] text-gray-500 mt-1">Управление гостиничными предприятиями</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="w-full max-w-[320px]">
         <div className="mb-3.5">
           <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">
-            Логин <span className="text-red-500">*</span>
+            Логин
           </label>
           <input
             type="text"
@@ -55,7 +55,7 @@ export default function LoginPage() {
 
         <div className="mb-3.5">
           <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">
-            Пароль <span className="text-red-500">*</span>
+            Пароль
           </label>
           <input
             type="password"

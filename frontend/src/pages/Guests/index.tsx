@@ -345,16 +345,11 @@ function GuestsList({ search }: { search: string }) {
           <div
             key={guest.id}
             onClick={() => setEditGuest(guest)}
-            className={`tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card cursor-pointer ${
-              guest.is_blacklisted ? 'border-l-[3px] border-red-500' : ''
-            }`}>
+            className="tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card cursor-pointer">
             <Avatar name={guest.full_name} size={44} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-[15px] font-semibold text-gray-900 truncate">{guest.full_name}</p>
-                {guest.is_blacklisted && (
-                  <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded shrink-0">ЧС</span>
-                )}
                 {guest.is_foreigner && (
                   <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded shrink-0">
                     {guest.nationality ?? 'Иностр.'}
@@ -435,10 +430,8 @@ function BlacklistTab({ search }: { search: string }) {
     <div className="space-y-2">
       {groupList.map(([name, list]) => (
         <div key={name} onClick={() => setViewKey(name)}
-          className="tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card cursor-pointer border-l-[3px] border-red-500">
-          <div className="w-11 h-11 bg-red-50 rounded-full flex items-center justify-center shrink-0">
-            <ShieldAlert size={20} className="text-red-600" />
-          </div>
+          className="tap-card flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-card cursor-pointer">
+          <Avatar name={name} size={44} />
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-gray-900 truncate">{name}</p>
             <p className="text-xs text-gray-400">{list[0].phone || '—'}</p>
@@ -465,28 +458,34 @@ function BlacklistTab({ search }: { search: string }) {
               <p className="text-xs text-gray-400">{activeEntries.length} наруш.</p>
               {activeEntries.map(entry => (
                 <div key={entry.id} className="bg-red-50/50 border border-red-100 rounded-xl px-3.5 py-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-red-200">
-                      {entry.reason_display}
-                    </span>
-                    <span className="text-xs text-gray-400">{entry.created_at.slice(0, 10)}</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-red-200">
+                          {entry.reason_display}
+                        </span>
+                        <span className="text-xs text-gray-400">{entry.created_at.slice(0, 10)}</span>
+                      </div>
+                      {entry.description && <p className="text-sm text-gray-600 mt-2">{entry.description}</p>}
+                      {entry.reported_by_name && <p className="text-xs text-gray-400 mt-1.5">Добавил: {entry.reported_by_name}</p>}
+                    </div>
+                    {isMine(entry) && isOwner ? (
+                      <button
+                        onClick={() => { if (confirm('Убрать это нарушение?')) { deactivate(entry.id); if (activeEntries.length <= 1) setViewKey(null) } }}
+                        title="Убрать нарушение"
+                        className="shrink-0 p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition">
+                        <Trash2 size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        disabled={reporting}
+                        onClick={() => { if (confirm('Сообщить автору, что запись возможно ошибочна?')) reportProblem(entry.id) }}
+                        title="Сообщить о проблеме"
+                        className="shrink-0 p-2 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 disabled:opacity-50 transition">
+                        <MessageSquareWarning size={16} />
+                      </button>
+                    )}
                   </div>
-                  {entry.description && <p className="text-sm text-gray-600 mt-2">{entry.description}</p>}
-                  {entry.reported_by_name && <p className="text-xs text-gray-400 mt-1.5">Добавил: {entry.reported_by_name}</p>}
-                  {isMine(entry) && isOwner ? (
-                    <button
-                      onClick={() => { if (confirm('Убрать это нарушение?')) { deactivate(entry.id); if (activeEntries.length <= 1) setViewKey(null) } }}
-                      className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600">
-                      <ShieldOff size={13} /> Убрать
-                    </button>
-                  ) : (
-                    <button
-                      disabled={reporting}
-                      onClick={() => { if (confirm('Сообщить автору, что запись возможно ошибочна?')) reportProblem(entry.id) }}
-                      className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 disabled:opacity-50">
-                      <MessageSquareWarning size={13} /> Сообщить о проблеме
-                    </button>
-                  )}
                 </div>
               ))}
             </div>

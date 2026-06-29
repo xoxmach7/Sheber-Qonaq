@@ -57,7 +57,7 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
       rate_type: 'monthly' as RateType, rate_amount: '', deposit_amount: '', prepay: '',
     }
   })
-  const [mode, setMode] = useState<'checkin' | 'booking'>(initialMode)
+  const mode = initialMode
   const [guestSearch, setGuestSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
@@ -136,19 +136,11 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
       <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
       <div className="relative bg-white rounded-t-[20px] shadow-sheet animate-slide-up max-h-[94vh] flex flex-col">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
-          <h3 className="font-bold text-lg">Новый заезд</h3>
+          <h3 className="font-bold text-lg">{mode === 'booking' ? 'Новая бронь' : 'Новый заезд'}</h3>
           <button onClick={onClose} className="p-1"><X size={20} className="text-gray-400" /></button>
         </div>
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
-          <SegmentControl
-            value={mode}
-            onChange={(v) => setMode(v as 'checkin' | 'booking')}
-            options={[
-              { value: 'checkin', label: 'Заселение' },
-              { value: 'booking', label: 'Бронь' },
-            ]}
-          />
-          {(error || bookError) && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-3 py-2">{((error || bookError) as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка при создании заезда'}</div>}
+          {(error || bookError) &&<div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-3 py-2">{((error || bookError) as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка при создании заезда'}</div>}
           {isBlacklisted && (
             <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
@@ -439,7 +431,7 @@ export default function StaysPage() {
 
             return (
               <div key={stay.id} className={`bg-white rounded-2xl shadow-card overflow-hidden ${
-                needsMpis ? 'ring-1 ring-orange-200' : isDebt ? 'ring-1 ring-red-200' : ''
+                isBooking ? '' : needsMpis ? 'ring-1 ring-orange-200' : isDebt ? 'ring-1 ring-red-200' : ''
               }`}>
                 <div className="px-4 pt-3.5 pb-2.5">
                   <div className="flex items-start justify-between gap-2">
