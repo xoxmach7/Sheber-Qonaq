@@ -29,8 +29,8 @@ export default function LoginPage() {
 
       {/* Logo */}
       <div className="text-center mb-10">
-        <div className="w-[72px] h-[72px] rounded-2xl bg-primary-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/30">
-          <Building2 size={36} className="text-white" />
+        <div className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg" style={{ background: '#60CCED' }}>
+          <img src="/logo.svg" alt="Sheber Qonaq" className="w-12 h-12 object-contain" />
         </div>
         <h1 className="text-[28px] font-extrabold text-gray-900">Sheber Qonaq</h1>
         <p className="text-[15px] text-gray-500 mt-1">Управление хостелом</p>
