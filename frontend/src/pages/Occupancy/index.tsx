@@ -581,20 +581,6 @@ export default function OccupancyPage() {
     <div className="px-4 py-4 space-y-3">
       <PageHeader title="Карта размещения" />
 
-      <SegmentControl
-        value={view}
-        onChange={(v) => setView(v as 'now' | 'month')}
-        options={[
-          { value: 'now', label: 'Сейчас' },
-          { value: 'month', label: 'Месяц' },
-        ]}
-      />
-
-      {view === 'month' && <MonthHeatmap />}
-
-      {view === 'now' && (
-        <>
-
       <div className="bg-white rounded-2xl shadow-card px-4 py-3 space-y-2">
         <div className="flex items-center gap-2">
           <CalendarDays size={16} className="text-gray-400 shrink-0" />
@@ -645,7 +631,7 @@ export default function OccupancyPage() {
 
       {displayRooms.map(room => {
         const isDorm = room.units.some(u => u.unit_type === 'bed')
-        const roomAvail = room.units.filter(u => u.status === 'available').length
+        const roomAvail = room.units.filter(u => u.status === 'available' && !u.has_booking).length
         const bunks: Array<[Unit, Unit | undefined]> = []
         if (isDorm) for (let i = 0; i < room.units.length; i += 2) bunks.push([room.units[i], room.units[i + 1]])
 
@@ -706,9 +692,6 @@ export default function OccupancyPage() {
           <p className="text-base font-semibold text-gray-500">{period ? 'Нет свободных мест' : 'Нет мест'}</p>
           <p className="text-sm mt-1">{period ? 'На выбранные даты всё занято' : 'Попробуйте другой фильтр'}</p>
         </div>
-      )}
-
-      </>
       )}
 
       {/* Panels */}

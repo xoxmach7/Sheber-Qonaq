@@ -17,7 +17,7 @@ function TopBar() {
     <div className="sticky top-0 z-20 bg-[#FAFAFA]/90 backdrop-blur-sm border-b border-gray-100">
       <div className="flex items-center justify-between px-4 h-11">
         <div className="flex items-center gap-2.5">
-          <span className="grid place-items-center w-9 h-9 rounded-xl shadow-sm" style={{ background: 'linear-gradient(135deg,#0EA5E9,#1B2E4B)' }}>
+          <span className="grid place-items-center w-9 h-9 rounded-xl shadow-sm" style={{ background: '#60CCED' }}>
             <img src="/logo.svg" alt="" className="w-6 h-6 object-contain" />
           </span>
           <span className="text-[17px] font-extrabold text-primary-500 tracking-tight">Sheber Qonaq</span>
