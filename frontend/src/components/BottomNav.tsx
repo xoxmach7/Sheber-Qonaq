@@ -8,6 +8,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import api from '../api/client'
+import { useAuthStore } from '../store/auth'
 
 export default function BottomNav() {
   // Читаем property_mode из dashboard — запрос уже закеширован Layout/Dashboard
@@ -17,6 +18,9 @@ export default function BottomNav() {
     staleTime: 60_000,
   })
 
+  const role = useAuthStore(s => s.user?.role)
+  const canFinance = ['superadmin', 'owner', 'manager', 'accountant'].includes(role ?? '')
+
   const mapRoute = data?.property_mode === 'cottage' ? '/cottage' : '/occupancy'
 
   const tabs = [
@@ -24,7 +28,7 @@ export default function BottomNav() {
     { to: mapRoute,     label: 'Карта',   Icon: BedDouble },
     { to: '/stays',     label: 'Заезды',  Icon: CalendarDays },
     { to: '/guests',    label: 'Гости',   Icon: Users },
-    { to: '/finances',  label: 'Финансы', Icon: Wallet },
+    ...(canFinance ? [{ to: '/finances', label: 'Финансы', Icon: Wallet }] : []),
   ]
 
   return (

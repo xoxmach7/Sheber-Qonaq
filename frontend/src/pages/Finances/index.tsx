@@ -6,10 +6,11 @@ import { ru } from 'date-fns/locale'
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, Plus, X,
   Zap, ShoppingCart, Wrench, Users, Megaphone, Receipt, Package,
-  Banknote, Smartphone, Building2, CreditCard, Trash2,
+  Banknote, Smartphone, Building2, CreditCard, Trash2, Lock,
 } from 'lucide-react'
 import type { Expense } from '../../types'
 import type { LucideIcon } from 'lucide-react'
+import { useAuthStore } from '../../store/auth'
 
 function fmt(n: number | string) {
   return Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
@@ -110,8 +111,20 @@ function ExpenseForm({ defaultDate, onClose }: { defaultDate: string; onClose: (
 
 // ── Page ──
 export default function FinancesPage() {
+  const role = useAuthStore(s => s.user?.role)
+  const canFinance = ['superadmin', 'owner', 'manager', 'accountant'].includes(role ?? '')
   const [monthOffset, setMonthOffset] = useState(0)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
+
+  if (!canFinance) return (
+    <div className="px-4 py-20 text-center text-gray-400">
+      <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
+        <Lock size={28} className="text-gray-400" />
+      </div>
+      <p className="font-semibold text-gray-600">Раздел недоступен</p>
+      <p className="text-sm mt-1">Финансы видны только владельцу и бухгалтеру</p>
+    </div>
+  )
 
   const currentMonth = format(subMonths(new Date(), -monthOffset), 'yyyy-MM')
   const displayMonth = format(subMonths(new Date(), -monthOffset), 'LLLL yyyy', { locale: ru })
