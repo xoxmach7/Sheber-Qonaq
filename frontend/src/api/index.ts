@@ -163,6 +163,9 @@ export const blacklistApi = {
   deactivate: (id: number) =>
     api.delete(`/blacklist/${id}/`),
 
+  reportProblem: (id: number, message?: string) =>
+    api.post(`/blacklist/${id}/report-problem/`, { message }).then(r => r.data),
+
   check: (phone?: string, iin?: string) =>
     api.post<BlacklistCheck>('/blacklist/check/', { phone, iin }).then(r => r.data),
 }
