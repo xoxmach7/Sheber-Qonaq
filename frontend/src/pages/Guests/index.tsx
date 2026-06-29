@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { guestsApi, blacklistApi } from '../../api'
 import {
   Plus, Phone, User, X,
-  ShieldAlert, ShieldOff,
+  ShieldAlert, ShieldOff, MessageSquareWarning,
   Banknote, Lock, Hammer, UserX, VolumeX, HelpCircle, Pencil, Trash2,
 } from 'lucide-react'
 import type { Guest, GuestCreate, BlacklistCreate, BlacklistReason, BlacklistEntry } from '../../types'
 import type { LucideIcon } from 'lucide-react'
 import { Avatar, PageHeader, SegmentControl, SearchBar, EmptyState } from '../../components/ui'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
+import { useAuthStore } from '../../store/auth'
 
 // ─── Guest Form (create / edit) ──────────────────────────────────────────────
 function GuestForm({
@@ -383,6 +384,8 @@ function GuestsList({ search }: { search: string }) {
 // ─── Blacklist tab ────────────────────────────────────────────────────────────
 function BlacklistTab({ search }: { search: string }) {
   const qc = useQueryClient()
+  const user = useAuthStore(s => s.user)
+  const isOwner = user?.role === 'owner' || user?.role === 'superadmin'
   const [viewKey, setViewKey] = useState<string | null>(null)
   const { data, isLoading } = useQuery({
     queryKey: ['blacklist', search],
@@ -394,6 +397,14 @@ function BlacklistTab({ search }: { search: string }) {
     mutationFn: blacklistApi.deactivate,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['blacklist'] }),
   })
+
+  const { mutate: reportProblem, isPending: reporting } = useMutation({
+    mutationFn: (id: number) => blacklistApi.reportProblem(id),
+    onSuccess: () => alert('Жалоба отправлена — автор записи получит уведомление.'),
+  })
+
+  // Запись добавлена моей организацией?
+  const isMine = (e: BlacklistEntry) => e.reported_by != null && e.reported_by === user?.organization
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-40">
@@ -462,11 +473,20 @@ function BlacklistTab({ search }: { search: string }) {
                   </div>
                   {entry.description && <p className="text-sm text-gray-600 mt-2">{entry.description}</p>}
                   {entry.reported_by_name && <p className="text-xs text-gray-400 mt-1.5">Добавил: {entry.reported_by_name}</p>}
-                  <button
-                    onClick={() => { if (confirm('Убрать это нарушение?')) { deactivate(entry.id); if (activeEntries.length <= 1) setViewKey(null) } }}
-                    className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600">
-                    <ShieldOff size={13} /> Убрать
-                  </button>
+                  {isMine(entry) && isOwner ? (
+                    <button
+                      onClick={() => { if (confirm('Убрать это нарушение?')) { deactivate(entry.id); if (activeEntries.length <= 1) setViewKey(null) } }}
+                      className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600">
+                      <ShieldOff size={13} /> Убрать
+                    </button>
+                  ) : (
+                    <button
+                      disabled={reporting}
+                      onClick={() => { if (confirm('Сообщить автору, что запись возможно ошибочна?')) reportProblem(entry.id) }}
+                      className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 disabled:opacity-50">
+                      <MessageSquareWarning size={13} /> Сообщить о проблеме
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -479,6 +499,8 @@ function BlacklistTab({ search }: { search: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function GuestsPage() {
+  const user = useAuthStore(s => s.user)
+  const canAddViolation = ['superadmin', 'owner', 'manager'].includes(user?.role ?? '')
   const [tab, setTab] = useState<'guests' | 'blacklist'>('guests')
   const [search, setSearch] = useState('')
   const [showGuestForm, setShowGuestForm] = useState(false)
@@ -490,11 +512,14 @@ export default function GuestsPage() {
   })
   const blacklistCount = blData?.count ?? 0
 
+  // На вкладке нарушений кнопку «Добавить» показываем только владельцу/админу
+  const showAction = tab === 'guests' || canAddViolation
+
   return (
     <div className="px-4 py-4 space-y-3">
       <PageHeader
         title="Гости"
-        action="Добавить"
+        action={showAction ? 'Добавить' : undefined}
         actionIcon={Plus}
         actionVariant={tab === 'blacklist' ? 'danger' : 'primary'}
         onAction={() => tab === 'guests' ? setShowGuestForm(true) : setShowBlacklistForm(true)}
