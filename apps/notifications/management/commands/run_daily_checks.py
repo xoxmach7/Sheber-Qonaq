@@ -21,6 +21,16 @@ class Command(BaseCommand):
         self._check_debts()
         self.stdout.write('=== run_daily_checks done ===')
 
+    def _expire_reservations(self):
+        """Снимает протухшие резервы без предоплаты (старше 12ч) -> expired."""
+        from apps.stays.services import expire_stale_reservations
+        try:
+            n = expire_stale_reservations(hours=12)
+            self.stdout.write(f'  expired {n} stale reservation(s)')
+        except Exception as exc:
+            logger.exception('expire_stale_reservations failed: %s', exc)
+            self.stdout.write(self.style.ERROR(f'  expire failed: {exc}'))
+
     def _create(self, org, notif_type, title, body, stay):
         from apps.notifications.models import Notification
         exists = Notification.objects.filter(
