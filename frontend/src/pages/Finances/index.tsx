@@ -112,7 +112,7 @@ function ExpenseForm({ defaultDate, onClose }: { defaultDate: string; onClose: (
 // ── Page ──
 export default function FinancesPage() {
   const role = useAuthStore(s => s.user?.role)
-  const canFinance = ['superadmin', 'owner', 'manager', 'accountant'].includes(role ?? '')
+  const canFinance = ['superadmin', 'owner'].includes(role ?? '')
   const [monthOffset, setMonthOffset] = useState(0)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
 
@@ -122,7 +122,7 @@ export default function FinancesPage() {
         <Lock size={28} className="text-gray-400" />
       </div>
       <p className="font-semibold text-gray-600">Раздел недоступен</p>
-      <p className="text-sm mt-1">Финансы видны только владельцу и бухгалтеру</p>
+      <p className="text-sm mt-1">Финансы видны только владельцу</p>
     </div>
   )
 

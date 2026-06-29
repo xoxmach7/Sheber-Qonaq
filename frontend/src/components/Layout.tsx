@@ -1,11 +1,14 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell } from 'lucide-react'
+import { Bell, Users } from 'lucide-react'
 import { notificationsApi } from '../api'
+import { useAuthStore } from '../store/auth'
 import BottomNav from './BottomNav'
 
 function TopBar() {
   const navigate = useNavigate()
+  const role = useAuthStore(s => s.user?.role)
+  const canManageStaff = ['superadmin', 'owner', 'manager'].includes(role ?? '')
   const { data } = useQuery({
     queryKey: ['notifications'],
     queryFn: notificationsApi.list,
@@ -22,16 +25,26 @@ function TopBar() {
           </span>
           <span className="text-[17px] font-extrabold text-primary-500 tracking-tight">Sheber Qonaq</span>
         </div>
-        <button
-          onClick={() => navigate('/notifications')}
-          className="relative w-8 h-8 rounded-xl flex items-center justify-center">
-          <Bell size={18} className={unread > 0 ? 'text-primary-500' : 'text-gray-400'} />
-          {unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
-              {unread > 99 ? '99+' : unread}
-            </span>
+        <div className="flex items-center gap-1">
+          {canManageStaff && (
+            <button
+              onClick={() => navigate('/staff')}
+              className="w-8 h-8 rounded-xl flex items-center justify-center"
+              aria-label="Сотрудники">
+              <Users size={18} className="text-gray-400" />
+            </button>
           )}
-        </button>
+          <button
+            onClick={() => navigate('/notifications')}
+            className="relative w-8 h-8 rounded-xl flex items-center justify-center">
+            <Bell size={18} className={unread > 0 ? 'text-primary-500' : 'text-gray-400'} />
+            {unread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                {unread > 99 ? '99+' : unread}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )

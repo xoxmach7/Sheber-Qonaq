@@ -1,6 +1,6 @@
 import api from './client'
 import type {
-  LoginCredentials, AuthTokens, User,
+  LoginCredentials, AuthTokens, User, UserCreate,
   Property, Room, Unit,
   Guest, GuestCreate,
   Stay, StayCreate, MpisStatus,
@@ -24,6 +24,21 @@ export const authApi = {
 
   me: () =>
     api.get<User>('/users/me/').then(r => r.data),
+}
+
+// ─── Staff / Users ───────────────────────────────────────────────────────────
+export const usersApi = {
+  list: () =>
+    api.get<PaginatedResponse<User>>('/users/').then(r => r.data),
+
+  create: (data: UserCreate) =>
+    api.post<User>('/users/', data).then(r => r.data),
+
+  update: (id: number, data: Partial<User>) =>
+    api.patch<User>(`/users/${id}/`, data).then(r => r.data),
+
+  remove: (id: number) =>
+    api.delete(`/users/${id}/`),
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────

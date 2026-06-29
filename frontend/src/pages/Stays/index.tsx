@@ -451,7 +451,7 @@ export default function StaysPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      {stay.status !== 'active' && <StatusBadge type="stay" status={stay.status} size="xs" />}
+                      {stay.status !== 'active' && stay.status !== 'reserved' && <StatusBadge type="stay" status={stay.status} size="xs" />}
                       {stay.mpis_status !== 'not_required' && <MpisBadge status={stay.mpis_status} />}
                     </div>
                   </div>
@@ -462,12 +462,21 @@ export default function StaysPage() {
                     <div><p className="text-gray-400 mb-0.5">Ставка</p><p className="font-medium text-gray-700">{fmt(stay.rate_amount)}</p></div>
                   </div>
 
-                  <div className={`mt-2 flex items-center justify-between text-sm rounded-xl px-3 py-2 ${isDebt ? 'bg-red-50' : 'bg-emerald-50'}`}>
-                    <span className={`font-semibold ${isDebt ? 'text-red-700' : 'text-emerald-700'}`}>
-                      {isDebt ? `Долг: ${fmt(balance)}` : 'Оплачено'}
-                    </span>
-                    <span className="text-gray-400 text-xs">{fmt(paid)} / {fmt(expected)}</span>
-                  </div>
+                  {isBooking ? (
+                    <div className={`mt-2 flex items-center justify-between text-sm rounded-xl px-3 py-2 ${Number(paid) > 0 ? 'bg-emerald-50' : 'bg-gray-50'}`}>
+                      <span className={`font-semibold ${Number(paid) > 0 ? 'text-emerald-700' : 'text-gray-500'}`}>
+                        {Number(paid) > 0 ? `Предоплата: ${fmt(paid)}` : 'Без предоплаты'}
+                      </span>
+                      <span className="text-gray-400 text-xs">из {fmt(expected)}</span>
+                    </div>
+                  ) : (
+                    <div className={`mt-2 flex items-center justify-between text-sm rounded-xl px-3 py-2 ${isDebt ? 'bg-red-50' : 'bg-emerald-50'}`}>
+                      <span className={`font-semibold ${isDebt ? 'text-red-700' : 'text-emerald-700'}`}>
+                        {isDebt ? `Долг: ${fmt(balance)}` : 'Оплачено'}
+                      </span>
+                      <span className="text-gray-400 text-xs">{fmt(paid)} / {fmt(expected)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex border-t border-gray-100">

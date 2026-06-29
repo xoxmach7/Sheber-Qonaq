@@ -6,7 +6,8 @@ from rest_framework.permissions import BasePermission
 
 OWNER_ROLES = ('superadmin', 'owner')
 MANAGER_ROLES = ('superadmin', 'owner', 'manager')
-FINANCE_ROLES = ('superadmin', 'owner', 'manager', 'accountant')
+# Финансы видит только владелец (и суперадмин платформы)
+FINANCE_ROLES = ('superadmin', 'owner')
 RECEPTION_ROLES = ('superadmin', 'owner', 'manager', 'reception')
 
 
