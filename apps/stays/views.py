@@ -54,9 +54,10 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
         stay.status = 'checked_out'
         stay.save(update_fields=['status', 'actual_check_out_date', 'notes'])
 
-        # Освобождаем юнит — ставим статус "требует уборки".
+        # Освобождаем юнит — сразу делаем доступным (без шага "грязно").
+        # Маленьким хостелам отдельный статус уборки только мешает.
         # В той же транзакции: если save() упадёт — Stay тоже откатится.
-        stay.unit.status = 'dirty'
+        stay.unit.status = 'available'
         stay.unit.save(update_fields=['status'])
 
         return Response(StaySerializer(stay, context={'request': request}).data)
@@ -121,8 +122,17 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        stay.status = 'confirmed'
-        stay.save(update_fields=['status'])
+        # Оплачено полностью — сразу переводим в Заезд (active) без отдельной кнопки.
+        # Промежуточное состояние confirmed остаётся для частичной (≥50%) предоплаты.
+        if stay.total_paid >= stay.total_expected:
+            stay.status = 'active'
+            stay.save(update_fields=['status'])
+            if not stay.shift_type and stay.unit.status == 'available':
+                stay.unit.status = 'occupied'
+                stay.unit.save(update_fields=['status'])
+        else:
+            stay.status = 'confirmed'
+            stay.save(update_fields=['status'])
         return self._stay_response(stay)
 
     @action(detail=True, methods=['post'], url_path='check-in')

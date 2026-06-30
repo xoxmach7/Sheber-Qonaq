@@ -352,15 +352,16 @@ function OccupiedPanel({ unit, onClose, onCheckout, onBook }: {
           </div>
         </div>
 
-        <button onClick={onBook}
-          className="w-full flex items-center justify-center gap-2 py-3 mb-2 bg-violet-50 text-violet-700 rounded-2xl text-sm font-bold ring-1 ring-violet-100">
-          <CalendarPlus size={16} /> Забронировать
-        </button>
-
-        <button onClick={onCheckout}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white rounded-2xl text-sm font-bold">
-          <LogOut size={16} /> Выселить
-        </button>
+        <div className="flex gap-2">
+          <button onClick={onBook}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-violet-500 text-white rounded-2xl text-sm font-bold">
+            <CalendarPlus size={16} /> Забронировать
+          </button>
+          <button onClick={onCheckout}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white rounded-2xl text-sm font-bold">
+            <LogOut size={16} /> Выселить
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -396,13 +397,14 @@ function StatusPicker({ unit, onSelect, onClose }: { unit: Unit; onSelect: (s: U
 }
 
 // ── Booking info panel ──
-function BookingPanel({ unit, onClose }: { unit: Unit; onClose: () => void }) {
+function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: () => void; onClose: () => void }) {
   const fmtD = (d?: string) => {
     if (!d) return '—'
     const [y, m, day] = d.split('-')
     return `${day}.${m}.${y}`
   }
   const statusLabel = unit.next_booking_status === 'confirmed' ? 'Подтверждена (есть предоплата)' : 'Резерв (без предоплаты)'
+  const guestName = unit.next_booking_guest ?? 'Гость'
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30 animate-fade-in" />
@@ -415,13 +417,17 @@ function BookingPanel({ unit, onClose }: { unit: Unit; onClose: () => void }) {
             <Clock size={15} className="text-violet-500 shrink-0" />
             <span className="text-sm font-bold text-violet-700">Бронь · {statusLabel}</span>
           </div>
-          <p className="text-base font-bold text-gray-900">{unit.next_booking_guest ?? 'Гость'}</p>
+          <p className="text-base font-bold text-gray-900">{guestName}</p>
           <div className="flex items-center gap-1.5 mt-1.5">
             <CalendarDays size={13} className="text-gray-400" />
             <span className="text-sm text-gray-600">{fmtD(unit.next_check_in)} → {fmtD(unit.next_check_out)}</span>
           </div>
         </div>
 
+        <button onClick={() => { if (confirm(`Удалить бронь ${guestName}?`)) onCancel() }}
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white rounded-2xl text-sm font-bold">
+          <X size={16} /> Удалить
+        </button>
       </div>
     </div>
   )
@@ -488,7 +494,11 @@ type PanelState = { type: 'free' | 'occupied' | 'status' | 'checkin' | 'book' | 
 export default function OccupancyPage() {
   const qc = useQueryClient()
   const [panel, setPanel] = useState<PanelState>(null)
-  const [filter, setFilter] = useState('all')
+  const initialFilter =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('filter') === 'free'
+      ? 'available'
+      : 'all'
+  const [filter, setFilter] = useState(initialFilter)
   const [view, setView] = useState<'now' | 'month'>('now')
   const [pFrom, setPFrom] = useState('')
   const [pTo, setPTo] = useState('')
@@ -511,6 +521,11 @@ export default function OccupancyPage() {
 
   const { mutate: checkout } = useMutation({
     mutationFn: (stayId: number) => staysApi.checkout(stayId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); setPanel(null) },
+  })
+
+  const { mutate: cancelBooking } = useMutation({
+    mutationFn: (stayId: number) => staysApi.cancel(stayId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); setPanel(null) },
   })
 
@@ -597,9 +612,9 @@ export default function OccupancyPage() {
       </div>
 
       {period && (
-        <div className="bg-violet-50 border border-violet-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-2">
-          <p className="text-sm font-bold text-violet-800">Свободно: {period.from} → {period.to}</p>
-          {!availLoading && avail && <span className="text-sm font-extrabold text-violet-700 shrink-0">{avail.count} мест</span>}
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-2">
+          <p className="text-sm font-bold text-emerald-800">Свободно: {period.from} → {period.to}</p>
+          {!availLoading && avail && <span className="text-sm font-extrabold text-emerald-700 shrink-0">{avail.count} мест</span>}
         </div>
       )}
 
@@ -703,6 +718,7 @@ export default function OccupancyPage() {
       )}
       {panel?.type === 'booking' && (
         <BookingPanel unit={panel.unit}
+          onCancel={() => { if (panel.unit.next_stay_id) cancelBooking(panel.unit.next_stay_id) }}
           onClose={() => setPanel(null)} />
       )}
       {panel?.type === 'occupied' && (

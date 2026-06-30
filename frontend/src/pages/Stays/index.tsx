@@ -356,7 +356,11 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
 // ── Main page ──
 export default function StaysPage() {
   const qc = useQueryClient()
-  const [tab, setTab] = useState<'stays' | 'bookings'>('stays')
+  const initialTab: 'stays' | 'bookings' =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'bookings'
+      ? 'bookings'
+      : 'stays'
+  const [tab, setTab] = useState<'stays' | 'bookings'>(initialTab)
   const [search, setSearch] = useState('')
   const [checkinMode, setCheckinMode] = useState<'checkin' | 'booking' | null>(null)
   const [payStay, setPayStay] = useState<Stay | null>(null)

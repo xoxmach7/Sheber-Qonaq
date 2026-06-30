@@ -500,7 +500,11 @@ function BlacklistTab({ search }: { search: string }) {
 export default function GuestsPage() {
   const user = useAuthStore(s => s.user)
   const canAddViolation = ['superadmin', 'owner', 'manager'].includes(user?.role ?? '')
-  const [tab, setTab] = useState<'guests' | 'blacklist'>('guests')
+  const initialTab: 'guests' | 'blacklist' =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'blacklist'
+      ? 'blacklist'
+      : 'guests'
+  const [tab, setTab] = useState<'guests' | 'blacklist'>(initialTab)
   const [search, setSearch] = useState('')
   const [showGuestForm, setShowGuestForm] = useState(false)
   const [showBlacklistForm, setShowBlacklistForm] = useState(false)

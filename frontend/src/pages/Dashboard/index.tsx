@@ -137,7 +137,7 @@ export default function DashboardPage() {
           value={occ?.available ?? 0}
           sub={`${occ?.out_of_order ?? 0} закрытых`}
           color="emerald"
-          onClick={() => navigate('/occupancy')}
+          onClick={() => navigate('/occupancy?filter=free')}
         />
         <KPICard
           icon={ArrowDownCircle}
@@ -161,15 +161,15 @@ export default function DashboardPage() {
           icon={CalendarClock}
           label="Активные брони"
           value={kpi?.active_bookings ?? 0}
-          color="blue"
-          onClick={() => navigate('/stays')}
+          color="violet"
+          onClick={() => navigate('/stays?tab=bookings')}
         />
         <KPICard
           icon={ShieldAlert}
           label="Нарушения за месяц"
           value={kpi?.violations_this_month ?? 0}
           color="red"
-          onClick={() => navigate('/guests')}
+          onClick={() => navigate('/guests?tab=blacklist')}
         />
       </div>
 

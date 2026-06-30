@@ -15,6 +15,7 @@ const colorMap: Record<string, { icon: string; iconBg: string }> = {
   blue:    { icon: 'text-blue-600',    iconBg: 'bg-blue-50' },
   red:     { icon: 'text-red-500',     iconBg: 'bg-red-50' },
   amber:   { icon: 'text-amber-600',   iconBg: 'bg-amber-50' },
+  violet:  { icon: 'text-violet-600',  iconBg: 'bg-violet-50' },
 }
 
 export default function KPICard({ icon: Icon, label, value, sub, color, onClick }: KPICardProps) {
