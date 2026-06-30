@@ -307,8 +307,8 @@ function FreePanel({ unit, onCheckIn, onBook, onChangeStatus, onClose }: {
 }
 
 // ── Occupied unit panel ──
-function OccupiedPanel({ unit, onClose, onChangeStatus, onCheckout, onBook }: {
-  unit: Unit; onClose: () => void; onChangeStatus: () => void; onCheckout: () => void; onBook: () => void
+function OccupiedPanel({ unit, onClose, onCheckout, onBook }: {
+  unit: Unit; onClose: () => void; onCheckout: () => void; onBook: () => void
 }) {
   const { data: blCheck } = useQuery({
     queryKey: ['bl-check', unit.current_guest_phone],
@@ -354,19 +354,13 @@ function OccupiedPanel({ unit, onClose, onChangeStatus, onCheckout, onBook }: {
 
         <button onClick={onBook}
           className="w-full flex items-center justify-center gap-2 py-3 mb-2 bg-violet-50 text-violet-700 rounded-2xl text-sm font-bold ring-1 ring-violet-100">
-          <CalendarPlus size={16} /> Забронировать на будущие даты
+          <CalendarPlus size={16} /> Забронировать
         </button>
 
-        <div className="flex gap-2">
-          <button onClick={onCheckout}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white rounded-2xl text-sm font-bold">
-            <LogOut size={16} /> Выселить
-          </button>
-          <button onClick={onChangeStatus}
-            className="px-5 py-3.5 bg-gray-100 text-gray-600 rounded-2xl text-sm font-semibold">
-            Статус
-          </button>
-        </div>
+        <button onClick={onCheckout}
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white rounded-2xl text-sm font-bold">
+          <LogOut size={16} /> Выселить
+        </button>
       </div>
     </div>
   )
@@ -402,7 +396,7 @@ function StatusPicker({ unit, onSelect, onClose }: { unit: Unit; onSelect: (s: U
 }
 
 // ── Booking info panel ──
-function BookingPanel({ unit, onChangeStatus, onClose }: { unit: Unit; onChangeStatus: () => void; onClose: () => void }) {
+function BookingPanel({ unit, onClose }: { unit: Unit; onClose: () => void }) {
   const fmtD = (d?: string) => {
     if (!d) return '—'
     const [y, m, day] = d.split('-')
@@ -428,12 +422,6 @@ function BookingPanel({ unit, onChangeStatus, onClose }: { unit: Unit; onChangeS
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <button onClick={onChangeStatus}
-            className="flex-1 py-3.5 bg-gray-100 text-gray-600 rounded-2xl text-sm font-semibold">Статус места</button>
-          <button onClick={onClose}
-            className="flex-1 py-3.5 bg-primary-500 text-white rounded-2xl text-sm font-bold">Закрыть</button>
-        </div>
       </div>
     </div>
   )
@@ -715,14 +703,12 @@ export default function OccupancyPage() {
       )}
       {panel?.type === 'booking' && (
         <BookingPanel unit={panel.unit}
-          onChangeStatus={() => setPanel({ type: 'status', unit: panel.unit })}
           onClose={() => setPanel(null)} />
       )}
       {panel?.type === 'occupied' && (
         <OccupiedPanel unit={panel.unit}
           onClose={() => setPanel(null)}
           onBook={() => setPanel({ type: 'book', unit: panel.unit })}
-          onChangeStatus={() => setPanel({ type: 'status', unit: panel.unit })}
           onCheckout={() => { if (panel.unit.current_stay_id) checkout(panel.unit.current_stay_id) }} />
       )}
       {panel?.type === 'status' && (
