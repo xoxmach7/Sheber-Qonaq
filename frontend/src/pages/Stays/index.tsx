@@ -145,7 +145,7 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
             <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={16} className="text-red-600 shrink-0" />
-                <span className="font-semibold text-red-700 text-sm">Гость в чёрном списке!</span>
+                <span className="font-semibold text-red-700 text-sm">У гостя есть нарушение</span>
               </div>
               {blacklistCheck?.entries.map(e => (
                 <p key={e.id} className="text-xs text-red-600 ml-6">{e.reason_display}: {e.description.slice(0, 80)}</p>
