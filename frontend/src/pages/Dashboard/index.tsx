@@ -6,6 +6,7 @@ import { ru } from 'date-fns/locale'
 import {
   BedDouble, CheckCircle2, ArrowDownCircle, ArrowUpCircle,
   Banknote, AlertCircle, Globe, Plus, LogOut, User, CreditCard,
+  CalendarClock, ShieldAlert,
 } from 'lucide-react'
 import { KPICard, Avatar } from '../../components/ui'
 import { useAuthStore } from '../../store/auth'
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   const fin = data?.finances
   const todayData = data?.today
   const alerts = data?.alerts
+  const kpi = data?.kpi
 
   // ── Сводка «Требует внимания» (для заметной панели сверху) ──
   const checkoutsToday = todayData?.checkouts?.length ?? 0
@@ -153,21 +155,31 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Revenue card */}
+      {/* Active bookings + violations */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <KPICard
+          icon={CalendarClock}
+          label="Активные брони"
+          value={kpi?.active_bookings ?? 0}
+          color="blue"
+          onClick={() => navigate('/stays')}
+        />
+        <KPICard
+          icon={ShieldAlert}
+          label="Нарушения за месяц"
+          value={kpi?.violations_this_month ?? 0}
+          color="red"
+          onClick={() => navigate('/guests')}
+        />
+      </div>
+
+      {/* Revenue card — доход и расход за месяц */}
       <KPICard
         icon={Banknote}
         label="Доход за месяц"
         value={fmt(fin?.income_this_month ?? 0)}
+        sub={`Расходы: ${fmt(fin?.expenses_this_month ?? 0)}`}
         color="emerald"
-        onClick={() => navigate('/finances')}
-      />
-
-      {/* Expenses card */}
-      <KPICard
-        icon={ArrowUpCircle}
-        label="Расходы за месяц"
-        value={fmt(fin?.expenses_this_month ?? 0)}
-        color="red"
         onClick={() => navigate('/finances')}
       />
 

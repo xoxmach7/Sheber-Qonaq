@@ -424,6 +424,8 @@ export default function StaysPage() {
             const isDebt = balance > 0
             const guestName = stay.guest_detail?.full_name ?? `Гость #${stay.guest}`
             const unitName = stay.unit_detail?.name ?? `Место #${stay.unit}`
+            const roomName = stay.unit_detail?.room_name
+            const placeLabel = roomName ? `${roomName} · ${unitName}` : unitName
             const isForeigner = stay.guest_detail?.is_foreigner ?? false
             const needsMpis = isForeigner && stay.mpis_status !== 'confirmed'
             const isBooking = stay.status === 'reserved'
@@ -439,7 +441,7 @@ export default function StaysPage() {
                       <Avatar name={guestName} size={40} />
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-900 truncate text-[15px]">{guestName}</p>
-                        <p className="text-xs text-gray-400">{unitName}</p>
+                        <p className="text-xs text-gray-400 truncate">{placeLabel}</p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">

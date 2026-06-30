@@ -190,6 +190,7 @@ export interface UnitShort {
   id: number
   name: string
   unit_type: string
+  room_name?: string
 }
 
 export interface Stay {
@@ -372,6 +373,10 @@ export interface DashboardData {
       unit_name: string
       debt: string
     }>
+  }
+  kpi?: {
+    active_bookings: number
+    violations_this_month: number
   }
 }
 
