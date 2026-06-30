@@ -10,7 +10,15 @@ import {
 import { PageHeader, FilterPills, Avatar, SegmentControl } from '../../components/ui'
 import MonthHeatmap from './MonthHeatmap'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
-import { format } from 'date-fns'
+import { format, addDays, addMonths } from 'date-fns'
+
+// Дата выезда = заезд + 1 период выбранного типа оплаты
+function addPeriod(dateStr: string, rate: RateType): string {
+  if (!dateStr) return dateStr
+  const d = new Date(dateStr + 'T12:00:00')
+  const nd = rate === 'daily' ? addDays(d, 1) : rate === 'weekly' ? addDays(d, 7) : addMonths(d, 1)
+  return format(nd, 'yyyy-MM-dd')
+}
 
 // ── Status config ──
 const STATUS: Record<UnitStatus, { label: string; dot: string; bg: string; text: string; border: string; icon: React.ReactNode }> = {
@@ -30,13 +38,16 @@ const dispStatus = (s: UnitStatus): UnitStatus => (CLOSED.includes(s) ? 'out_of_
 // ── Check-In Sheet (pre-selected unit) ──
 function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; onClose: () => void; initialMode?: 'checkin' | 'booking' }) {
   const qc = useQueryClient()
-  const [form, setForm] = useState({
-    guest: '', guestName: '', guestPhone: '',
-    check_in_date: format(new Date(), 'yyyy-MM-dd'),
-    expected_check_out_date: format(new Date(Date.now() + 30 * 86400000), 'yyyy-MM-dd'),
-    rate_type: 'monthly' as RateType,
-    rate_amount: '',
-    prepay: '',
+  const [form, setForm] = useState(() => {
+    const today = format(new Date(), 'yyyy-MM-dd')
+    return {
+      guest: '', guestName: '', guestPhone: '',
+      check_in_date: today,
+      expected_check_out_date: addPeriod(today, 'monthly'),
+      rate_type: 'monthly' as RateType,
+      rate_amount: '',
+      prepay: '',
+    }
   })
   const [guestSearch, setGuestSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
@@ -215,7 +226,8 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд *</label>
-              <input type="date" className="input-field text-sm" value={form.check_in_date} onChange={e => setForm(f => ({ ...f, check_in_date: e.target.value }))} />
+              <input type="date" className="input-field text-sm" value={form.check_in_date}
+                onChange={e => setForm(f => ({ ...f, check_in_date: e.target.value, expected_check_out_date: addPeriod(e.target.value, f.rate_type) }))} />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Выезд</label>
@@ -227,7 +239,7 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Тариф *</label>
             <div className="grid grid-cols-3 gap-1.5 mb-2">
               {(['monthly', 'weekly', 'daily'] as RateType[]).map(rt => (
-                <button key={rt} onClick={() => setForm(f => ({ ...f, rate_type: rt }))}
+                <button key={rt} onClick={() => setForm(f => ({ ...f, rate_type: rt, expected_check_out_date: addPeriod(f.check_in_date, rt) }))}
                   className={`py-2 rounded-xl text-xs font-semibold border transition ${form.rate_type === rt ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-600 border-gray-200'}`}>
                   {rateLabels[rt]}
                 </button>
