@@ -138,7 +138,7 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
             <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={15} className="text-red-600 shrink-0" />
-                <span className="font-bold text-red-700 text-sm">Гость в чёрном списке!</span>
+                <span className="font-bold text-red-700 text-sm">У гостя есть нарушение</span>
               </div>
               {blCheck?.entries.map(e => (
                 <p key={e.id} className="text-xs text-red-600 ml-5">{e.reason_display}: {e.description.slice(0, 80)}</p>
@@ -346,7 +346,7 @@ function OccupiedPanel({ unit, onClose, onCheckout, onBook }: {
         {isBlacklisted && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 mb-3 flex items-center gap-2">
             <AlertTriangle size={14} className="text-red-500 shrink-0" />
-            <p className="text-xs text-red-700 font-semibold">Гость в чёрном списке</p>
+            <p className="text-xs text-red-700 font-semibold">У гостя есть нарушение</p>
           </div>
         )}
 
@@ -659,8 +659,8 @@ export default function OccupancyPage() {
           <div key={room.roomId} className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center shrink-0">
-                  <span className="text-[10px] font-bold text-gray-500">{room.roomName.match(/\d+/)?.[0] ?? '?'}</span>
+                <div className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center shrink-0" title={`${room.units.length} мест`}>
+                  <span className="text-[10px] font-bold text-gray-500">{room.units.length}</span>
                 </div>
                 <span className="font-semibold text-sm text-gray-800 truncate">{room.roomName}</span>
               </div>

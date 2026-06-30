@@ -59,28 +59,29 @@ export default function DashboardPage() {
   const mpisPending = alerts?.mpis_pending_count ?? 0
   const expiringSoon = alerts?.expiring_soon_count ?? 0
 
-  type TopAlert = { key: string; icon: typeof Globe; title: string; sub: string; cls: string; to?: string; scrollTo?: string }
+  type TopAlert = { key: string; icon: typeof Globe; title: string; sub?: string; cls: string; to?: string; scrollTo?: string }
+  // Все алерты единого цвета (amber) — как "заезды скоро заканчиваются".
+  const ALERT_CLS = 'bg-amber-50 border-amber-200 text-amber-700'
   const topAlerts: TopAlert[] = []
   if (mpisPending > 0) topAlerts.push({
     key: 'mpis', icon: Globe,
-    title: `${mpisPending} без MPIS`,
-    sub: 'Штраф 40 МРП за каждого — зарегистрируйте',
-    cls: 'bg-orange-50 border-orange-200 text-orange-700', to: '/stays',
+    title: `${mpisPending} ${plural(mpisPending, 'гость', 'гостя', 'гостей')} без МПИС`,
+    cls: ALERT_CLS, to: '/stays',
   })
   if (debtors.length > 0) topAlerts.push({
     key: 'debt', icon: Banknote,
     title: `${debtors.length} ${plural(debtors.length, 'должник', 'должника', 'должников')} · ${fmt(debtTotal)}`,
-    sub: 'Не оплатили проживание', cls: 'bg-red-50 border-red-200 text-red-700', scrollTo: 'debtors',
+    cls: ALERT_CLS, scrollTo: 'debtors',
   })
   if (checkoutsToday > 0) topAlerts.push({
     key: 'checkout', icon: ArrowUpCircle,
     title: `${checkoutsToday} ${plural(checkoutsToday, 'выезд', 'выезда', 'выездов')} сегодня`,
-    sub: 'Проверьте оплату перед выездом', cls: 'bg-blue-50 border-blue-200 text-blue-700', to: '/stays',
+    sub: 'Проверьте оплату перед выездом', cls: ALERT_CLS, to: '/stays',
   })
   if (expiringSoon > 0) topAlerts.push({
     key: 'expiring', icon: AlertCircle,
     title: `${expiringSoon} ${plural(expiringSoon, 'заезд', 'заезда', 'заездов')} скоро заканчиваются`,
-    sub: 'В течение 3 дней', cls: 'bg-amber-50 border-amber-200 text-amber-700', to: '/stays',
+    sub: 'В течение 3 дней', cls: ALERT_CLS, to: '/stays',
   })
 
   return (
@@ -113,7 +114,7 @@ export default function DashboardPage() {
               <a.icon size={20} className="shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold leading-tight">{a.title}</p>
-                <p className="text-xs opacity-80 mt-0.5">{a.sub}</p>
+                {a.sub && <p className="text-xs opacity-80 mt-0.5">{a.sub}</p>}
               </div>
               <ArrowUpCircle size={16} className="rotate-45 opacity-40 shrink-0" />
             </button>
