@@ -68,8 +68,9 @@ export default function NotificationsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
 
-  const notifications = data?.results ?? []
-  const unread = data?.unread_count ?? 0
+  // Скрываем уведомления о выездах (expiring, overdue) — они дублируют дашборд и шумят
+  const notifications = (data?.results ?? []).filter(n => n.type !== 'expiring' && n.type !== 'overdue')
+  const unread = notifications.filter(n => !n.is_read).length
 
   return (
     <div className="px-4 py-4 space-y-3">

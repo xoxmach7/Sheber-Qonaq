@@ -147,6 +147,19 @@ class DashboardView(APIView):
             mpis_status__in=['pending', 'submitted'],
         ).count()
 
+        # Активные брони (резерв + подтверждённые, ещё не заселены)
+        active_bookings_count = Stay.objects.filter(
+            organization=org,
+            status__in=['reserved', 'confirmed'],
+        ).count()
+
+        # Нарушения, добавленные этой организацией в текущем месяце
+        violations_this_month = BlacklistEntry.objects.filter(
+            reported_by=org,
+            is_active=True,
+            created_at__date__gte=month_start,
+        ).count()
+
         return Response({
             'date': today,
             'month': today.strftime('%Y-%m'),
@@ -181,5 +194,10 @@ class DashboardView(APIView):
                 'expiring_soon_count': expiring_count,
                 'mpis_pending_count': mpis_pending_count,
                 'debtors': debtors[:5],   # топ-5 должников
+            },
+
+            'kpi': {
+                'active_bookings': active_bookings_count,
+                'violations_this_month': violations_this_month,
             },
         })
