@@ -1,13 +1,19 @@
 from pathlib import Path
 from decouple import config
+import secrets
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
+# SECRET_KEY должен быть установлен в .env для production
+# В development генерируем случайный ключ при каждом запуске (для безопасности)
+SECRET_KEY = config('SECRET_KEY', default=secrets.token_urlsafe(50))
 
-DEBUG = config('DEBUG', default=True, cast=bool)
+# DEBUG по умолчанию False для безопасности
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+# ALLOWED_HOSTS требует явного указания доменов в .env
+# Для development используйте: ALLOWED_HOSTS=localhost,127.0.0.1
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 # Applications
 DJANGO_APPS = [
@@ -152,8 +158,14 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL', default=True, cast=bool)
+# CORS - по умолчанию закрыт для безопасности
+# Для development установите CORS_ALLOW_ALL=True в .env
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL', default=False, cast=bool)
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:3000,http://127.0.0.1:3000'
+).split(',') if not CORS_ALLOW_ALL_ORIGINS else []
+CORS_ALLOW_CREDENTIALS = True
 
 # Redis
 REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')

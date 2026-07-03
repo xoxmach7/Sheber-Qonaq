@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { showToast } from '../lib/toast'
 
 // Dev: относительный URL → vite proxy → localhost:8000
 // Production: полный URL бэкенда Railway (VITE_API_URL задаётся в Railway)
@@ -37,10 +38,19 @@ api.interceptors.response.use(
           localStorage.setItem('access_token', data.access)
           original.headers.Authorization = `Bearer ${data.access}`
           return api(original)
-        } catch {
+        } catch (refreshError) {
+          // Показываем причину разлогина
+          if (axios.isAxiosError(refreshError) && refreshError.response?.status === 401) {
+            showToast('Сессия истекла. Войдите снова')
+          } else {
+            showToast('Ошибка соединения. Попробуйте позже')
+          }
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
-          window.location.href = '/login'
+          // Небольшая задержка, чтобы пользователь увидел уведомление
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 1000)
         }
       }
     }

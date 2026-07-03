@@ -10,15 +10,9 @@ import {
 import { PageHeader, FilterPills, Avatar, SegmentControl } from '../../components/ui'
 import MonthHeatmap from './MonthHeatmap'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
-import { format, addDays, addMonths } from 'date-fns'
-
-// Дата выезда = заезд + 1 период выбранного типа оплаты
-function addPeriod(dateStr: string, rate: RateType): string {
-  if (!dateStr) return dateStr
-  const d = new Date(dateStr + 'T12:00:00')
-  const nd = rate === 'daily' ? addDays(d, 1) : rate === 'weekly' ? addDays(d, 7) : addMonths(d, 1)
-  return format(nd, 'yyyy-MM-dd')
-}
+import { addPeriod } from '../../lib/dates'
+import { STALE_TIME } from '../../lib/constants'
+import { format } from 'date-fns'
 
 // ── Status config ──
 const STATUS: Record<UnitStatus, { label: string; dot: string; bg: string; text: string; border: string; icon: React.ReactNode }> = {
@@ -63,7 +57,7 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
   const { data: blCheck } = useQuery({
     queryKey: ['bl-check', form.guestPhone],
     queryFn: () => blacklistApi.check(form.guestPhone),
-    enabled: form.guestPhone.length > 5,
+    enabled: form.guestPhone.length >= 15, // Полный номер: +7 777 777-77-77 = 16 символов
   })
   const { mutate: createGuest, isPending: creatingGuest } = useMutation({
     mutationFn: (d: GuestCreate) => guestsApi.create(d),
@@ -325,7 +319,7 @@ function OccupiedPanel({ unit, onClose, onCheckout, onBook }: {
   const { data: blCheck } = useQuery({
     queryKey: ['bl-check', unit.current_guest_phone],
     queryFn: () => blacklistApi.check(unit.current_guest_phone!),
-    enabled: !!unit.current_guest_phone && unit.current_guest_phone.length > 5,
+    enabled: !!unit.current_guest_phone && unit.current_guest_phone.length >= 15, // Полный номер
   })
   const isBlacklisted = blCheck?.is_blacklisted ?? false
 
@@ -523,7 +517,7 @@ export default function OccupancyPage() {
   })
 
   const { data: units = [], isLoading } = useQuery({
-    queryKey: ['units'], queryFn: propertiesApi.allUnits, staleTime: 30_000,
+    queryKey: ['units'], queryFn: propertiesApi.allUnits, staleTime: STALE_TIME.UNITS,
   })
 
   const { mutate: changeStatus } = useMutation({
