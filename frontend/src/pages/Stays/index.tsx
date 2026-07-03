@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { staysApi, guestsApi, propertiesApi, blacklistApi, paymentsApi } from '../../api'
-import { format, differenceInDays, differenceInMonths, addMonths, addDays } from 'date-fns'
+import { format, differenceInDays, differenceInMonths, addMonths } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import {
   Plus, X, LogOut, User, Search, AlertTriangle, UserPlus,
@@ -11,25 +11,10 @@ import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader, SegmentControl } from '../../components/ui'
 import { MpisBadge, MpisPanel, ExtendForm, PaymentForm, TransferForm } from './_helpers'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
+import { addPeriod, plural } from '../../lib/dates'
 import type { StayCreate, Stay, RateType, GuestCreate } from '../../types'
 
 const fmtTg = (n: number | string) => Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
-
-// Дата выезда = заезд + 1 период выбранного типа оплаты
-function addPeriod(dateStr: string, rate: RateType): string {
-  if (!dateStr) return dateStr
-  const d = new Date(dateStr + 'T12:00:00')
-  const nd = rate === 'daily' ? addDays(d, 1) : rate === 'weekly' ? addDays(d, 7) : addMonths(d, 1)
-  return format(nd, 'yyyy-MM-dd')
-}
-
-// Русское склонение числительных: plural(2, 'день','дня','дней')
-function plural(n: number, one: string, few: string, many: string): string {
-  const m10 = n % 10, m100 = n % 100
-  if (m10 === 1 && m100 !== 11) return one
-  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few
-  return many
-}
 
 // ── Checkout badge ──
 function CheckoutBadge({ date }: { date: string }) {
@@ -71,7 +56,7 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
   const { data: blacklistCheck } = useQuery({
     queryKey: ['blacklist-check', form.guestPhone],
     queryFn: () => blacklistApi.check(form.guestPhone),
-    enabled: form.guestPhone.length > 5,
+    enabled: form.guestPhone.length >= 15, // Полный номер: +7 777 777-77-77 = 16 символов
   })
   const { mutate: createGuest, isPending: isCreatingGuest, error: createGuestError } = useMutation({
     mutationFn: (data: GuestCreate) => guestsApi.create(data),
