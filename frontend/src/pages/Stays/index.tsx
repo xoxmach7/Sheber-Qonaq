@@ -24,9 +24,9 @@ function CheckoutBadge({ date }: { date: string }) {
   d.setHours(0, 0, 0, 0)
   const diff = differenceInDays(d, today)
 
-  if (diff < 0) return <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-red-200">Просрочен {Math.abs(diff)}д</span>
-  if (diff === 0) return <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-orange-200">Выезд сегодня</span>
-  if (diff <= 3) return <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-amber-200">Через {diff}д</span>
+  if (diff < 0) return <span className="text-xs text-red-600 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-red-200">Просрочен {Math.abs(diff)}д</span>
+  if (diff === 0) return <span className="text-xs text-orange-600 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-orange-200">Выезд сегодня</span>
+  if (diff <= 3) return <span className="text-xs text-amber-700 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-amber-200">Через {diff}д</span>
   return null
 }
 
@@ -496,7 +496,7 @@ export default function StaysPage() {
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       {stay.status !== 'active' && stay.status !== 'reserved' && <StatusBadge type="stay" status={stay.status} size="xs" />}
-                      {stay.mpis_status !== 'not_required' && <MpisBadge status={stay.mpis_status} />}
+                      {!isBooking && stay.mpis_status !== 'not_required' && <MpisBadge status={stay.mpis_status} />}
                     </div>
                   </div>
 
@@ -545,7 +545,7 @@ export default function StaysPage() {
                       <CalendarClock size={15} /> Продлить
                     </button>
                   )}
-                  {isForeigner && (<><div className="w-px bg-gray-100" /><button onClick={() => setMpisStay(stay)}
+                  {!isBooking && isForeigner && (<><div className="w-px bg-gray-100" /><button onClick={() => setMpisStay(stay)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50 transition tap-card">
                     <Globe size={15} /> Увед.
                   </button></>)}
