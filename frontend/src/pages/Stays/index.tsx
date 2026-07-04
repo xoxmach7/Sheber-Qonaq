@@ -221,8 +221,8 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
                 <div><label className="text-xs text-gray-500 mb-1 block">Телефон *</label><input className="input-field text-sm" placeholder={PHONE_PLACEHOLDER} value={newGuest.phone} onChange={e => setNewGuest(g => ({ ...g, phone: formatPhoneKZ(e.target.value) }))} /></div>
                 <div className="flex items-center gap-3 py-2 border-t border-gray-200">
                   <button type="button" onClick={() => setNewGuest(g => ({ ...g, is_foreigner: !g.is_foreigner, nationality: !g.is_foreigner ? g.nationality : '' }))}
-                    className={`relative w-10 h-6 rounded-full transition-colors ${newGuest.is_foreigner ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                    <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${newGuest.is_foreigner ? 'translate-x-5' : 'translate-x-1'}`} />
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${newGuest.is_foreigner ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${newGuest.is_foreigner ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                   <div className="flex items-center gap-1.5">
                     <Globe size={14} className={newGuest.is_foreigner ? 'text-blue-600' : 'text-gray-400'} />

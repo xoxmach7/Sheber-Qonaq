@@ -182,7 +182,7 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
                 <button type="button" onClick={() => setNewGuest(g => ({ ...g, is_foreigner: !g.is_foreigner }))}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-semibold ${newGuest.is_foreigner ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>
                   <span className="flex items-center gap-1.5"><span>&#127757;</span> Иностранный гость</span>
-                  <span className={`w-8 h-4 rounded-full relative shrink-0 ${newGuest.is_foreigner ? 'bg-blue-500' : 'bg-gray-300'}`}><span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${newGuest.is_foreigner ? 'translate-x-4' : 'translate-x-0.5'}`} /></span>
+                  <span className={`w-11 h-6 rounded-full relative shrink-0 transition-colors ${newGuest.is_foreigner ? 'bg-blue-500' : 'bg-gray-300'}`}><span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${newGuest.is_foreigner ? 'translate-x-5' : 'translate-x-0'}`} /></span>
                 </button>
                 {newGuest.is_foreigner && (
                   <div className="space-y-2">
@@ -251,7 +251,7 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
             ? book(Number(form.prepay || 0))
             : checkIn({ unit: unit.id, guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: 0 })}
             disabled={!canSubmit}
-            className={`w-full py-3.5 text-white rounded-2xl text-sm font-bold disabled:opacity-40 ${mode === 'booking' ? 'bg-violet-500' : 'bg-primary-500'}`}>
+            className="w-full py-3.5 text-white rounded-2xl text-sm font-bold disabled:opacity-40 bg-primary-500">
             {(isPending || booking) ? (mode === 'booking' ? 'Бронируем...' : 'Заселяем...') : (mode === 'booking' ? 'Забронировать' : 'Заселить')}
           </button>
         </div>
