@@ -34,7 +34,11 @@ class Guest(OrganizationScopedModel):
     document_type = models.CharField(
         max_length=20, choices=DOCUMENT_TYPES, default='id_card', verbose_name='Тип документа'
     )
-    document_number = models.CharField(max_length=50, blank=True, verbose_name='Номер документа')
+    # Номер документа — персональные данные, шифруем при сохранении (как ИИН).
+    _document_number_encrypted = models.CharField(
+        max_length=500, blank=True, db_column='document_number_encrypted',
+        verbose_name='Номер документа (зашифрован)'
+    )
     document_photo = models.ImageField(
         upload_to='documents/%Y/%m/', blank=True, null=True, verbose_name='Фото документа'
     )
@@ -55,7 +59,11 @@ class Guest(OrganizationScopedModel):
     document_issue_date = models.DateField(null=True, blank=True, verbose_name='Дата выдачи документа')
     document_expiry_date = models.DateField(null=True, blank=True, verbose_name='Срок действия документа')
     entry_date = models.DateField(null=True, blank=True, verbose_name='Дата въезда в РК')
-    migration_card_number = models.CharField(max_length=50, blank=True, verbose_name='Номер миграционной карты')
+    # Номер миграционной карты — персональные данные, шифруем при сохранении.
+    _migration_card_number_encrypted = models.CharField(
+        max_length=500, blank=True, db_column='migration_card_number_encrypted',
+        verbose_name='Номер миграционной карты (зашифрован)'
+    )
 
     notes = models.TextField(blank=True, verbose_name='Заметки')
     is_active = models.BooleanField(default=True, verbose_name='Активен')
@@ -86,3 +94,22 @@ class Guest(OrganizationScopedModel):
         else:
             self._iin_encrypted = ''
             self.iin_hash = ''
+
+    # Номер документа — та же схема прозрачного шифрования, что и ИИН.
+    # Отдельный hash для поиска не нужен: по номеру документа сейчас
+    # нигде не фильтруем/не ищем в БД (в отличие от ИИН и чёрного списка).
+    @property
+    def document_number(self):
+        return decrypt_value(self._document_number_encrypted)
+
+    @document_number.setter
+    def document_number(self, value):
+        self._document_number_encrypted = encrypt_value(value.strip()) if value else ''
+
+    @property
+    def migration_card_number(self):
+        return decrypt_value(self._migration_card_number_encrypted)
+
+    @migration_card_number.setter
+    def migration_card_number(self, value):
+        self._migration_card_number_encrypted = encrypt_value(value.strip()) if value else ''

@@ -30,10 +30,31 @@ class UnitSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+    def validate_room(self, value):
+        # Межарендная защита: комната должна принадлежать организации пользователя.
+        request = self.context.get('request')
+        org = getattr(getattr(request, 'user', None), 'organization', None)
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Комната не найдена.')
+        return value
+
+    def _all_stays(self, obj):
+        # Если stays уже prefetch'нуты (список Unit из UnitViewSet), .all() отдаёт
+        # их из кэша без запроса к БД. .filter() на менеджере, наоборот, ВСЕГДА
+        # бьёт в базу заново — даже если prefetch_related был на queryset'е выше.
+        # Поэтому здесь фильтруем в Python, а не через .filter().
+        return list(obj.stays.all())
+
     def _active_stay(self, obj):
-        if obj.status == 'occupied':
-            return obj.stays.filter(status='active').select_related('guest').first()
-        return None
+        if obj.status != 'occupied':
+            return None
+        if not hasattr(self, '_active_stay_cache'):
+            self._active_stay_cache = {}
+        if obj.pk not in self._active_stay_cache:
+            self._active_stay_cache[obj.pk] = next(
+                (s for s in self._all_stays(obj) if s.status == 'active'), None
+            )
+        return self._active_stay_cache[obj.pk]
 
     def get_current_guest(self, obj):
         stay = self._active_stay(obj)
@@ -59,16 +80,15 @@ class UnitSerializer(serializers.ModelSerializer):
         """Ближайшая будущая/текущая бронь (reserved/confirmed), не считая заселения."""
         if not hasattr(obj, '_next_booking_cache'):
             from datetime import date
-            obj._next_booking_cache = (
-                obj.stays.filter(
-                    status__in=['reserved', 'confirmed'],
-                    shift_type__isnull=True,
-                    expected_check_out_date__gte=date.today(),
-                )
-                .select_related('guest')
-                .order_by('check_in_date')
-                .first()
-            )
+            today = date.today()
+            candidates = [
+                s for s in self._all_stays(obj)
+                if s.status in ('reserved', 'confirmed')
+                and s.shift_type is None
+                and s.expected_check_out_date >= today
+            ]
+            candidates.sort(key=lambda s: s.check_in_date)
+            obj._next_booking_cache = candidates[0] if candidates else None
         return obj._next_booking_cache
 
     def get_has_booking(self, obj):
@@ -113,6 +133,14 @@ class RoomSerializer(serializers.ModelSerializer):
 
     def get_available_count(self, obj):
         return obj.units.filter(status='available').count()
+
+    def validate_property(self, value):
+        # Межарендная защита: объект размещения должен принадлежать организации пользователя.
+        request = self.context.get('request')
+        org = getattr(getattr(request, 'user', None), 'organization', None)
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Объект не найден.')
+        return value
 
 
 class PropertySerializer(serializers.ModelSerializer):

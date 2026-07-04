@@ -4,6 +4,11 @@ from .models import Guest
 
 class GuestSerializer(serializers.ModelSerializer):
     iin = serializers.CharField(required=False, allow_blank=True, write_only=False)
+    # document_number/migration_card_number — теперь Python-property поверх
+    # зашифрованных полей (см. Guest model), поэтому DRF не может достроить их
+    # автоматически из модели — объявляем явно, как и iin.
+    document_number = serializers.CharField(required=False, allow_blank=True)
+    migration_card_number = serializers.CharField(required=False, allow_blank=True)
     full_name = serializers.CharField(read_only=True)
     is_blacklisted = serializers.SerializerMethodField()
 
@@ -43,9 +48,13 @@ class GuestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         iin = validated_data.pop('iin', '')
+        document_number = validated_data.pop('document_number', '')
+        migration_card_number = validated_data.pop('migration_card_number', '')
         guest = Guest(**validated_data)
         if iin:
             guest.iin = iin
+        guest.document_number = document_number
+        guest.migration_card_number = migration_card_number
         guest.save()
         return guest
 
@@ -63,6 +72,8 @@ class GuestShortSerializer(serializers.ModelSerializer):
     """Краткая версия для использования в Stay и других местах.
     Включает поля для MPIS clipboard bridge."""
     full_name = serializers.CharField(read_only=True)
+    document_number = serializers.CharField(read_only=True)
+    migration_card_number = serializers.CharField(read_only=True)
 
     class Meta:
         model = Guest

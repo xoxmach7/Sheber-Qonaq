@@ -24,6 +24,16 @@ class BlacklistEntrySerializer(serializers.ModelSerializer):
     def get_guest_name(self, obj):
         return obj.guest.full_name if obj.guest_id else None
 
+    def validate_guest(self, value):
+        # Гость должен принадлежать организации пользователя (не чужой из сети).
+        if value is None:
+            return value
+        request = self.context.get('request')
+        org = getattr(getattr(request, 'user', None), 'organization', None)
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Гость не найден.')
+        return value
+
     def validate(self, data):
         # ФИО можно не указывать, если выбран гость — возьмём из карточки
         if not data.get('full_name') and not data.get('guest'):

@@ -13,6 +13,14 @@ class ViewingSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'reminder_sent', 'created_at']
 
+    def validate_lead(self, value):
+        # Межарендная защита: лид должен принадлежать организации пользователя.
+        request = self.context.get('request')
+        org = getattr(getattr(request, 'user', None), 'organization', None)
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Лид не найден.')
+        return value
+
 
 class LeadSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
