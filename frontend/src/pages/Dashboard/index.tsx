@@ -60,7 +60,7 @@ export default function DashboardPage() {
   const topAlerts: TopAlert[] = []
   if (mpisPending > 0) topAlerts.push({
     key: 'mpis', icon: Globe,
-    title: `${mpisPending} ${plural(mpisPending, 'гость', 'гостя', 'гостей')} без увед. о прибытии`,
+    title: `${mpisPending} ${plural(mpisPending, 'гость', 'гостя', 'гостей')} без уведомления о прибытии`,
     cls: ALERT_CLS, to: '/stays?mpis=1',
   })
   if (debtors.length > 0) topAlerts.push({
