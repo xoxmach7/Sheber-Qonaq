@@ -5,7 +5,7 @@ import { format, differenceInDays, differenceInMonths, addMonths } from 'date-fn
 import { ru } from 'date-fns/locale'
 import {
   Plus, X, LogOut, User, Search, AlertTriangle, UserPlus,
-  ChevronLeft, CreditCard, CalendarClock, Globe, Clock,
+  ChevronLeft, ChevronDown, CreditCard, CalendarClock, Globe, Clock,
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader, SegmentControl, FilterPills } from '../../components/ui'
@@ -353,6 +353,10 @@ export default function StaysPage() {
       : 'checkin'
   const [tab, setTab] = useState<'stays' | 'bookings'>(initialTab)
   const [sortBy, setSortBy] = useState<'checkin' | 'checkout' | 'debt' | 'mpis'>(initialSort)
+  const [sortOpen, setSortOpen] = useState(false)
+  const SORT_LABELS: Record<'checkin' | 'checkout' | 'debt' | 'mpis', string> = {
+    checkin: 'Дата заезда', checkout: 'Дата выезда', debt: 'Долг', mpis: 'Уведомление',
+  }
   const [search, setSearch] = useState('')
   const [checkinMode, setCheckinMode] = useState<'checkin' | 'booking' | null>(null)
   const [payStay, setPayStay] = useState<Stay | null>(null)
@@ -415,14 +419,25 @@ export default function StaysPage() {
         ]} />
 
       <div>
-        <span className="text-sm font-semibold text-gray-700 mb-1.5 block">Сортировка</span>
-        <FilterPills value={sortBy} onChange={v => setSortBy(v as 'checkin' | 'checkout' | 'debt' | 'mpis')}
-          options={[
-            { value: 'checkin', label: 'Дата заезда' },
-            { value: 'checkout', label: 'Дата выезда' },
-            { value: 'debt', label: 'Долг' },
-            { value: 'mpis', label: 'Уведомление' },
-          ]} />
+        <button
+          type="button"
+          onClick={() => setSortOpen(o => !o)}
+          className="flex items-center gap-1.5 text-sm font-semibold text-gray-700"
+        >
+          Сортировка: <span className="text-primary-600">{SORT_LABELS[sortBy]}</span>
+          <ChevronDown size={16} className={`text-gray-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {sortOpen && (
+          <div className="mt-1.5">
+            <FilterPills value={sortBy} onChange={v => { setSortBy(v as 'checkin' | 'checkout' | 'debt' | 'mpis'); setSortOpen(false) }}
+              options={[
+                { value: 'checkin', label: 'Дата заезда' },
+                { value: 'checkout', label: 'Дата выезда' },
+                { value: 'debt', label: 'Долг' },
+                { value: 'mpis', label: 'Уведомление' },
+              ]} />
+          </div>
+        )}
       </div>
 
       <div className="relative">

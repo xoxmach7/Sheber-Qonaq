@@ -100,7 +100,7 @@ function ExpenseForm({ defaultDate, onClose }: { defaultDate: string; onClose: (
         <div className="px-5 pb-5 pt-3 border-t border-gray-100">
           <button onClick={() => mutate({ property: propertyId, category: form.category, amount: form.amount, date: form.date, description: form.description })}
             disabled={!canSubmit}
-            className="w-full bg-red-600 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 transition tap-card">
+            className="w-full bg-primary-500 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 transition tap-card">
             {isPending ? 'Сохраняем...' : `Записать расход ${form.amount ? '−' + fmt(form.amount) : ''}`}
           </button>
         </div>
