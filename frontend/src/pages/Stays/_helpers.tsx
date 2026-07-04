@@ -16,9 +16,9 @@ import type { LucideIcon } from 'lucide-react'
 function MpisBadge({ status }: { status: MpisStatus }) {
   if (status === 'not_required') return null
   const cfg = {
-    pending:   { label: 'Уведомление: Ожидает',     cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
-    submitted: { label: 'Уведомление: Отправлено',   cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
-    confirmed: { label: 'Уведомление: Подтверждено', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
+    pending:   { label: 'Увед.: Ожидает',     cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
+    submitted: { label: 'Увед.: Отправлено',   cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
+    confirmed: { label: 'Увед.: Подтверждено', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   }[status]
   return <span className={`text-xs px-2 py-0.5 rounded-lg font-semibold ${cfg.cls}`}>{cfg.label}</span>
 }
