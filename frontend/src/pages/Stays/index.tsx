@@ -261,7 +261,7 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
                       <label className="text-xs text-gray-500 mb-1 block">Миграционная карта</label>
                       <input className="input-field text-sm" placeholder="Талон / миграционная карта" value={newGuest.migration_card_number ?? ''} onChange={e => setNewGuest(g => ({ ...g, migration_card_number: e.target.value }))} />
                     </div>
-                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1"><Clock size={11} />Регистрация в MPIS/eQonaq</p>
+                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1"><Clock size={11} />Уведомление о прибытии в eQonaq</p>
                   </div>
                 )}
                 <button onClick={() => createGuest(newGuest)}
@@ -345,11 +345,14 @@ export default function StaysPage() {
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'bookings'
       ? 'bookings'
       : 'stays'
-  const initialSort = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debtors') === '1'
+  const initialSortParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const initialSort = initialSortParams?.get('debtors') === '1'
     ? 'debt'
-    : 'checkin'
+    : initialSortParams?.get('mpis') === '1'
+      ? 'mpis'
+      : 'checkin'
   const [tab, setTab] = useState<'stays' | 'bookings'>(initialTab)
-  const [sortBy, setSortBy] = useState<'checkin' | 'checkout' | 'debt'>(initialSort)
+  const [sortBy, setSortBy] = useState<'checkin' | 'checkout' | 'debt' | 'mpis'>(initialSort)
   const [search, setSearch] = useState('')
   const [checkinMode, setCheckinMode] = useState<'checkin' | 'booking' | null>(null)
   const [payStay, setPayStay] = useState<Stay | null>(null)
@@ -388,6 +391,14 @@ export default function StaysPage() {
       if (sortBy === 'checkout') {
         return a.expected_check_out_date.localeCompare(b.expected_check_out_date) || b.id - a.id
       }
+      if (sortBy === 'mpis') {
+        // Сначала те, кому нужно отправить/подтвердить уведомление о прибытии
+        const order: Record<string, number> = { pending: 0, submitted: 1, confirmed: 2, not_required: 3 }
+        const aOrder = order[a.mpis_status] ?? 3
+        const bOrder = order[b.mpis_status] ?? 3
+        if (aOrder !== bOrder) return aOrder - bOrder
+        return b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id
+      }
       return b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id
     })
 
@@ -403,12 +414,16 @@ export default function StaysPage() {
           { value: 'bookings', label: `Бронь${bookings.length ? ` (${bookings.length})` : ''}` },
         ]} />
 
-      <FilterPills value={sortBy} onChange={v => setSortBy(v as 'checkin' | 'checkout' | 'debt')}
-        options={[
-          { value: 'checkin', label: 'По дате заезда' },
-          { value: 'checkout', label: 'По дате выезда' },
-          { value: 'debt', label: 'По долгу' },
-        ]} />
+      <div>
+        <span className="text-sm font-semibold text-gray-700 mb-1.5 block">Сортировка</span>
+        <FilterPills value={sortBy} onChange={v => setSortBy(v as 'checkin' | 'checkout' | 'debt' | 'mpis')}
+          options={[
+            { value: 'checkin', label: 'По дате заезда' },
+            { value: 'checkout', label: 'По дате выезда' },
+            { value: 'debt', label: 'По долгу' },
+            { value: 'mpis', label: 'Увед.' },
+          ]} />
+      </div>
 
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -506,7 +521,7 @@ export default function StaysPage() {
                   )}
                   {isForeigner && (<><div className="w-px bg-gray-100" /><button onClick={() => setMpisStay(stay)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50 transition tap-card">
-                    <Globe size={15} /> МПИС
+                    <Globe size={15} /> Увед.
                   </button></>)}
                   <div className="w-px bg-gray-100" />
                   {(isBooking || isConfirmed) ? (

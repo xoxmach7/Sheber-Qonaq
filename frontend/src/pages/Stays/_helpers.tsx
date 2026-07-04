@@ -12,18 +12,18 @@ import { Avatar, PageHeader } from '../../components/ui'
 import type { StayCreate, Stay, PaymentCreate, PaymentMethod, RateType, GuestCreate, MpisStatus } from '../../types'
 import type { LucideIcon } from 'lucide-react'
 
-// ── MPIS badge ──
+// ── Уведомление о прибытии (Увед.) — бывш. MPIS ──
 function MpisBadge({ status }: { status: MpisStatus }) {
   if (status === 'not_required') return null
   const cfg = {
-    pending:   { label: 'МПИС: Ожидает',     cls: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' },
-    submitted: { label: 'МПИС: Отправлено',   cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
-    confirmed: { label: 'МПИС: Подтверждено', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
+    pending:   { label: 'Увед.: Ожидает',     cls: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' },
+    submitted: { label: 'Увед.: Отправлено',   cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
+    confirmed: { label: 'Увед.: Подтверждено', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   }[status]
   return <span className={`text-xs px-2 py-0.5 rounded-lg font-semibold ${cfg.cls}`}>{cfg.label}</span>
 }
 
-// ── MPIS Panel ──
+// ── Панель уведомления о прибытии ──
 function MpisPanel({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   const qc = useQueryClient()
   const g = stay.guest_detail
@@ -69,7 +69,7 @@ function MpisPanel({ stay, onClose }: { stay: Stay; onClose: () => void }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Globe size={18} className="text-blue-600" />
-            <h3 className="font-bold text-lg">Регистрация MPIS</h3>
+            <h3 className="font-bold text-lg">Уведомление о прибытии</h3>
           </div>
           <button onClick={onClose} className="p-1"><X size={20} className="text-gray-400" /></button>
         </div>

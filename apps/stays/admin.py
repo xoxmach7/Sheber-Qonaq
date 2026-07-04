@@ -26,7 +26,7 @@ class StayAdmin(admin.ModelAdmin):
         ('Тариф и оплата', {
             'fields': ('rate_type', 'rate_amount', 'total_expected', 'total_paid', 'balance')
         }),
-        ('MPIS / eQonaq', {
+        ('Уведомление о прибытии / eQonaq', {
             'fields': ('mpis_status',),
         }),
         ('Дополнительно', {
@@ -57,7 +57,7 @@ class StayAdmin(admin.ModelAdmin):
         label = labels.get(obj.status, obj.status)
         return format_html('<span style="color:{}">{}</span>', color, label)
 
-    @admin.display(description='MPIS')
+    @admin.display(description='Увед. о прибытии')
     def mpis_status_colored(self, obj):
         icons = {
             'not_required': ('—', 'gray'),
