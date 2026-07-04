@@ -84,8 +84,8 @@ class Stay(OrganizationScopedModel):
     )
     mpis_status = models.CharField(
         max_length=20, choices=MPIS_STATUSES, default='not_required',
-        verbose_name='Статус MPIS',
-        help_text='Статус регистрации иностранного гостя в системе MPIS/eQonaq'
+        verbose_name='Статус уведомления о прибытии',
+        help_text='Статус отправки уведомления о прибытии иностранного гостя в системе eQonaq'
     )
     # Cottage mode — посменная аренда (null = обычный хостельный режим)
     shift_type = models.CharField(

@@ -71,7 +71,7 @@ class Expense(OrganizationScopedModel):
         max_digits=10, decimal_places=2, verbose_name='Сумма (тенге)'
     )
     date = models.DateField(verbose_name='Дата')
-    description = models.TextField(verbose_name='Описание')
+    description = models.TextField(blank=True, default='', verbose_name='Описание')
     created_by = models.ForeignKey(
         'users.User', on_delete=models.SET_NULL, null=True,
         related_name='created_expenses', verbose_name='Создал'

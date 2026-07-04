@@ -135,7 +135,7 @@ function GuestForm({
           {form.is_foreigner ? (
             <div className="space-y-3 rounded-xl border border-blue-200 bg-blue-50/40 p-3">
               <p className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
-                <span>&#127757;</span> Данные для МПИС / eQonaq
+                <span>&#127757;</span> Данные для уведомления о прибытии / eQonaq
               </p>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1">Гражданство *</label>

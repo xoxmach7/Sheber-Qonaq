@@ -21,7 +21,7 @@ class GuestAdmin(admin.ModelAdmin):
         ('Документ', {
             'fields': ('document_type', 'document_number', 'iin_hash')
         }),
-        ('Гражданство / MPIS', {
+        ('Гражданство / Увед. о прибытии', {
             'fields': ('nationality', 'is_foreigner')
         }),
         ('Дополнительно', {

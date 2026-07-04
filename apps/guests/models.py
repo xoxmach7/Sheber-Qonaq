@@ -46,10 +46,10 @@ class Guest(OrganizationScopedModel):
     )
     is_foreigner = models.BooleanField(
         default=False, verbose_name='Иностранец',
-        help_text='Требуется регистрация в MPIS/eQonaq'
+        help_text='Требуется уведомление о прибытии в eQonaq'
     )
 
-    # ── Данные для МПИС/eQonaq (иностранные гости) ──
+    # ── Данные для уведомления о прибытии / eQonaq (иностранные гости) ──
     SEX_CHOICES = [('M', 'Мужской'), ('F', 'Женский')]
     sex = models.CharField(max_length=1, choices=SEX_CHOICES, blank=True, verbose_name='Пол')
     document_issue_date = models.DateField(null=True, blank=True, verbose_name='Дата выдачи документа')
