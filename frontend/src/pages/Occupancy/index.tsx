@@ -7,7 +7,7 @@ import {
   Phone, CalendarDays, LogOut, Plus, X, Search,
   UserPlus, AlertTriangle, User, CalendarPlus,
 } from 'lucide-react'
-import { PageHeader, FilterPills, Avatar, SegmentControl } from '../../components/ui'
+import { PageHeader, FilterPills, Avatar } from '../../components/ui'
 import MonthHeatmap from './MonthHeatmap'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { addPeriod } from '../../lib/dates'
@@ -47,7 +47,7 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
   const [showDropdown, setShowDropdown] = useState(false)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
   const [newGuest, setNewGuest] = useState<GuestCreate>({ first_name: '', last_name: '', phone: '', nationality: '', is_foreigner: false })
-  const [mode, setMode] = useState<'checkin' | 'booking'>(initialMode)
+  const mode = initialMode
 
   const { data: guestResults } = useQuery({
     queryKey: ['guests-search', guestSearch],
@@ -117,22 +117,13 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
           <button onClick={onClose}><X size={20} className="text-gray-400" /></button>
         </div>
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
-          <SegmentControl
-            value={mode}
-            onChange={(v) => setMode(v as 'checkin' | 'booking')}
-            options={[
-              { value: 'checkin', label: 'Заселение' },
-              { value: 'booking', label: 'Бронь' },
-            ]}
-          />
-
           {(error || bookError) && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3 py-2">{((error || bookError) as any)?.response?.data?.non_field_errors?.[0] ?? 'Ошибка'}</div>}
 
           {isBlacklisted && (
             <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={15} className="text-red-600 shrink-0" />
-                <span className="font-bold text-red-700 text-sm">У гостя есть нарушение</span>
+                <span className="font-bold text-red-700 text-sm">У гостя есть нарушение(я)</span>
               </div>
               {blCheck?.entries.map(e => (
                 <p key={e.id} className="text-xs text-red-600 ml-5">{e.reason_display}: {e.description.slice(0, 80)}</p>
@@ -144,9 +135,9 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Гость *</label>
             {form.guest ? (
-              <div className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${isBlacklisted ? 'bg-red-50 border-red-300' : 'bg-primary-50 border-primary-200'}`}>
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-primary-50 border-primary-200">
                 <Avatar name={form.guestName} size={32} />
-                <span className={`flex-1 font-medium text-sm ${isBlacklisted ? 'text-red-800' : 'text-primary-800'}`}>{form.guestName}</span>
+                <span className="flex-1 font-medium text-sm text-primary-800">{form.guestName}</span>
                 <button onClick={() => setForm(f => ({ ...f, guest: '', guestName: '', guestPhone: '' }))}><X size={16} className="text-gray-400" /></button>
               </div>
             ) : (
@@ -340,7 +331,7 @@ function OccupiedPanel({ unit, onClose, onCheckout, onBook }: {
         {isBlacklisted && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 mb-3 flex items-center gap-2">
             <AlertTriangle size={14} className="text-red-500 shrink-0" />
-            <p className="text-xs text-red-700 font-semibold">У гостя есть нарушение</p>
+            <p className="text-xs text-red-700 font-semibold">У гостя есть нарушение(я)</p>
           </div>
         )}
 

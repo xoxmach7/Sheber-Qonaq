@@ -130,7 +130,7 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
             <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={16} className="text-red-600 shrink-0" />
-                <span className="font-semibold text-red-700 text-sm">У гостя есть нарушение</span>
+                <span className="font-semibold text-red-700 text-sm">У гостя есть нарушение(я)</span>
               </div>
               {blacklistCheck?.entries.map(e => (
                 <p key={e.id} className="text-xs text-red-600 ml-6">{e.reason_display}: {e.description.slice(0, 80)}</p>
@@ -167,10 +167,10 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Гость *</label>
             {form.guest ? (
-              <div className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${isBlacklisted ? 'bg-red-50 border-red-300' : 'bg-primary-50 border-primary-200'}`}>
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-primary-50 border-primary-200">
                 <Avatar name={form.guestName} size={32} />
-                <span className={`flex-1 font-medium ${isBlacklisted ? 'text-red-800' : 'text-primary-800'}`}>{form.guestName}</span>
-                <button onClick={() => setForm(f => ({ ...f, guest: '', guestName: '', guestPhone: '' }))}><X size={16} className={isBlacklisted ? 'text-red-400' : 'text-primary-400'} /></button>
+                <span className="flex-1 font-medium text-primary-800">{form.guestName}</span>
+                <button onClick={() => setForm(f => ({ ...f, guest: '', guestName: '', guestPhone: '' }))}><X size={16} className="text-primary-400" /></button>
               </div>
             ) : (
               <div className="relative">
@@ -329,8 +329,8 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
             ? book(Number(form.prepay || 0))
             : mutate({ unit: Number(form.unit), guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: form.deposit_amount || 0 })}
             disabled={!canSubmit}
-            className={`w-full py-3.5 rounded-xl font-semibold transition tap-card ${mode === 'booking' ? 'bg-violet-500 text-white disabled:bg-gray-200 disabled:text-gray-400' : isBlacklisted ? 'bg-red-600 text-white' : 'bg-primary-500 text-white disabled:bg-gray-200 disabled:text-gray-400'}`}>
-            {(isPending || booking) ? (mode === 'booking' ? 'Бронируем...' : 'Создаём заезд...') : mode === 'booking' ? 'Забронировать' : isBlacklisted ? 'Заселить (гость в ЧС)' : 'Заселить'}
+            className={`w-full py-3.5 rounded-xl font-semibold transition tap-card ${mode === 'booking' ? 'bg-violet-500 text-white disabled:bg-gray-200 disabled:text-gray-400' : 'bg-primary-500 text-white disabled:bg-gray-200 disabled:text-gray-400'}`}>
+            {(isPending || booking) ? (mode === 'booking' ? 'Бронируем...' : 'Создаём заезд...') : mode === 'booking' ? 'Забронировать' : 'Заселить'}
           </button>
         </div>
       </div>
@@ -416,14 +416,11 @@ export default function StaysPage() {
             const roomName = stay.unit_detail?.room_name
             const placeLabel = roomName ? `${roomName} · ${unitName}` : unitName
             const isForeigner = stay.guest_detail?.is_foreigner ?? false
-            const needsMpis = isForeigner && stay.mpis_status !== 'confirmed'
             const isBooking = stay.status === 'reserved'
             const isConfirmed = stay.status === 'confirmed'
 
             return (
-              <div key={stay.id} className={`bg-white rounded-2xl shadow-card overflow-hidden ${
-                isBooking ? '' : needsMpis ? 'ring-1 ring-orange-200' : isDebt ? 'ring-1 ring-red-200' : ''
-              }`}>
+              <div key={stay.id} className="bg-white rounded-2xl shadow-card overflow-hidden">
                 <div className="px-4 pt-3.5 pb-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -485,8 +482,8 @@ export default function StaysPage() {
                     </button>
                   )}
                   {isForeigner && (<><div className="w-px bg-gray-100" /><button onClick={() => setMpisStay(stay)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition tap-card ${needsMpis ? 'text-orange-600 hover:bg-orange-50' : 'text-emerald-600 hover:bg-emerald-50'}`}>
-                    <Globe size={15} /> {needsMpis ? 'MPIS!' : 'MPIS'}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50 transition tap-card">
+                    <Globe size={15} /> МПИС
                   </button></>)}
                   <div className="w-px bg-gray-100" />
                   {(isBooking || isConfirmed) ? (

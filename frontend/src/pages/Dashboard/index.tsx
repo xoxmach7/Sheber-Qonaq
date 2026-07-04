@@ -8,7 +8,7 @@ import {
   Banknote, AlertCircle, Globe, Plus, LogOut, User, CreditCard,
   CalendarClock, ShieldAlert,
 } from 'lucide-react'
-import { KPICard, Avatar } from '../../components/ui'
+import { KPICard } from '../../components/ui'
 import { useAuthStore } from '../../store/auth'
 import { REFETCH_INTERVAL } from '../../lib/constants'
 import { plural } from '../../lib/dates'
@@ -66,7 +66,7 @@ export default function DashboardPage() {
   if (debtors.length > 0) topAlerts.push({
     key: 'debt', icon: Banknote,
     title: `${debtors.length} ${plural(debtors.length, 'должник', 'должника', 'должников')} · ${fmt(debtTotal)}`,
-    cls: ALERT_CLS, scrollTo: 'debtors',
+    cls: ALERT_CLS, to: '/stays',
   })
   if (checkoutsToday > 0) topAlerts.push({
     key: 'checkout', icon: ArrowUpCircle,
@@ -178,33 +178,6 @@ export default function DashboardPage() {
         color="emerald"
         onClick={() => navigate('/finances')}
       />
-
-      {/* Debtors */}
-      {alerts?.debtors && alerts.debtors.length > 0 && (
-        <section id="debtors" className="scroll-mt-4">
-          <h3 className="text-[15px] font-bold text-gray-900 mb-2.5 flex items-center gap-1.5">
-            <AlertCircle size={15} className="text-amber-500" />
-            Должники
-          </h3>
-          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-            {alerts.debtors.map((d, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar name={d.guest_name} size={32} />
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{d.guest_name}</p>
-                    <p className="text-xs text-gray-400">{d.unit_name}</p>
-                  </div>
-                </div>
-                <span className="text-sm font-bold text-red-600">-{fmt(d.debt)}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
     </div>
   )

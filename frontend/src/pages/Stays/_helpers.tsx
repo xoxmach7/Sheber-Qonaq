@@ -16,9 +16,9 @@ import type { LucideIcon } from 'lucide-react'
 function MpisBadge({ status }: { status: MpisStatus }) {
   if (status === 'not_required') return null
   const cfg = {
-    pending:   { label: 'MPIS: Ожидает',     cls: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' },
-    submitted: { label: 'MPIS: Отправлено',   cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
-    confirmed: { label: 'MPIS: Подтверждено', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
+    pending:   { label: 'МПИС: Ожидает',     cls: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' },
+    submitted: { label: 'МПИС: Отправлено',   cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' },
+    confirmed: { label: 'МПИС: Подтверждено', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
   }[status]
   return <span className={`text-xs px-2 py-0.5 rounded-lg font-semibold ${cfg.cls}`}>{cfg.label}</span>
 }
@@ -188,7 +188,7 @@ function PaymentForm({ stayId, onClose, confirmAfter = false }: { stayId: number
         </div>
         <button onClick={() => mutate({ stay: stayId, amount, payment_date: format(new Date(), 'yyyy-MM-dd'), method })}
           disabled={!amount || isPending}
-          className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 tap-card">
+          className="w-full bg-primary-500 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 tap-card">
           {isPending ? 'Сохраняем...' : `Принять ${amount ? Number(amount).toLocaleString('ru') + ' ₸' : ''}`}
         </button>
       </div>
