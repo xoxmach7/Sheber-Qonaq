@@ -44,6 +44,24 @@ class StaySerializer(serializers.ModelSerializer):
         except Exception:
             return 'hostel'
 
+    def _request_org(self):
+        request = self.context.get('request')
+        return getattr(getattr(request, 'user', None), 'organization', None)
+
+    def validate_guest(self, value):
+        # Межарендная защита: гость должен принадлежать организации текущего пользователя.
+        org = self._request_org()
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Гость не найден.')
+        return value
+
+    def validate_unit(self, value):
+        # Межарендная защита: юнит должен принадлежать организации текущего пользователя.
+        org = self._request_org()
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Юнит не найден.')
+        return value
+
     def validate(self, data):
         unit = data.get('unit')
         check_in = data.get('check_in_date')

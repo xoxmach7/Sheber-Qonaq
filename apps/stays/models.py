@@ -136,6 +136,11 @@ class Stay(OrganizationScopedModel):
 
     @property
     def total_paid(self) -> Decimal:
+        # Если payments уже prefetch'нуты (список Stay), суммируем в Python —
+        # иначе на каждый Stay в списке уходил бы отдельный SQL-запрос (N+1).
+        cache = getattr(self, '_prefetched_objects_cache', None)
+        if cache is not None and 'payments' in cache:
+            return sum((p.amount for p in self.payments.all()), Decimal('0'))
         result = self.payments.aggregate(total=Sum('amount'))['total']
         return result or Decimal('0')
 

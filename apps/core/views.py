@@ -89,7 +89,7 @@ class DashboardView(APIView):
         # ── 3. ДОЛГИ АКТИВНЫХ ГОСТЕЙ ─────────────────────────────────────────
         active_stays = Stay.objects.filter(
             organization=org, status='active'
-        ).select_related('guest', 'unit')
+        ).select_related('guest', 'unit').prefetch_related('payments')
 
         debtors = []
         total_debt = Decimal('0')

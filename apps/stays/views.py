@@ -16,7 +16,7 @@ from .serializers import (
 
 
 class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
-    queryset = Stay.objects.select_related('guest', 'unit__room__property').all()
+    queryset = Stay.objects.select_related('guest', 'unit__room__property').prefetch_related('payments').all()
     serializer_class = StaySerializer
     permission_classes = [IsAuthenticated, IsReception]
     filterset_fields = ['status', 'unit', 'guest', 'rate_type', 'source']

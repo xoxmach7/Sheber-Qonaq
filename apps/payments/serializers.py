@@ -19,6 +19,14 @@ class PaymentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at']
 
+    def validate_stay(self, value):
+        # Межарендная защита: заезд должен принадлежать организации текущего пользователя.
+        request = self.context.get('request')
+        org = getattr(getattr(request, 'user', None), 'organization', None)
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Заезд не найден.')
+        return value
+
 
 class ExpenseSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
@@ -30,6 +38,16 @@ class ExpenseSerializer(serializers.ModelSerializer):
             'amount', 'date', 'description', 'created_by', 'created_at',
         ]
         read_only_fields = ['id', 'created_by', 'created_at']
+
+    def validate_property(self, value):
+        # Межарендная защита: объект размещения должен принадлежать организации пользователя.
+        if value is None:
+            return value
+        request = self.context.get('request')
+        org = getattr(getattr(request, 'user', None), 'organization', None)
+        if org and value.organization_id != org.id:
+            raise serializers.ValidationError('Объект не найден.')
+        return value
 
 
 class FinanceSummarySerializer(serializers.Serializer):

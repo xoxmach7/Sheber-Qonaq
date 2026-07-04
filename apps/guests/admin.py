@@ -11,7 +11,10 @@ class GuestAdmin(admin.ModelAdmin):
     ]
     list_filter = ['document_type', 'is_foreigner', 'is_active', 'organization']
     search_fields = ['first_name', 'last_name', 'phone']
-    readonly_fields = ['iin_hash', 'created_at', 'updated_at']
+    # document_number теперь Python-property (шифруется в БД) — Django admin
+    # требует явно перечислить property-поля в readonly_fields, иначе форма
+    # не сможет их отрендерить/сохранить как обычные editable-поля модели.
+    readonly_fields = ['iin_hash', 'document_number', 'created_at', 'updated_at']
     ordering = ['last_name', 'first_name']
 
     fieldsets = (
