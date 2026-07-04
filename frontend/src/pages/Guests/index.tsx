@@ -75,7 +75,14 @@ function GuestForm({
   const isPending = creating || updating
   const set = (k: keyof GuestCreate, v: string) => setForm(f => ({ ...f, [k]: v }))
   const toggleForeigner = () => setForm(f => ({ ...f, is_foreigner: !f.is_foreigner, iin: '', document_type: !f.is_foreigner ? 'passport_foreign' : undefined }))
-  const handleSave = () => isEdit ? update(form) : create(form)
+  const handleSave = () => {
+    // Django DateField не принимает '' — только null. При редактировании
+    // форма всегда включает эти ключи (даже пустые), из-за чего сохранение падало.
+    const DATE_FIELDS: (keyof GuestCreate)[] = ['date_of_birth', 'document_issue_date', 'document_expiry_date', 'entry_date']
+    const payload = { ...form }
+    DATE_FIELDS.forEach(k => { if (payload[k] === '') (payload as any)[k] = null })
+    isEdit ? update(payload) : create(payload)
+  }
   const handleDelete = () => {
     if (confirm(`Удалить гостя «${initial!.full_name}»? Если есть история заселений — он будет архивирован.`)) remove()
   }
