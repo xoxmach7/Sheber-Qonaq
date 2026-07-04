@@ -24,9 +24,9 @@ function CheckoutBadge({ date }: { date: string }) {
   d.setHours(0, 0, 0, 0)
   const diff = differenceInDays(d, today)
 
-  if (diff < 0) return <span className="text-xs text-red-600 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-red-200">Просрочен {Math.abs(diff)}д</span>
-  if (diff === 0) return <span className="text-xs text-orange-600 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-orange-200">Выезд сегодня</span>
-  if (diff <= 3) return <span className="text-xs text-amber-700 px-2 py-0.5 rounded-lg font-semibold ring-1 ring-amber-200">Через {diff}д</span>
+  if (diff < 0) return <span className="text-xs text-red-600 font-semibold">Просрочен {Math.abs(diff)}д</span>
+  if (diff === 0) return <span className="text-xs text-orange-600 font-semibold">Выезд сегодня</span>
+  if (diff <= 3) return <span className="text-xs text-amber-700 font-semibold">Через {diff}д</span>
   return null
 }
 
