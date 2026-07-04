@@ -21,6 +21,13 @@ class PaymentViewSet(viewsets.ModelViewSet):
     filterset_fields = ['stay', 'method', 'payment_date']
     ordering_fields = ['payment_date', 'amount']
 
+    def get_permissions(self):
+        # Удалять запись об оплате может только финансовая роль (owner/superadmin) —
+        # иначе ресепшн мог бы стереть историю платежей и исказить баланс/долги.
+        if self.action == 'destroy':
+            return [IsAuthenticated(), CanManageFinances()]
+        return super().get_permissions()
+
     def get_queryset(self):
         return Payment.objects.filter(
             stay__organization=self.request.user.organization

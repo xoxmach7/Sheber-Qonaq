@@ -1,3 +1,5 @@
+from decimal import Decimal
+from django.core.validators import MinValueValidator
 from django.db import models
 from apps.core.models import OrganizationScopedModel, TimestampedModel
 
@@ -19,7 +21,8 @@ class Payment(TimestampedModel):
         related_name='payments', verbose_name='Проживание'
     )
     amount = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name='Сумма (тенге)'
+        max_digits=10, decimal_places=2, verbose_name='Сумма (тенге)',
+        validators=[MinValueValidator(Decimal('0.01'))],
     )
     payment_date = models.DateField(verbose_name='Дата оплаты')
     method = models.CharField(
@@ -68,7 +71,8 @@ class Expense(OrganizationScopedModel):
         max_length=20, choices=CATEGORIES, verbose_name='Категория'
     )
     amount = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name='Сумма (тенге)'
+        max_digits=10, decimal_places=2, verbose_name='Сумма (тенге)',
+        validators=[MinValueValidator(Decimal('0.01'))],
     )
     date = models.DateField(verbose_name='Дата')
     description = models.TextField(blank=True, default='', verbose_name='Описание')

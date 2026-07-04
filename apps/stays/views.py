@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from django.db import transaction
 from django.utils import timezone
 from apps.core.mixins import OrganizationMixin
-from apps.core.permissions import IsReception, IsOwnerOrManager
+from apps.core.permissions import IsReception, IsOwnerOrManager, MANAGER_ROLES
 from .models import Stay
 from .serializers import (
     StaySerializer, CheckOutSerializer, ExtendStaySerializer,
@@ -162,6 +162,15 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
             return Response(
                 {'error': 'Нельзя отменить завершённую бронь.'},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Отмена reserved (денег ещё нет) — обычная операция ресепшна.
+        # Отмена confirmed/active — там уже есть оплата/депозит, нужен manager+,
+        # иначе ресепшн мог бы без согласования аннулировать оплаченную бронь
+        # или выселить активного гостя без сторно платежей.
+        if stay.status in ('confirmed', 'active') and request.user.role not in MANAGER_ROLES:
+            return Response(
+                {'error': 'Отменить оплаченную бронь или заселённого гостя может только менеджер и выше.'},
+                status=status.HTTP_403_FORBIDDEN,
             )
         was_active = stay.status == 'active'
         if request.data.get('notes'):

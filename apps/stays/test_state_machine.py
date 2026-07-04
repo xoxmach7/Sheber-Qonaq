@@ -119,3 +119,55 @@ def test_reserved_does_not_occupy_unit(api, hostel_unit, guest):
     assert r.data['status'] == 'reserved'
     hostel_unit.refresh_from_db()
     assert hostel_unit.status == 'available'
+
+
+@pytest.mark.django_db
+def test_reception_can_cancel_reserved(org, hostel_unit, guest):
+    """Ресепшн отменяет обычный резерв без предоплаты — обычная операция."""
+    from rest_framework.test import APIClient
+    from apps.users.models import User
+    reception = User.objects.create_user(
+        username='reception1', password='pass12345', role='reception', organization=org,
+    )
+    client = APIClient()
+    client.force_authenticate(user=reception)
+    stay = _reserved(org, hostel_unit, guest)
+    r = client.post(f'/api/v1/stays/{stay.id}/cancel/')
+    assert r.status_code == 200
+    stay.refresh_from_db()
+    assert stay.status == 'cancelled'
+
+
+@pytest.mark.django_db
+def test_reception_cannot_cancel_confirmed(org, hostel_unit, guest):
+    """
+    Регрессия: ресепшн не должен уметь без согласования отменить уже
+    оплаченную (confirmed) бронь или выселить активного гостя — там уже
+    есть деньги/депозит, и cancel() не делает сторно платежей.
+    """
+    from rest_framework.test import APIClient
+    from apps.users.models import User
+    reception = User.objects.create_user(
+        username='reception2', password='pass12345', role='reception', organization=org,
+    )
+    client = APIClient()
+    client.force_authenticate(user=reception)
+    stay = _reserved(org, hostel_unit, guest)
+    stay.status = 'confirmed'
+    stay.save(update_fields=['status'])
+    r = client.post(f'/api/v1/stays/{stay.id}/cancel/')
+    assert r.status_code == 403
+    stay.refresh_from_db()
+    assert stay.status == 'confirmed'
+
+
+@pytest.mark.django_db
+def test_manager_can_cancel_confirmed(api, org, hostel_unit, guest):
+    """Manager (и выше) по-прежнему может отменить confirmed/active."""
+    stay = _reserved(org, hostel_unit, guest)
+    stay.status = 'confirmed'
+    stay.save(update_fields=['status'])
+    r = api.post(f'/api/v1/stays/{stay.id}/cancel/')
+    assert r.status_code == 200
+    stay.refresh_from_db()
+    assert stay.status == 'cancelled'

@@ -30,6 +30,18 @@ class IsReception(BasePermission):
                     and request.user.role in RECEPTION_ROLES)
 
 
+# Кто по должности реально меняет статус юнита: ресепшн (заселение/выселение),
+# горничная (уборка) и техник (ремонт/закрытие юнита). Бухгалтеру это не нужно —
+# раньше эндпоинт был открыт для ЛЮБОЙ роли в организации без проверки.
+UNIT_STATUS_ROLES = RECEPTION_ROLES + ('housekeeping', 'maintenance')
+
+
+class CanUpdateUnitStatus(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated
+                    and request.user.role in UNIT_STATUS_ROLES)
+
+
 class BelongsToOrganization(BasePermission):
     """Объект должен принадлежать организации пользователя."""
     def has_object_permission(self, request, view, obj):

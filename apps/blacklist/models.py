@@ -1,6 +1,24 @@
+import re
 from django.db import models
 from apps.core.models import TimestampedModel
 from apps.core.encryption import encrypt_value, decrypt_value, hash_for_search
+
+
+def normalize_phone(phone: str) -> str:
+    """
+    Нормализует телефон к последним 10 цифрам (KZ: национальный номер без
+    кода страны/трункового префикса). '+7 707 123-45-67', '87071234567',
+    '7 707 1234567' — всё сводится к одной строке '7071234567'.
+
+    Why: сравнение точной строкой (`phone=phone`) тривиально обходится
+    другим форматированием того же номера — гость из ЧС заселяется без
+    предупреждения. Всё, что пишет БД (guest.phone/blacklist.phone),
+    должно проходить через один и тот же нормализатор перед сравнением.
+    """
+    digits = re.sub(r'\D', '', phone or '')
+    if len(digits) == 11 and digits[0] in ('7', '8'):
+        return digits[1:]
+    return digits
 
 
 class BlacklistEntry(TimestampedModel):
@@ -85,17 +103,24 @@ class BlacklistEntry(TimestampedModel):
         """
         Проверить гостя по ИИН и/или телефону.
         Возвращает список активных записей или пустой список.
+
+        Телефон сравнивается по нормализованным цифрам (см. normalize_phone),
+        а не точной строкой — иначе разное форматирование одного и того же
+        номера (+7/8, пробелы, дефисы) тихо обходит проверку.
         """
         from apps.core.encryption import hash_for_search
         qs = cls.objects.filter(is_active=True)
-        conditions = models.Q()
+        results = {}
 
         if iin:
-            conditions |= models.Q(iin_hash=hash_for_search(iin))
+            for e in qs.filter(iin_hash=hash_for_search(iin)):
+                results[e.id] = e
+
         if phone:
-            conditions |= models.Q(phone=phone)
+            target = normalize_phone(phone)
+            if target:
+                for e in qs.exclude(phone=''):
+                    if e.id not in results and normalize_phone(e.phone) == target:
+                        results[e.id] = e
 
-        if not conditions:
-            return []
-
-        return list(qs.filter(conditions))
+        return list(results.values())
