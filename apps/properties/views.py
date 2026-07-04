@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from apps.core.mixins import OrganizationMixin
-from apps.core.permissions import IsOwnerOrManager, IsReception
+from apps.core.permissions import IsOwnerOrManager, IsReception, CanUpdateUnitStatus
 from .models import Property, Room, Unit
 from .serializers import (
     PropertySerializer, RoomSerializer, UnitSerializer,
@@ -51,11 +51,13 @@ class UnitViewSet(OrganizationMixin, viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ('create', 'destroy'):
             return [IsAuthenticated(), IsOwnerOrManager()]
+        if self.action == 'set_status':
+            return [IsAuthenticated(), CanUpdateUnitStatus()]
         return [IsAuthenticated()]
 
     @action(detail=True, methods=['patch'])
     def set_status(self, request, pk=None):
-        """Быстрое обновление статуса койки (доступно ресепшн и выше)."""
+        """Быстрое обновление статуса койки (ресепшн, горничная, техник и выше)."""
         unit = self.get_object()
         serializer = UnitStatusSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

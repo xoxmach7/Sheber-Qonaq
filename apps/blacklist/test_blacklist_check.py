@@ -39,3 +39,15 @@ def test_inactive_entry_not_returned():
 @pytest.mark.django_db
 def test_no_criteria_returns_empty():
     assert BlacklistEntry.check_guest() == []
+
+
+@pytest.mark.django_db
+def test_check_by_phone_ignores_formatting():
+    """Регрессия: ЧС не должен обходиться другим форматированием номера."""
+    BlacklistEntry.objects.create(
+        full_name='Проблемный Гость', phone='+7 700 999-88-77',
+        reason='debt', description='',
+    )
+    assert len(BlacklistEntry.check_guest(phone='87009998877')) == 1
+    assert len(BlacklistEntry.check_guest(phone='8 (700) 999 88 77')) == 1
+    assert len(BlacklistEntry.check_guest(phone='7009998877')) == 1
