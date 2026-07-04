@@ -5,7 +5,7 @@ import type { Unit, UnitStatus, StayCreate, RateType, GuestCreate } from '../../
 import {
   Wrench, Moon, CheckCircle2, Clock, Ban, Sparkles,
   Phone, CalendarDays, LogOut, Plus, X, Search,
-  UserPlus, AlertTriangle, User, CalendarPlus,
+  UserPlus, AlertTriangle, User,
 } from 'lucide-react'
 import { PageHeader, FilterPills, Avatar } from '../../components/ui'
 import MonthHeatmap from './MonthHeatmap'
@@ -352,7 +352,7 @@ function OccupiedPanel({ unit, onClose, onCheckout, onBook }: {
         <div className="flex gap-2">
           <button onClick={onBook}
             className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-violet-500 text-white rounded-2xl text-sm font-bold">
-            <CalendarPlus size={16} /> Забронировать
+            <Clock size={16} /> Забронировать
           </button>
           <button onClick={onCheckout}
             className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white rounded-2xl text-sm font-bold">
