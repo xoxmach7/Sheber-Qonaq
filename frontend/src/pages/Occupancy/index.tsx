@@ -29,6 +29,11 @@ const STATUS: Record<UnitStatus, { label: string; dot: string; bg: string; text:
 const CLOSED: UnitStatus[] = ['dirty', 'maintenance', 'out_of_order']
 const dispStatus = (s: UnitStatus): UnitStatus => (CLOSED.includes(s) ? 'out_of_order' : s)
 
+// Бронь показываем как «Бронь» на карте только если заезд сегодня — если бронь
+// на будущую дату, место визуально свободно (гость ещё не приезжает).
+const isBookedToday = (u: Unit): boolean =>
+  !!u.has_booking && u.status !== 'occupied' && u.next_check_in === format(new Date(), 'yyyy-MM-dd')
+
 // ── Check-In Sheet (pre-selected unit) ──
 function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; onClose: () => void; initialMode?: 'checkin' | 'booking' }) {
   const qc = useQueryClient()
@@ -185,17 +190,38 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
                   <span className={`w-11 h-6 rounded-full relative shrink-0 transition-colors ${newGuest.is_foreigner ? 'bg-blue-500' : 'bg-gray-300'}`}><span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${newGuest.is_foreigner ? 'translate-x-5' : 'translate-x-0'}`} /></span>
                 </button>
                 {newGuest.is_foreigner && (
-                  <div className="space-y-2">
-                    <input className="input-field text-sm" placeholder="Гражданство (Россия...)" value={newGuest.nationality ?? ''} onChange={e => setNewGuest(g => ({ ...g, nationality: e.target.value }))} />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input className="input-field text-sm" placeholder="Номер паспорта" value={newGuest.document_number ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_number: e.target.value, document_type: 'passport_foreign' }))} />
-                      <select className="input-field text-sm" value={newGuest.sex ?? ''} onChange={e => setNewGuest(g => ({ ...g, sex: e.target.value as 'M' | 'F' | '' }))}>
-                        <option value="">Пол</option>
-                        <option value="M">Мужской</option>
-                        <option value="F">Женский</option>
-                      </select>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1"><span>&#127757;</span>Гражданство</label>
+                    <input className="input-field text-sm" placeholder="напр. Россия, Германия" value={newGuest.nationality ?? ''} onChange={e => setNewGuest(g => ({ ...g, nationality: e.target.value }))} />
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Номер паспорта</label>
+                        <input className="input-field text-sm" placeholder="N1234567" value={newGuest.document_number ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_number: e.target.value, document_type: 'passport_foreign' }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Пол</label>
+                        <select className="input-field text-sm" value={newGuest.sex ?? ''} onChange={e => setNewGuest(g => ({ ...g, sex: e.target.value as 'M' | 'F' | '' }))}>
+                          <option value="">—</option>
+                          <option value="M">Мужской</option>
+                          <option value="F">Женский</option>
+                        </select>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-blue-600">Остальное по паспорту дозаполните в карточке гостя.</p>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Дата рождения</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Въезд в РК</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <label className="text-xs text-gray-500 mb-1 block">Миграционная карта</label>
+                      <input className="input-field text-sm" placeholder="Талон / миграционная карта" value={newGuest.migration_card_number ?? ''} onChange={e => setNewGuest(g => ({ ...g, migration_card_number: e.target.value }))} />
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1"><Clock size={11} />Уведомление о прибытии в eQonaq</p>
                   </div>
                 )}
                 <button onClick={() => createGuest(newGuest)}
@@ -432,7 +458,7 @@ function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: () =>
 
 // ── Bed cell ──
 function BedCell({ unit, position, onClick }: { unit: Unit; position: 'lower' | 'upper'; onClick: () => void }) {
-  const booked = !!unit.has_booking && unit.status !== 'occupied'
+  const booked = isBookedToday(unit)
   const cfg = STATUS[booked ? 'reserved' : dispStatus(unit.status)]
   const posLabel = position === 'lower' ? '↓ Нижн.' : '↑ Верхн.'
   const posColor = position === 'lower' ? 'text-gray-400' : 'text-primary-400'
@@ -528,7 +554,7 @@ export default function OccupancyPage() {
 
   const handleUnitClick = (unit: Unit) => {
     if (unit.status === 'occupied') setPanel({ type: 'occupied', unit })
-    else if (unit.has_booking) setPanel({ type: 'booking', unit })
+    else if (isBookedToday(unit)) setPanel({ type: 'booking', unit })
     else setPanel({ type: 'free', unit })
   }
 
@@ -542,26 +568,25 @@ export default function OccupancyPage() {
   let occBar = 0, bookedBar = 0, servBar = 0, freeBar = 0
   units.forEach(u => {
     if (u.status === 'occupied') occBar++
-    else if (u.status === 'reserved' || (u.status === 'available' && u.has_booking)) bookedBar++
+    else if (isBookedToday(u)) bookedBar++
     else if (u.status === 'maintenance' || u.status === 'dirty' || u.status === 'out_of_order') servBar++
     else freeBar++
   })
   const seg = (n: number) => (total > 0 ? (n / total) * 100 : 0)
 
-  const isBooked = (u: Unit) => !!u.has_booking && u.status !== 'occupied'
   const counts: Record<string, number> = {
     all: total,
-    available: units.filter(u => u.status === 'available' && !u.has_booking).length,
+    available: units.filter(u => u.status === 'available' && !isBookedToday(u)).length,
     occupied: units.filter(u => u.status === 'occupied').length,
-    booking: units.filter(isBooked).length,
+    booking: units.filter(isBookedToday).length,
     closed: units.filter(u => CLOSED.includes(u.status)).length,
   }
 
   const matchFilter = (u: Unit): boolean => {
     if (filter === 'all') return true
-    if (filter === 'available') return u.status === 'available' && !u.has_booking
+    if (filter === 'available') return u.status === 'available' && !isBookedToday(u)
     if (filter === 'occupied') return u.status === 'occupied'
-    if (filter === 'booking') return isBooked(u)
+    if (filter === 'booking') return isBookedToday(u)
     if (filter === 'closed') return CLOSED.includes(u.status)
     return u.status === filter
   }
@@ -667,7 +692,7 @@ export default function OccupancyPage() {
             ) : (
               <div className="p-3 grid grid-cols-3 gap-2">
                 {room.units.map(unit => {
-                  const booked = !!unit.has_booking && unit.status !== 'occupied'
+                  const booked = isBookedToday(unit)
                   const cfg = STATUS[booked ? 'reserved' : dispStatus(unit.status)]
                   const shortName = unit.name.includes('-') ? unit.name.split('-')[1] : unit.name
                   const guest = unit.status === 'occupied' ? unit.current_guest : (booked ? unit.next_booking_guest : undefined)

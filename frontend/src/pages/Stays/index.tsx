@@ -5,7 +5,7 @@ import { format, differenceInDays, differenceInMonths, addMonths } from 'date-fn
 import { ru } from 'date-fns/locale'
 import {
   Plus, X, LogOut, User, Search, AlertTriangle, UserPlus,
-  ChevronLeft, ChevronDown, CreditCard, CalendarClock, Globe, Clock,
+  ChevronLeft, ArrowUpDown, CreditCard, CalendarClock, Globe, Clock,
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader, SegmentControl, FilterPills } from '../../components/ui'
@@ -346,11 +346,15 @@ export default function StaysPage() {
       ? 'bookings'
       : 'stays'
   const initialSortParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-  const initialSort = initialSortParams?.get('debtors') === '1'
-    ? 'debt'
-    : initialSortParams?.get('mpis') === '1'
-      ? 'mpis'
-      : 'checkin'
+  const sortParam = initialSortParams?.get('sort')
+  const initialSort =
+    sortParam === 'checkout' || sortParam === 'checkin' || sortParam === 'debt' || sortParam === 'mpis'
+      ? sortParam
+      : initialSortParams?.get('debtors') === '1'
+        ? 'debt'
+        : initialSortParams?.get('mpis') === '1'
+          ? 'mpis'
+          : 'checkin'
   const [tab, setTab] = useState<'stays' | 'bookings'>(initialTab)
   const [sortBy, setSortBy] = useState<'checkin' | 'checkout' | 'debt' | 'mpis'>(initialSort)
   const [sortOpen, setSortOpen] = useState(false)
@@ -415,33 +419,33 @@ export default function StaysPage() {
           { value: 'bookings', label: `Бронь${bookings.length ? ` (${bookings.length})` : ''}` },
         ]} />
 
-      <div>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400" placeholder="Поиск: гость, место или дата заезда…"
+            value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
         <button
           type="button"
           onClick={() => setSortOpen(o => !o)}
-          className="flex items-center gap-1.5 text-sm font-semibold text-gray-700"
+          title="Сортировка"
+          className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border transition ${
+            sortOpen ? 'bg-primary-50 border-primary-300 text-primary-600' : 'bg-white border-gray-200 text-gray-500'
+          }`}
         >
-          Сортировка
-          <ChevronDown size={16} className={`text-gray-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+          <ArrowUpDown size={16} />
         </button>
-        {sortOpen && (
-          <div className="mt-1.5">
-            <FilterPills value={sortBy} onChange={v => setSortBy(v as 'checkin' | 'checkout' | 'debt' | 'mpis')}
-              options={[
-                { value: 'checkin', label: 'Дата заезда' },
-                { value: 'checkout', label: 'Дата выезда' },
-                { value: 'debt', label: 'Долг' },
-                { value: 'mpis', label: 'Уведомление' },
-              ]} />
-          </div>
-        )}
       </div>
 
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" placeholder="Поиск: гость, место или дата заезда…"
-          value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
+      {sortOpen && (
+        <FilterPills value={sortBy} onChange={v => setSortBy(v as 'checkin' | 'checkout' | 'debt' | 'mpis')}
+          options={[
+            { value: 'checkin', label: 'Дата заезда' },
+            { value: 'checkout', label: 'Дата выезда' },
+            { value: 'debt', label: 'Долг' },
+            { value: 'mpis', label: 'Уведомление' },
+          ]} />
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center h-40">

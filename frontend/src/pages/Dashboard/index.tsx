@@ -68,11 +68,7 @@ export default function DashboardPage() {
     title: `${debtors.length} ${plural(debtors.length, 'должник', 'должника', 'должников')} · ${fmt(debtTotal)}`,
     cls: ALERT_CLS, to: '/stays?debtors=1',
   })
-  if (checkoutsToday > 0) topAlerts.push({
-    key: 'checkout', icon: ArrowUpCircle,
-    title: `${checkoutsToday} ${plural(checkoutsToday, 'выезд', 'выезда', 'выездов')} сегодня`,
-    sub: 'Проверьте оплату перед выездом', cls: ALERT_CLS, to: '/stays',
-  })
+  // Алерт про выезды сегодня убран — дублировал KPI-карточку «Выезды сегодня».
   if (expiringSoon > 0) topAlerts.push({
     key: 'expiring', icon: AlertCircle,
     title: `${expiringSoon} ${plural(expiringSoon, 'заезд', 'заезда', 'заездов')} скоро заканчиваются`,
@@ -147,7 +143,7 @@ export default function DashboardPage() {
           label="Выезды сегодня"
           value={todayData?.checkouts?.length ?? 0}
           color="red"
-          onClick={() => navigate('/stays')}
+          onClick={() => navigate('/stays?tab=stays&sort=checkout')}
         />
       </div>
 
