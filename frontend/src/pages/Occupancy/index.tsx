@@ -213,6 +213,16 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
                         <input type="date" className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
                       </div>
                       <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Паспорт выдан</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.document_issue_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_issue_date: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Действует до</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.document_expiry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_expiry_date: e.target.value }))} />
+                      </div>
+                      <div>
                         <label className="text-xs text-gray-500 mb-1 block">Въезд в РК</label>
                         <input type="date" className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
                       </div>
@@ -420,13 +430,49 @@ function StatusPicker({ unit, onSelect, onClose }: { unit: Unit; onSelect: (s: U
 }
 
 // ── Booking info panel ──
-function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: () => void; onClose: () => void }) {
+function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: (stayId: number) => void; onClose: () => void }) {
   const fmtD = (d?: string) => {
     if (!d) return '—'
     const [y, m, day] = d.split('-')
     return `${day}.${m}.${y}`
   }
-  const statusLabel = unit.next_booking_status === 'confirmed' ? 'Подтверждена (есть предоплата)' : 'Резерв (без предоплаты)'
+  const bookings = unit.upcoming_bookings ?? []
+  const statusLabelOf = (s?: string) => s === 'confirmed' ? 'Подтверждена (есть предоплата)' : 'Резерв (без предоплаты)'
+
+  // Несколько броней на юнит — показываем все, а не только ближайшую
+  if (bookings.length > 1) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+        <div className="absolute inset-0 bg-black/30 animate-fade-in" />
+        <div className="relative w-full bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="flex justify-center mb-3"><div className="w-9 h-1 rounded-full bg-gray-300" /></div>
+          <p className="text-xs font-semibold text-gray-400 uppercase mb-3">{unit.room_name} — {unit.name} — {bookings.length} брони</p>
+
+          <div className="space-y-3 mb-2">
+            {bookings.map(b => (
+              <div key={b.stay_id} className="bg-violet-50 border border-violet-200 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock size={15} className="text-violet-500 shrink-0" />
+                  <span className="text-sm font-bold text-violet-700">Бронь · {statusLabelOf(b.status)}</span>
+                </div>
+                <p className="text-base font-bold text-gray-900">{b.guest}</p>
+                <div className="flex items-center gap-1.5 mt-1.5 mb-3">
+                  <CalendarDays size={13} className="text-gray-400" />
+                  <span className="text-sm text-gray-600">{fmtD(b.check_in)} → {fmtD(b.check_out)}</span>
+                </div>
+                <button onClick={() => { if (confirm(`Удалить бронь ${b.guest}?`)) onCancel(b.stay_id) }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500 text-white rounded-xl text-sm font-bold">
+                  <X size={15} /> Удалить
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const statusLabel = statusLabelOf(unit.next_booking_status)
   const guestName = unit.next_booking_guest ?? 'Гость'
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
@@ -447,7 +493,7 @@ function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: () =>
           </div>
         </div>
 
-        <button onClick={() => { if (confirm(`Удалить бронь ${guestName}?`)) onCancel() }}
+        <button onClick={() => { if (unit.next_stay_id && confirm(`Удалить бронь ${guestName}?`)) onCancel(unit.next_stay_id) }}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white rounded-2xl text-sm font-bold">
           <X size={16} /> Удалить
         </button>
@@ -469,6 +515,11 @@ function BedCell({ unit, position, onClick }: { unit: Unit; position: 'lower' | 
       className={`relative flex flex-col w-full rounded-xl border p-2 text-left transition tap-card ${cfg.bg} ${cfg.border}`}
       style={{ minHeight: 72 }}>
       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
+      {(unit.bookings_count ?? 0) > 1 && (
+        <span className="absolute top-1 left-1 bg-violet-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full leading-none" title="Несколько броней">
+          {unit.bookings_count}
+        </span>
+      )}
       <span className={`text-[9px] font-semibold ${posColor} leading-none mb-1`}>{posLabel}</span>
       <span className={`text-xs font-bold ${cfg.text} leading-none`}>{shortName}</span>
       <div className="mt-1">{cfg.icon}</div>
@@ -701,6 +752,11 @@ export default function OccupancyPage() {
                       className={`relative flex flex-col items-center justify-center rounded-xl border p-2 transition tap-card ${cfg.bg} ${cfg.border}`}
                       style={{ minHeight: 72 }}>
                       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
+                      {(unit.bookings_count ?? 0) > 1 && (
+                        <span className="absolute top-1 left-1 bg-violet-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full leading-none" title="Несколько броней">
+                          {unit.bookings_count}
+                        </span>
+                      )}
                       <p className={`text-xs font-bold ${cfg.text}`}>{shortName}</p>
                       <div className="mt-1">{cfg.icon}</div>
                       {guest && (
@@ -740,7 +796,7 @@ export default function OccupancyPage() {
       )}
       {panel?.type === 'booking' && (
         <BookingPanel unit={panel.unit}
-          onCancel={() => { if (panel.unit.next_stay_id) cancelBooking(panel.unit.next_stay_id) }}
+          onCancel={(stayId) => cancelBooking(stayId)}
           onClose={() => setPanel(null)} />
       )}
       {panel?.type === 'occupied' && (

@@ -253,6 +253,16 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
                         <input type="date" className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
                       </div>
                       <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Паспорт выдан</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.document_issue_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_issue_date: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Действует до</label>
+                        <input type="date" className="input-field text-sm" value={newGuest.document_expiry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_expiry_date: e.target.value }))} />
+                      </div>
+                      <div>
                         <label className="text-xs text-gray-500 mb-1 block">Въезд в РК</label>
                         <input type="date" className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
                       </div>

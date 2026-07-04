@@ -17,6 +17,8 @@ class UnitSerializer(serializers.ModelSerializer):
     next_booking_guest  = serializers.SerializerMethodField()
     next_booking_status = serializers.SerializerMethodField()
     next_stay_id        = serializers.SerializerMethodField()
+    bookings_count       = serializers.SerializerMethodField()
+    upcoming_bookings    = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit
@@ -27,6 +29,7 @@ class UnitSerializer(serializers.ModelSerializer):
             'current_guest_phone', 'check_in', 'check_out',
             'has_booking', 'next_check_in', 'next_check_out',
             'next_booking_guest', 'next_booking_status', 'next_stay_id',
+            'bookings_count', 'upcoming_bookings',
         ]
         read_only_fields = ['id']
 
@@ -76,9 +79,9 @@ class UnitSerializer(serializers.ModelSerializer):
         stay = self._active_stay(obj)
         return str(stay.expected_check_out_date) if stay else None
 
-    def _next_booking(self, obj):
-        """Ближайшая будущая/текущая бронь (reserved/confirmed), не считая заселения."""
-        if not hasattr(obj, '_next_booking_cache'):
+    def _booking_candidates(self, obj):
+        """Все будущие/текущие брони (reserved/confirmed) юнита, отсортированные по дате заезда."""
+        if not hasattr(obj, '_booking_candidates_cache'):
             from datetime import date
             today = date.today()
             candidates = [
@@ -88,8 +91,13 @@ class UnitSerializer(serializers.ModelSerializer):
                 and s.expected_check_out_date >= today
             ]
             candidates.sort(key=lambda s: s.check_in_date)
-            obj._next_booking_cache = candidates[0] if candidates else None
-        return obj._next_booking_cache
+            obj._booking_candidates_cache = candidates
+        return obj._booking_candidates_cache
+
+    def _next_booking(self, obj):
+        """Ближайшая будущая/текущая бронь (reserved/confirmed), не считая заселения."""
+        candidates = self._booking_candidates(obj)
+        return candidates[0] if candidates else None
 
     def get_has_booking(self, obj):
         return self._next_booking(obj) is not None
@@ -113,6 +121,21 @@ class UnitSerializer(serializers.ModelSerializer):
     def get_next_stay_id(self, obj):
         b = self._next_booking(obj)
         return b.id if b else None
+
+    def get_bookings_count(self, obj):
+        return len(self._booking_candidates(obj))
+
+    def get_upcoming_bookings(self, obj):
+        return [
+            {
+                'stay_id': s.id,
+                'check_in': str(s.check_in_date),
+                'check_out': str(s.expected_check_out_date),
+                'guest': s.guest.full_name,
+                'status': s.status,
+            }
+            for s in self._booking_candidates(obj)
+        ]
 
 
 class UnitStatusSerializer(serializers.Serializer):
