@@ -8,7 +8,7 @@ import {
   ChevronLeft, CreditCard, CalendarClock, Globe, Clock,
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
-import { Avatar, PageHeader, SegmentControl } from '../../components/ui'
+import { Avatar, PageHeader, SegmentControl, FilterPills } from '../../components/ui'
 import { MpisBadge, MpisPanel, ExtendForm, PaymentForm, TransferForm } from './_helpers'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { addPeriod, plural } from '../../lib/dates'
@@ -329,7 +329,7 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
             ? book(Number(form.prepay || 0))
             : mutate({ unit: Number(form.unit), guest: Number(form.guest), check_in_date: form.check_in_date, expected_check_out_date: form.expected_check_out_date, rate_type: form.rate_type, rate_amount: form.rate_amount, deposit_amount: form.deposit_amount || 0 })}
             disabled={!canSubmit}
-            className={`w-full py-3.5 rounded-xl font-semibold transition tap-card ${mode === 'booking' ? 'bg-violet-500 text-white disabled:bg-gray-200 disabled:text-gray-400' : 'bg-primary-500 text-white disabled:bg-gray-200 disabled:text-gray-400'}`}>
+            className="w-full py-3.5 rounded-xl font-semibold transition tap-card bg-primary-500 text-white disabled:bg-gray-200 disabled:text-gray-400">
             {(isPending || booking) ? (mode === 'booking' ? 'Бронируем...' : 'Создаём заезд...') : mode === 'booking' ? 'Забронировать' : 'Заселить'}
           </button>
         </div>
@@ -345,7 +345,11 @@ export default function StaysPage() {
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'bookings'
       ? 'bookings'
       : 'stays'
+  const initialSort = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debtors') === '1'
+    ? 'debt'
+    : 'checkin'
   const [tab, setTab] = useState<'stays' | 'bookings'>(initialTab)
+  const [sortBy, setSortBy] = useState<'checkin' | 'checkout' | 'debt'>(initialSort)
   const [search, setSearch] = useState('')
   const [checkinMode, setCheckinMode] = useState<'checkin' | 'booking' | null>(null)
   const [payStay, setPayStay] = useState<Stay | null>(null)
@@ -373,7 +377,19 @@ export default function StaysPage() {
   const q = search.trim().toLowerCase()
   const sortedList = [...list]
     .filter(s => !q || (s.guest_detail?.full_name ?? '').toLowerCase().includes(q) || (s.unit_detail?.name ?? '').toLowerCase().includes(q) || s.check_in_date.includes(q))
-    .sort((a, b) => b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id)
+    .sort((a, b) => {
+      if (sortBy === 'debt') {
+        const aDebt = Number(a.balance) > 0
+        const bDebt = Number(b.balance) > 0
+        if (aDebt !== bDebt) return aDebt ? -1 : 1
+        if (aDebt && bDebt) return Number(b.balance) - Number(a.balance)
+        return b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id
+      }
+      if (sortBy === 'checkout') {
+        return a.expected_check_out_date.localeCompare(b.expected_check_out_date) || b.id - a.id
+      }
+      return b.check_in_date.localeCompare(a.check_in_date) || b.id - a.id
+    })
 
   return (
     <div className="px-4 py-4 space-y-3">
@@ -385,6 +401,13 @@ export default function StaysPage() {
         options={[
           { value: 'stays', label: `Заезды${stays.length ? ` (${stays.length})` : ''}` },
           { value: 'bookings', label: `Бронь${bookings.length ? ` (${bookings.length})` : ''}` },
+        ]} />
+
+      <FilterPills value={sortBy} onChange={v => setSortBy(v as 'checkin' | 'checkout' | 'debt')}
+        options={[
+          { value: 'checkin', label: 'По дате заезда' },
+          { value: 'checkout', label: 'По дате выезда' },
+          { value: 'debt', label: 'По долгу' },
         ]} />
 
       <div className="relative">

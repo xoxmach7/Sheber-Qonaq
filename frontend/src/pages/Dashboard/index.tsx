@@ -66,7 +66,7 @@ export default function DashboardPage() {
   if (debtors.length > 0) topAlerts.push({
     key: 'debt', icon: Banknote,
     title: `${debtors.length} ${plural(debtors.length, 'должник', 'должника', 'должников')} · ${fmt(debtTotal)}`,
-    cls: ALERT_CLS, to: '/stays',
+    cls: ALERT_CLS, to: '/stays?debtors=1',
   })
   if (checkoutsToday > 0) topAlerts.push({
     key: 'checkout', icon: ArrowUpCircle,

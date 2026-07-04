@@ -114,10 +114,14 @@ class DashboardView(APIView):
             'guest__phone', 'unit__name',
         )
 
-        # Заезжают сегодня (статус active, заселились сегодня)
+        # Заезжают сегодня (реальные заезды/брони с датой начала сегодня;
+        # отменённые/неявившиеся/просроченные резервы не считаем — иначе
+        # счётчик не уменьшается при удалении такой записи).
         checkins_today = Stay.objects.filter(
             organization=org,
             check_in_date=today,
+        ).exclude(
+            status__in=['cancelled', 'no_show', 'expired']
         ).values(
             'id', 'guest__first_name', 'guest__last_name',
             'guest__phone', 'unit__name', 'status',
