@@ -418,10 +418,10 @@ export default function StaysPage() {
         <span className="text-sm font-semibold text-gray-700 mb-1.5 block">Сортировка</span>
         <FilterPills value={sortBy} onChange={v => setSortBy(v as 'checkin' | 'checkout' | 'debt' | 'mpis')}
           options={[
-            { value: 'checkin', label: 'По дате заезда' },
-            { value: 'checkout', label: 'По дате выезда' },
-            { value: 'debt', label: 'По долгу' },
-            { value: 'mpis', label: 'Увед.' },
+            { value: 'checkin', label: 'Дата заезда' },
+            { value: 'checkout', label: 'Дата выезда' },
+            { value: 'debt', label: 'Долг' },
+            { value: 'mpis', label: 'Уведомление' },
           ]} />
       </div>
 

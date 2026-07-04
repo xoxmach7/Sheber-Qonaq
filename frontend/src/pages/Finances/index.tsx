@@ -241,8 +241,8 @@ export default function FinancesPage() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
               <h3 className="font-semibold text-gray-800 text-sm">Расходы по категориям</h3>
               <button onClick={() => setShowExpenseForm(true)}
-                className="flex items-center gap-1 bg-red-50 text-red-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold tap-card ring-1 ring-red-100">
-                <Plus size={13} /> Добавить
+                className="flex items-center gap-1.5 bg-primary-500 text-white px-3.5 py-2 rounded-xl text-[13px] font-semibold shadow-sm tap-card">
+                <Plus size={16} /> Добавить
               </button>
             </div>
             {data?.expenses_by_category && Object.values(data.expenses_by_category).some(v => Number(v) > 0) ? (
