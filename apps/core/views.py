@@ -114,14 +114,14 @@ class DashboardView(APIView):
             'guest__phone', 'unit__name',
         )
 
-        # Заезжают сегодня — считаем реальные заезды (active/confirmed) И брони
-        # (reserved) с датой заезда сегодня. Отменённые/неявившиеся/просроченные
-        # резервы не считаем — иначе счётчик не уменьшается при удалении такой записи.
+        # Заезжают сегодня — считаем ТОЛЬКО записи, которые реально видны гостю
+        # в списках «Заезды» (active/confirmed) или «Бронь» (reserved), с датой
+        # заезда сегодня. Checked_out/cancelled/no_show/expired не считаем —
+        # они не отображаются ни в одной из этих вкладок.
         checkins_today = Stay.objects.filter(
             organization=org,
             check_in_date=today,
-        ).exclude(
-            status__in=['cancelled', 'no_show', 'expired']
+            status__in=['active', 'confirmed', 'reserved'],
         ).values(
             'id', 'guest__first_name', 'guest__last_name',
             'guest__phone', 'unit__name', 'status',

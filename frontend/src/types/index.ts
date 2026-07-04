@@ -110,6 +110,14 @@ export interface Unit {
   next_booking_guest?: string
   next_booking_status?: 'reserved' | 'confirmed'
   next_stay_id?: number
+  bookings_count?: number
+  upcoming_bookings?: {
+    stay_id: number
+    check_in: string
+    check_out: string
+    guest: string
+    status: 'reserved' | 'confirmed'
+  }[]
 }
 
 // ─── Guest ───────────────────────────────────────────────────────────────────
