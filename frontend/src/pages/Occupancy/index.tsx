@@ -313,11 +313,23 @@ function FreePanel({ unit, onCheckIn, onBook, onChangeStatus, onClose }: {
         <div className="flex justify-center mb-3"><div className="w-9 h-1 rounded-full bg-gray-300" /></div>
         <p className="text-xs font-semibold text-gray-400 uppercase mb-4">{unit.room_name} — {unit.name}</p>
         {unit.has_booking && (
-          <div className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 mb-4 flex items-center gap-2">
-            <Clock size={14} className="text-violet-500 shrink-0" />
-            <p className="text-xs text-violet-700 font-medium">
-              Есть бронь: {fmtD(unit.next_check_in)} → {fmtD(unit.next_check_out)}
-            </p>
+          <div className="space-y-1.5 mb-4">
+            {(unit.upcoming_bookings ?? []).map(b => (
+              <div key={b.stay_id} className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <Clock size={14} className="text-violet-500 shrink-0" />
+                <p className="text-xs text-violet-700 font-medium">
+                  {b.guest} · {fmtD(b.check_in)} → {fmtD(b.check_out)}
+                </p>
+              </div>
+            ))}
+            {!(unit.upcoming_bookings?.length) && (
+              <div className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <Clock size={14} className="text-violet-500 shrink-0" />
+                <p className="text-xs text-violet-700 font-medium">
+                  Есть бронь: {fmtD(unit.next_check_in)} → {fmtD(unit.next_check_out)}
+                </p>
+              </div>
+            )}
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
@@ -515,11 +527,6 @@ function BedCell({ unit, position, onClick }: { unit: Unit; position: 'lower' | 
       className={`relative flex flex-col w-full rounded-xl border p-2 text-left transition tap-card ${cfg.bg} ${cfg.border}`}
       style={{ minHeight: 72 }}>
       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
-      {(unit.bookings_count ?? 0) > 1 && (
-        <span className="absolute top-1 left-1 bg-violet-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full leading-none" title="Несколько броней">
-          {unit.bookings_count}
-        </span>
-      )}
       <span className={`text-[9px] font-semibold ${posColor} leading-none mb-1`}>{posLabel}</span>
       <span className={`text-xs font-bold ${cfg.text} leading-none`}>{shortName}</span>
       <div className="mt-1">{cfg.icon}</div>
@@ -752,11 +759,6 @@ export default function OccupancyPage() {
                       className={`relative flex flex-col items-center justify-center rounded-xl border p-2 transition tap-card ${cfg.bg} ${cfg.border}`}
                       style={{ minHeight: 72 }}>
                       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
-                      {(unit.bookings_count ?? 0) > 1 && (
-                        <span className="absolute top-1 left-1 bg-violet-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full leading-none" title="Несколько броней">
-                          {unit.bookings_count}
-                        </span>
-                      )}
                       <p className={`text-xs font-bold ${cfg.text}`}>{shortName}</p>
                       <div className="mt-1">{cfg.icon}</div>
                       {guest && (
