@@ -17,7 +17,16 @@ import StaffPage from './pages/Staff'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const isInitialized = useAuthStore(s => s.isInitialized)
   if (!isAuthenticated) return <Navigate to="/login" replace />
+  // После F5 user на мгновение null, пока идёт повторный /users/me/ —
+  // без этой проверки страницы с гейтом по роли (Финансы, Сотрудники)
+  // успевают отрендерить «Раздел недоступен» до того, как роль подтвердится.
+  if (!isInitialized) return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
   return <>{children}</>
 }
 
