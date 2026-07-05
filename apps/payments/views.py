@@ -31,7 +31,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Payment.objects.filter(
             stay__organization=self.request.user.organization
-        ).select_related('stay__guest', 'received_by').order_by('-payment_date')
+        ).select_related('stay__guest', 'stay__unit', 'received_by').order_by('-payment_date')
 
     def perform_create(self, serializer):
         serializer.save(received_by=self.request.user)

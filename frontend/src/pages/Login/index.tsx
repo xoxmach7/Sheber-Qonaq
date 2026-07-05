@@ -33,7 +33,7 @@ export default function LoginPage() {
           <img src="/logo.svg" alt="Sheber Qonaq" className="w-[76px] h-[76px] object-contain" />
         </div>
         <h1 className="text-[28px] font-extrabold text-gray-900">Sheber Qonaq</h1>
-        <p className="text-[15px] text-gray-500 mt-1 leading-snug">Управление гостиничными<br />предприятиями</p>
+        <p className="text-[13px] text-gray-500 mt-1 leading-snug">Управление гостиничными<br />предприятиями</p>
       </div>
 
       {/* Form */}

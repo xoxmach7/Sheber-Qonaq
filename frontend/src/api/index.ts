@@ -149,6 +149,9 @@ export const paymentsApi = {
   create: (data: PaymentCreate) =>
     api.post<Payment>('/payments/', data).then(r => r.data),
 
+  remove: (id: number) =>
+    api.delete(`/payments/${id}/`),
+
   expenses: () =>
     api.get<PaginatedResponse<Expense>>('/expenses/').then(r => r.data),
 

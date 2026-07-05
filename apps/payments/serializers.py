@@ -7,17 +7,26 @@ class PaymentSerializer(serializers.ModelSerializer):
     received_by_name = serializers.CharField(
         source='received_by.get_full_name', read_only=True
     )
+    stay_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
         fields = [
-            'id', 'stay', 'amount', 'payment_date',
+            'id', 'stay', 'stay_info', 'amount', 'payment_date',
             'method', 'method_display',
             'period_from', 'period_to',
             'received_by', 'received_by_name', 'notes',
             'created_at',
         ]
         read_only_fields = ['id', 'created_at']
+
+    def get_stay_info(self, obj):
+        # "Гость · место" — для истории платежей на странице Финансы.
+        stay = obj.stay
+        guest_name = stay.guest.full_name if stay and stay.guest_id else None
+        unit_name = stay.unit.name if stay and stay.unit_id else None
+        parts = [p for p in (guest_name, unit_name) if p]
+        return ' · '.join(parts) if parts else None
 
     def validate_stay(self, value):
         # Межарендная защита: заезд должен принадлежать организации текущего пользователя.

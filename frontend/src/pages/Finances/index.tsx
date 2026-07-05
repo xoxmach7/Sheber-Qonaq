@@ -154,6 +154,24 @@ export default function FinancesPage() {
     },
   })
 
+  // История внесённых платежей за выбранный месяц (с удалением)
+  const { data: paymentsData } = useQuery({
+    queryKey: ['payments'],
+    queryFn: () => paymentsApi.list(),
+  })
+  const monthPayments = (paymentsData?.results ?? [])
+    .filter(p => (p.payment_date ?? '').startsWith(currentMonth))
+    .sort((a, b) => (b.payment_date ?? '').localeCompare(a.payment_date ?? ''))
+
+  const { mutate: deletePayment } = useMutation({
+    mutationFn: (id: number) => paymentsApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['finances'] })
+      qc.invalidateQueries({ queryKey: ['payments'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Month selector */}
@@ -236,6 +254,38 @@ export default function FinancesPage() {
             </div>
           )}
 
+          {/* История платежей */}
+          {monthPayments.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-50">
+                <h3 className="font-semibold text-gray-800 text-sm">История платежей · {displayMonth}</h3>
+              </div>
+              {monthPayments.map(pay => {
+                const cfg = METHOD_CONFIG[pay.method]
+                const Icon = cfg?.Icon ?? Banknote
+                return (
+                  <div key={pay.id} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0">
+                    <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center shrink-0">
+                      <Icon size={15} className="text-gray-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-800 truncate">{pay.stay_info || `Заезд #${pay.stay}`}</p>
+                      <p className="text-xs text-gray-400">
+                        {cfg?.label ?? pay.method} · {format(new Date(pay.payment_date + 'T12:00:00'), 'd MMM yyyy', { locale: ru })}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-emerald-600 shrink-0">+{fmt(pay.amount)}</span>
+                    <button
+                      onClick={() => { if (confirm('Удалить эту оплату? Баланс проживания пересчитается.')) deletePayment(pay.id) }}
+                      className="p-1.5 text-gray-300 hover:text-red-500 shrink-0">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* Expenses by category */}
           <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
@@ -265,7 +315,6 @@ export default function FinancesPage() {
             ) : (
               <div className="px-4 py-6 text-center text-gray-400 text-sm">
                 <p>Расходов за этот месяц нет</p>
-                <button onClick={() => setShowExpenseForm(true)} className="mt-2 text-primary-600 font-medium text-xs">+ Добавить первый расход</button>
               </div>
             )}
           </div>
