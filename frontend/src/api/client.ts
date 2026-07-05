@@ -21,6 +21,32 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Обновление access-токена — только один сетевой запрос за раз.
+//
+// Why: SIMPLE_JWT настроен на ROTATE_REFRESH_TOKENS + BLACKLIST_AFTER_ROTATION —
+// каждый успешный /auth/refresh/ мгновенно инвалидирует старый refresh token.
+// Когда access-токен истекает, приложение обычно шлёт НЕСКОЛЬКО параллельных
+// запросов (дашборд/карта грузят сразу 3-5 эндпоинтов) — без этого замка
+// каждый из них ловил 401 и независимо дёргал /auth/refresh/ с одним и тем же
+// (уже использованным и заблэклистенным вторым запросом) refresh token, что
+// приводило к ложному разлогину каждые ~10-15 минут, хотя первый запрос
+// сессию уже успешно продлил.
+let refreshPromise: Promise<string> | null = null
+
+function refreshAccessToken(refresh: string): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const refreshURL = import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL}/api/v1/auth/refresh/`
+        : '/api/v1/auth/refresh/'
+      const { data } = await axios.post(refreshURL, { refresh })
+      localStorage.setItem('access_token', data.access)
+      return data.access
+    })().finally(() => { refreshPromise = null })
+  }
+  return refreshPromise
+}
+
 // Auto-refresh on 401
 api.interceptors.response.use(
   (res) => res,
@@ -31,12 +57,8 @@ api.interceptors.response.use(
       const refresh = localStorage.getItem('refresh_token')
       if (refresh) {
         try {
-          const refreshURL = import.meta.env.VITE_API_URL
-            ? `${import.meta.env.VITE_API_URL}/api/v1/auth/refresh/`
-            : '/api/v1/auth/refresh/'
-          const { data } = await axios.post(refreshURL, { refresh })
-          localStorage.setItem('access_token', data.access)
-          original.headers.Authorization = `Bearer ${data.access}`
+          const access = await refreshAccessToken(refresh)
+          original.headers.Authorization = `Bearer ${access}`
           return api(original)
         } catch (refreshError) {
           // Показываем причину разлогина
