@@ -115,7 +115,6 @@ export default function FinancesPage() {
   const canFinance = ['superadmin', 'owner'].includes(role ?? '')
   const [monthOffset, setMonthOffset] = useState(0)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
-  const [showPayments, setShowPayments] = useState(false)
   const [showAllPayments, setShowAllPayments] = useState(false)
   const [openCategory, setOpenCategory] = useState<string | null>(null)
 
@@ -232,15 +231,13 @@ export default function FinancesPage() {
             </div>
           </div>
 
-          {/* История платежей — свёрнута по умолчанию */}
+          {/* История платежей — первые 3 всегда видны, остальные по кнопке */}
           {monthPayments.length > 0 && (
             <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <button onClick={() => setShowPayments(o => { if (o) setShowAllPayments(false); return !o })}
-                className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-50 tap-card">
+              <div className="px-4 py-3 border-b border-gray-50">
                 <h3 className="font-semibold text-gray-800 text-sm">История платежей · {displayMonth}</h3>
-                <ChevronDown size={16} className={`text-gray-400 transition-transform shrink-0 ${showPayments ? 'rotate-180' : ''}`} />
-              </button>
-              {showPayments && (showAllPayments ? monthPayments : monthPayments.slice(0, 3)).map(pay => {
+              </div>
+              {(showAllPayments ? monthPayments : monthPayments.slice(0, 3)).map(pay => {
                 const cfg = METHOD_CONFIG[pay.method]
                 const Icon = cfg?.Icon ?? Banknote
                 return (
@@ -263,10 +260,11 @@ export default function FinancesPage() {
                   </div>
                 )
               })}
-              {showPayments && !showAllPayments && monthPayments.length > 3 && (
-                <button onClick={() => setShowAllPayments(true)}
+              {monthPayments.length > 3 && (
+                <button onClick={() => setShowAllPayments(o => !o)}
                   className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 text-primary-600 text-xs font-semibold tap-card">
-                  Показать все ({monthPayments.length}) <ChevronDown size={13} />
+                  {showAllPayments ? 'Свернуть' : `Показать все (${monthPayments.length})`}
+                  <ChevronDown size={13} className={`transition-transform ${showAllPayments ? 'rotate-180' : ''}`} />
                 </button>
               )}
             </div>
