@@ -6,6 +6,12 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  // Стал ли известен реальный профиль пользователя (роль и т.д.) после
+  // перезагрузки страницы. При F5 user сбрасывается в null, пока идёт
+  // повторный /users/me/ — страницы с гейтом по роли (Финансы, Сотрудники)
+  // не должны показывать «Раздел недоступен» в это окно, только пока
+  // профиль ещё не подтверждён.
+  isInitialized: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
   loadUser: () => Promise<void>
@@ -15,6 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: !!localStorage.getItem('access_token'),
   isLoading: false,
+  isInitialized: !localStorage.getItem('access_token'),
 
   login: async (username, password) => {
     set({ isLoading: true })
@@ -23,7 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('access_token', tokens.access)
       localStorage.setItem('refresh_token', tokens.refresh)
       const user = await authApi.me()
-      set({ user, isAuthenticated: true, isLoading: false })
+      set({ user, isAuthenticated: true, isLoading: false, isInitialized: true })
     } catch (e) {
       set({ isLoading: false })
       throw e
@@ -42,14 +49,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadUser: async () => {
     const token = localStorage.getItem('access_token')
-    if (!token) return
+    if (!token) { set({ isInitialized: true }); return }
     try {
       const user = await authApi.me()
-      set({ user, isAuthenticated: true })
+      set({ user, isAuthenticated: true, isInitialized: true })
     } catch {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
-      set({ user: null, isAuthenticated: false })
+      set({ user: null, isAuthenticated: false, isInitialized: true })
     }
   },
 }))
