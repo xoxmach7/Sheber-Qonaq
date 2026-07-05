@@ -153,3 +153,56 @@ class BlacklistEntry(TimestampedModel):
                         results[e.id] = e
 
         return list(results.values())
+
+    @classmethod
+    def visible_to(cls, organization) -> list:
+        """
+        Записи для вкладки «Нарушения» конкретной организации:
+        - свои записи (reported_by == organization);
+        - записи о госте, который уже есть в СОБСТВЕННОЙ базе гостей этой
+          организации (совпадение по ИИН/телефону/ФИО — тот же матчинг,
+          что и check_guest при заселении).
+
+        Раньше видимость чужой записи требовала ручного шага — is_verified,
+        выставляемого супер-админом через Django admin (mark_verified).
+        Из-за этого казалось, что нарушитель "не показывается" в другом
+        хостеле, хотя запись давно существует — просто её никто не
+        подтвердил вручную. Теперь вместо ручного подтверждения запись
+        автоматически видна той организации, которая реально сталкивалась
+        с этим гостем (он есть в её базе) — без ручного шага. Полный чужой
+        каталог по-прежнему не отдаётся: организация не видит нарушителей,
+        с которыми она никогда не сталкивалась.
+        """
+        if organization is None:
+            return []
+
+        from apps.guests.models import Guest
+
+        own = list(cls.objects.filter(is_active=True, reported_by=organization))
+        own_ids = {e.id for e in own}
+
+        org_guests = Guest.objects.filter(organization=organization)
+        iin_hashes = {g.iin_hash for g in org_guests if g.iin_hash}
+        phones = {normalize_phone(g.phone) for g in org_guests if g.phone}
+        phones.discard('')
+        names = {normalize_name(g.full_name) for g in org_guests if g.full_name}
+        names.discard('')
+
+        others = cls.objects.filter(is_active=True).exclude(reported_by=organization)
+        matched = []
+        for e in others:
+            if e.id in own_ids:
+                continue
+            if e.iin_hash and e.iin_hash in iin_hashes:
+                matched.append(e)
+                continue
+            if e.phone and normalize_phone(e.phone) in phones:
+                matched.append(e)
+                continue
+            if e.full_name and normalize_name(e.full_name) in names:
+                matched.append(e)
+                continue
+
+        result = own + matched
+        result.sort(key=lambda e: e.created_at, reverse=True)
+        return result

@@ -3,7 +3,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
-from django.db import models
 from apps.core.permissions import IsOwnerOrManager
 from apps.notifications.models import Notification
 from .models import BlacklistEntry
@@ -14,10 +13,13 @@ class BlacklistViewSet(viewsets.ModelViewSet):
     """
     Глобальный чёрный список нарушений.
 
-    Видимость (вкладка «Нарушения»): своя организация видит СВОИ записи
-    + подтверждённые (is_verified). Полный каталог чужих нарушителей не отдаётся.
+    Видимость (вкладка «Нарушения»): своя организация видит СВОИ записи +
+    записи о гостях, которые уже есть в её собственной базе гостей
+    (автоматически, без ручного подтверждения — см. BlacklistEntry.visible_to).
+    Полный каталог чужих нарушителей не отдаётся.
 
-    Чужие нарушения всплывают ТОЛЬКО при заселении — через /check/ по ИИН/телефону.
+    Чужие нарушения всплывают ТАКЖЕ при заселении — через /check/ по ИИН/телефону/ФИО,
+    независимо от того, есть ли гость уже в базе организации.
 
     Добавлять: владелец/администратор (owner/manager).
     Убирать (deactivate): только владелец (owner) той организации, что добавила запись.
@@ -29,10 +31,9 @@ class BlacklistViewSet(viewsets.ModelViewSet):
     filterset_fields = ['reason', 'is_verified']
 
     def get_queryset(self):
-        qs = BlacklistEntry.objects.filter(is_active=True).order_by('-created_at')
-        org_id = getattr(self.request.user, 'organization_id', None)
-        # check/ работает по всей базе отдельно; список — свои + подтверждённые
-        return qs.filter(models.Q(reported_by_id=org_id) | models.Q(is_verified=True))
+        organization = getattr(self.request.user, 'organization', None)
+        visible_ids = [e.id for e in BlacklistEntry.visible_to(organization)]
+        return BlacklistEntry.objects.filter(id__in=visible_ids).order_by('-created_at')
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy'):
