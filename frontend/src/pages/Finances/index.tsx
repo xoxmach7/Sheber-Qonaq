@@ -4,7 +4,7 @@ import { paymentsApi, propertiesApi } from '../../api'
 import { format, subMonths } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import {
-  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, Plus, X,
+  ChevronLeft, ChevronRight, ChevronDown, TrendingUp, TrendingDown, Minus, Plus, X,
   Zap, ShoppingCart, Wrench, Users, Megaphone, Receipt, Package,
   Banknote, Smartphone, Building2, CreditCard, Trash2, Lock,
 } from 'lucide-react'
@@ -115,6 +115,8 @@ export default function FinancesPage() {
   const canFinance = ['superadmin', 'owner'].includes(role ?? '')
   const [monthOffset, setMonthOffset] = useState(0)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
+  const [showPayments, setShowPayments] = useState(false)
+  const [openCategory, setOpenCategory] = useState<string | null>(null)
 
   if (!canFinance) return (
     <div className="px-4 py-20 text-center text-gray-400">
@@ -229,38 +231,15 @@ export default function FinancesPage() {
             </div>
           </div>
 
-          {/* Income by method */}
-          {data?.income_by_method && Object.values(data.income_by_method).some(v => Number(v) > 0) && (
-            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-50">
-                <h3 className="font-semibold text-gray-800 text-sm">Доход по методам оплаты</h3>
-              </div>
-              {Object.entries(data.income_by_method)
-                .filter(([, v]) => Number(v) > 0)
-                .sort(([, a], [, b]) => Number(b) - Number(a))
-                .map(([method, amount]) => {
-                  const cfg = METHOD_CONFIG[method]
-                  const Icon = cfg?.Icon
-                  return (
-                    <div key={method} className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0">
-                      <div className="flex items-center gap-2.5">
-                        {Icon && <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center"><Icon size={15} className="text-gray-500" /></div>}
-                        <span className="text-sm text-gray-700">{cfg?.label ?? method}</span>
-                      </div>
-                      <span className="text-sm font-bold text-emerald-600">+{fmt(amount)}</span>
-                    </div>
-                  )
-                })}
-            </div>
-          )}
-
-          {/* История платежей */}
+          {/* История платежей — свёрнута по умолчанию */}
           {monthPayments.length > 0 && (
             <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-50">
+              <button onClick={() => setShowPayments(o => !o)}
+                className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-50 tap-card">
                 <h3 className="font-semibold text-gray-800 text-sm">История платежей · {displayMonth}</h3>
-              </div>
-              {monthPayments.map(pay => {
+                <ChevronDown size={16} className={`text-gray-400 transition-transform shrink-0 ${showPayments ? 'rotate-180' : ''}`} />
+              </button>
+              {showPayments && monthPayments.map(pay => {
                 const cfg = METHOD_CONFIG[pay.method]
                 const Icon = cfg?.Icon ?? Banknote
                 return (
@@ -286,7 +265,7 @@ export default function FinancesPage() {
             </div>
           )}
 
-          {/* Expenses by category */}
+          {/* Расходы по категориям — клик по категории раскрывает список расходов внутри неё */}
           <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
               <h3 className="font-semibold text-gray-800 text-sm">Расходы по категориям</h3>
@@ -301,14 +280,40 @@ export default function FinancesPage() {
                 .sort(([, a], [, b]) => Number(b) - Number(a))
                 .map(([cat, amount]) => {
                   const catCfg = CATEGORY_OPTIONS.find(c => c.value === cat)
-                  const Icon = catCfg?.Icon
+                  const Icon = catCfg?.Icon ?? Package
+                  const isOpen = openCategory === cat
+                  const catExpenses = monthExpenses.filter(e => e.category === cat)
                   return (
-                    <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0">
-                      <div className="flex items-center gap-2.5">
-                        {Icon && <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center"><Icon size={15} className="text-gray-500" /></div>}
-                        <span className="text-sm text-gray-700">{CATEGORY_LABELS[cat] ?? cat}</span>
-                      </div>
-                      <span className="text-sm font-bold text-red-600">−{fmt(amount)}</span>
+                    <div key={cat} className="border-b border-gray-50 last:border-0">
+                      <button onClick={() => setOpenCategory(o => o === cat ? null : cat)}
+                        className="w-full flex items-center justify-between px-4 py-3 tap-card">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center"><Icon size={15} className="text-gray-500" /></div>
+                          <span className="text-sm text-gray-700">{CATEGORY_LABELS[cat] ?? cat}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-red-600">−{fmt(amount)}</span>
+                          <ChevronDown size={15} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+                      {isOpen && (
+                        <div className="bg-gray-50/60 pl-4">
+                          {catExpenses.map(exp => (
+                            <div key={exp.id} className="flex items-center gap-3 pl-11 pr-4 py-2.5 border-t border-gray-100">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-gray-800 truncate">{exp.description || CATEGORY_LABELS[exp.category] || exp.category}</p>
+                                <p className="text-xs text-gray-400">{format(new Date(exp.date + 'T12:00:00'), 'd MMM yyyy', { locale: ru })}</p>
+                              </div>
+                              <span className="text-sm font-bold text-red-600 shrink-0">−{fmt(exp.amount)}</span>
+                              <button
+                                onClick={() => { if (confirm('Удалить этот расход?')) deleteExpense(exp.id) }}
+                                className="p-1.5 text-gray-300 hover:text-red-500 shrink-0">
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )
                 })
@@ -318,38 +323,6 @@ export default function FinancesPage() {
               </div>
             )}
           </div>
-
-          {/* Список расходов с датами */}
-          {monthExpenses.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-50">
-                <h3 className="font-semibold text-gray-800 text-sm">Список расходов · {displayMonth}</h3>
-              </div>
-              {monthExpenses.map(exp => {
-                const catCfg = CATEGORY_OPTIONS.find(c => c.value === exp.category)
-                const Icon = catCfg?.Icon ?? Package
-                return (
-                  <div key={exp.id} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0">
-                    <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center shrink-0">
-                      <Icon size={15} className="text-gray-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 truncate">{exp.description || CATEGORY_LABELS[exp.category] || exp.category}</p>
-                      <p className="text-xs text-gray-400">
-                        {CATEGORY_LABELS[exp.category] ?? exp.category} · {format(new Date(exp.date + 'T12:00:00'), 'd MMM yyyy', { locale: ru })}
-                      </p>
-                    </div>
-                    <span className="text-sm font-bold text-red-600 shrink-0">−{fmt(exp.amount)}</span>
-                    <button
-                      onClick={() => { if (confirm('Удалить этот расход?')) deleteExpense(exp.id) }}
-                      className="p-1.5 text-gray-300 hover:text-red-500 shrink-0">
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
         </>
       )}
 
