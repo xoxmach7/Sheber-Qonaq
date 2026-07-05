@@ -30,11 +30,15 @@ class GuestSerializer(serializers.ModelSerializer):
 
     def get_is_blacklisted(self, obj) -> bool:
         from apps.blacklist.models import BlacklistEntry
-        if not obj.phone:
+        # Матчинг по ИИН/телефону/ФИО, с нормализацией — та же логика,
+        # что и в /check/ эндпоинтах (BlacklistEntry.check_guest), иначе
+        # разное форматирование телефона или порядок слов в ФИО тихо
+        # скрывает нарушение гостя в другом хостеле.
+        if not obj.phone and not obj.iin and not obj.full_name:
             return False
-        return BlacklistEntry.objects.filter(
-            is_active=True, phone=obj.phone
-        ).exists()
+        return bool(BlacklistEntry.check_guest(
+            iin=obj.iin, phone=obj.phone, full_name=obj.full_name,
+        ))
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -89,8 +93,9 @@ class GuestShortSerializer(serializers.ModelSerializer):
 class BlacklistCheckSerializer(serializers.Serializer):
     iin = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
+    full_name = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
-        if not data.get('iin') and not data.get('phone'):
-            raise serializers.ValidationError('Укажите ИИН или телефон.')
+        if not data.get('iin') and not data.get('phone') and not data.get('full_name'):
+            raise serializers.ValidationError('Укажите ИИН, телефон или ФИО.')
         return data

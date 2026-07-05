@@ -7,10 +7,12 @@ import { Avatar, PageHeader, EmptyState } from '../../components/ui'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { useAuthStore } from '../../store/auth'
 
-// Роли, которые владелец может выдать сотруднику
+// Роли, которые владелец может выдать сотруднику.
+// «Администратор» (manager) назначить может только владелец — сам
+// администратор администратора создать не может (см. apps/users/serializers.py).
 const ROLE_OPTIONS: { value: UserRole; label: string; hint: string; Icon: typeof Shield }[] = [
-  { value: 'manager',   label: 'Администратор', hint: 'Почти всё: заезды, гости, финансы, сотрудники', Icon: Shield },
-  { value: 'reception', label: 'Ресепшн',       hint: 'Заселение, выселение, брони, гости',             Icon: Headphones },
+  { value: 'manager',   label: 'Администратор', hint: 'Заезды, гости, брони, сотрудники — без финансов', Icon: Shield },
+  { value: 'reception', label: 'Ресепшн',       hint: 'Заселение, выселение, брони, гости',              Icon: Headphones },
 ]
 
 const ROLE_LABEL: Record<string, string> = {
@@ -27,6 +29,11 @@ const ROLE_STYLE: Record<string, string> = {
 // ── Форма добавления сотрудника ──
 function StaffForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
+  const me = useAuthStore(s => s.user)
+  const isOwnerTier = me?.role === 'owner' || me?.role === 'superadmin'
+  // Администратора (manager) может назначить только владелец — сам
+  // администратор эту опцию даже не видит в форме.
+  const roleOptions = isOwnerTier ? ROLE_OPTIONS : ROLE_OPTIONS.filter(o => o.value !== 'manager')
   const [form, setForm] = useState<UserCreate>({
     username: '', password: '', first_name: '', last_name: '', phone: '', role: 'reception',
   })
@@ -59,7 +66,7 @@ function StaffForm({ onClose }: { onClose: () => void }) {
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Роль *</label>
             <div className="grid grid-cols-2 gap-2">
-              {ROLE_OPTIONS.map(({ value, label, hint, Icon }) => (
+              {roleOptions.map(({ value, label, hint, Icon }) => (
                 <button key={value} type="button" onClick={() => set('role', value)}
                   className={`flex flex-col items-start gap-1 px-3 py-2.5 rounded-xl border text-left transition tap-card ${
                     form.role === value ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-700 border-gray-200'

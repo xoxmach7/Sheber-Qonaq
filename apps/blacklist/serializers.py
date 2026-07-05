@@ -69,8 +69,9 @@ class BlacklistEntrySerializer(serializers.ModelSerializer):
 class BlacklistCheckInputSerializer(serializers.Serializer):
     iin = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
+    full_name = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
-        if not data.get('iin') and not data.get('phone'):
-            raise serializers.ValidationError('Укажите ИИН или телефон.')
+        if not data.get('iin') and not data.get('phone') and not data.get('full_name'):
+            raise serializers.ValidationError('Укажите ИИН, телефон или ФИО.')
         return data

@@ -69,8 +69,46 @@ def test_manager_can_create_reception_account(manager_client, org):
 
 
 @pytest.mark.django_db
+def test_manager_cannot_create_another_manager(manager_client, org):
+    """
+    Регрессия: manager (Администратор в UI) не должен уметь размножать
+    себе подобных в обход владельца — только owner/superadmin назначает
+    роль manager.
+    """
+    payload = {
+        'username': 'newmanager', 'password': 'strongpass12345',
+        'first_name': 'A', 'last_name': 'B', 'role': 'manager',
+    }
+    r = manager_client.post('/api/v1/users/', payload, format='json')
+    assert r.status_code == 400
+    assert not User.objects.filter(username='newmanager').exists()
+
+
+@pytest.mark.django_db
+def test_manager_cannot_promote_reception_to_manager(manager_client, org):
+    reception = User.objects.create_user(
+        username='resp', password='pass12345', role='reception', organization=org,
+    )
+    r = manager_client.patch(f'/api/v1/users/{reception.id}/', {'role': 'manager'}, format='json')
+    assert r.status_code == 400
+    reception.refresh_from_db()
+    assert reception.role == 'reception'
+
+
+@pytest.mark.django_db
 def test_owner_can_change_role(owner_client, manager_user):
     r = owner_client.patch(f'/api/v1/users/{manager_user.id}/', {'role': 'reception'}, format='json')
     assert r.status_code == 200, r.data
     manager_user.refresh_from_db()
     assert manager_user.role == 'reception'
+
+
+@pytest.mark.django_db
+def test_owner_can_create_manager_account(owner_client, org):
+    payload = {
+        'username': 'newmanager2', 'password': 'strongpass12345',
+        'first_name': 'A', 'last_name': 'B', 'role': 'manager',
+    }
+    r = owner_client.post('/api/v1/users/', payload, format='json')
+    assert r.status_code == 201, r.data
+    assert User.objects.get(username='newmanager2').role == 'manager'
