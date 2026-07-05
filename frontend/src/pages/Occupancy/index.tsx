@@ -59,10 +59,14 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
     queryFn: () => guestsApi.list(guestSearch),
     enabled: guestSearch.length >= 2,
   })
+  // Проверка ЧС по телефону (готовый гость) ИЛИ по ФИО, введённому в форме
+  // быстрого создания — нарушение из другого хостела может не совпасть по
+  // телефону (другой номер/формат), но должно найтись по имени.
+  const quickCreateFullName = `${newGuest.first_name} ${newGuest.last_name}`.trim()
   const { data: blCheck } = useQuery({
-    queryKey: ['bl-check', form.guestPhone],
-    queryFn: () => blacklistApi.check(form.guestPhone),
-    enabled: form.guestPhone.length >= 15, // Полный номер: +7 777 777-77-77 = 16 символов
+    queryKey: ['bl-check', form.guestPhone, quickCreateFullName],
+    queryFn: () => blacklistApi.check(form.guestPhone, undefined, quickCreateFullName),
+    enabled: form.guestPhone.length >= 15 || (newGuest.first_name.length >= 2 && newGuest.last_name.length >= 2),
   })
   const { mutate: createGuest, isPending: creatingGuest } = useMutation({
     mutationFn: (d: GuestCreate) => guestsApi.create(d),
@@ -314,7 +318,7 @@ function FreePanel({ unit, onCheckIn, onBook, onChangeStatus, onClose }: {
         <p className="text-xs font-semibold text-gray-400 uppercase mb-4">{unit.room_name} — {unit.name}</p>
         {unit.has_booking && (
           <div className="space-y-1.5 mb-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase">Брони</p>
+            <p className="text-xs font-semibold text-black">Брони</p>
             {(unit.upcoming_bookings ?? []).map(b => (
               <div key={b.stay_id} className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
                 <Clock size={14} className="text-violet-500 shrink-0" />

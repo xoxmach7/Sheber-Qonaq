@@ -104,7 +104,7 @@ export default function DashboardPage() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left tap-card ${a.cls}`}>
               <a.icon size={20} className="shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium leading-tight">{a.title}</p>
+                <p className="text-[13px] font-medium leading-tight">{a.title}</p>
                 {a.sub && <p className="text-xs opacity-80 mt-0.5">{a.sub}</p>}
               </div>
               <ArrowUpCircle size={16} className="rotate-45 opacity-40 shrink-0" />

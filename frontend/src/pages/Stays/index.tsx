@@ -53,10 +53,14 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
     queryFn: () => guestsApi.list(guestSearch),
     enabled: guestSearch.length >= 2,
   })
+  // Проверка ЧС по телефону (готовый гость) ИЛИ по ФИО, введённому в форме
+  // быстрого создания — нарушение из другого хостела может не совпасть по
+  // телефону (другой номер/формат), но должно найтись по имени.
+  const quickCreateFullName = `${newGuest.first_name} ${newGuest.last_name}`.trim()
   const { data: blacklistCheck } = useQuery({
-    queryKey: ['blacklist-check', form.guestPhone],
-    queryFn: () => blacklistApi.check(form.guestPhone),
-    enabled: form.guestPhone.length >= 15, // Полный номер: +7 777 777-77-77 = 16 символов
+    queryKey: ['blacklist-check', form.guestPhone, quickCreateFullName],
+    queryFn: () => blacklistApi.check(form.guestPhone, undefined, quickCreateFullName),
+    enabled: form.guestPhone.length >= 15 || (newGuest.first_name.length >= 2 && newGuest.last_name.length >= 2),
   })
   const { mutate: createGuest, isPending: isCreatingGuest, error: createGuestError } = useMutation({
     mutationFn: (data: GuestCreate) => guestsApi.create(data),

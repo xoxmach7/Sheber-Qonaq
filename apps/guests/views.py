@@ -60,6 +60,7 @@ class GuestViewSet(OrganizationMixin, viewsets.ModelViewSet):
         entries = BlacklistEntry.check_guest(
             iin=serializer.validated_data.get('iin'),
             phone=serializer.validated_data.get('phone'),
+            full_name=serializer.validated_data.get('full_name'),
         )
 
         return Response({

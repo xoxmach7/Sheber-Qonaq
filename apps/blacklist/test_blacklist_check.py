@@ -51,3 +51,39 @@ def test_check_by_phone_ignores_formatting():
     assert len(BlacklistEntry.check_guest(phone='87009998877')) == 1
     assert len(BlacklistEntry.check_guest(phone='8 (700) 999 88 77')) == 1
     assert len(BlacklistEntry.check_guest(phone='7009998877')) == 1
+
+
+@pytest.mark.django_db
+def test_check_by_full_name_finds_entry():
+    """
+    Гость с нарушением в одном хостеле должен находиться в другом хостеле
+    даже без телефона/ИИН — по ФИО (регистр и порядок слов не важны).
+    """
+    BlacklistEntry.objects.create(
+        full_name='Иванов Иван', reason='behavior', description='',
+    )
+    assert len(BlacklistEntry.check_guest(full_name='Иванов Иван')) == 1
+    assert len(BlacklistEntry.check_guest(full_name='иван иванов')) == 1
+    assert len(BlacklistEntry.check_guest(full_name='ИВАН ИВАНОВ')) == 1
+
+
+@pytest.mark.django_db
+def test_check_by_full_name_no_match():
+    BlacklistEntry.objects.create(
+        full_name='Иванов Иван', reason='behavior', description='',
+    )
+    assert BlacklistEntry.check_guest(full_name='Петров Пётр') == []
+
+
+@pytest.mark.django_db
+def test_check_combines_all_criteria_without_duplicates():
+    """
+    Одна и та же запись не должна дублироваться в результате, если совпала
+    сразу по нескольким критериям (напр. и по телефону, и по ФИО).
+    """
+    BlacklistEntry.objects.create(
+        full_name='Иванов Иван', phone='+7 700 999-88-77',
+        reason='debt', description='',
+    )
+    entries = BlacklistEntry.check_guest(phone='+7 700 999-88-77', full_name='Иван Иванов')
+    assert len(entries) == 1

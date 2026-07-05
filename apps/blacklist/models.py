@@ -21,6 +21,21 @@ def normalize_phone(phone: str) -> str:
     return digits
 
 
+def normalize_name(name: str) -> str:
+    """
+    Нормализует ФИО для сравнения: регистр не важен, порядок слов (Имя
+    Фамилия vs Фамилия Имя) не важен, лишние пробелы схлопываются.
+
+    Why: BlacklistEntry.full_name — произвольный текст, который вручную
+    вбивает администратор одного хостела ("Иванов Иван"), а карточка гостя
+    в другом хостеле хранит ФИО в фиксированном порядке last+first ("Иван
+    Иванов" или наоборот) — сравнение по точной строке почти никогда не
+    совпадёт, хотя это один и тот же человек.
+    """
+    tokens = re.sub(r'\s+', ' ', (name or '').strip()).upper().split(' ')
+    return ' '.join(sorted(t for t in tokens if t))
+
+
 class BlacklistEntry(TimestampedModel):
     """
     Запись в чёрном списке.
@@ -99,14 +114,21 @@ class BlacklistEntry(TimestampedModel):
             self.iin_hash = ''
 
     @classmethod
-    def check_guest(cls, iin: str = None, phone: str = None) -> list:
+    def check_guest(cls, iin: str = None, phone: str = None, full_name: str = None) -> list:
         """
-        Проверить гостя по ИИН и/или телефону.
+        Проверить гостя по ИИН и/или телефону и/или ФИО.
         Возвращает список активных записей или пустой список.
 
         Телефон сравнивается по нормализованным цифрам (см. normalize_phone),
         а не точной строкой — иначе разное форматирование одного и того же
         номера (+7/8, пробелы, дефисы) тихо обходит проверку.
+
+        ФИО сравнивается по набору слов без учёта регистра и порядка
+        (см. normalize_name) — иначе "Иванов Иван" и "Иван Иванов"
+        считаются разными людьми. ФИО — самый слабый сигнал (тёзки
+        существуют), поэтому используется только как один из способов
+        найти запись, а не единственный — итог всегда объединение
+        совпадений по всем переданным критериям.
         """
         from apps.core.encryption import hash_for_search
         qs = cls.objects.filter(is_active=True)
@@ -121,6 +143,13 @@ class BlacklistEntry(TimestampedModel):
             if target:
                 for e in qs.exclude(phone=''):
                     if e.id not in results and normalize_phone(e.phone) == target:
+                        results[e.id] = e
+
+        if full_name:
+            target_name = normalize_name(full_name)
+            if target_name:
+                for e in qs.exclude(full_name=''):
+                    if e.id not in results and normalize_name(e.full_name) == target_name:
                         results[e.id] = e
 
         return list(results.values())

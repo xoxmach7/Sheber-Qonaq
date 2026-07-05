@@ -85,8 +85,8 @@ export const guestsApi = {
   remove: (id: number) =>
     api.delete<{ archived?: boolean; detail?: string }>(`/guests/${id}/`).then(r => r.data),
 
-  checkBlacklist: (iin?: string, phone?: string) =>
-    api.post<BlacklistCheck>('/guests/check_blacklist/', { iin, phone }).then(r => r.data),
+  checkBlacklist: (iin?: string, phone?: string, fullName?: string) =>
+    api.post<BlacklistCheck>('/guests/check_blacklist/', { iin, phone, full_name: fullName }).then(r => r.data),
 }
 
 // ─── Stays ───────────────────────────────────────────────────────────────────
@@ -181,8 +181,8 @@ export const blacklistApi = {
   reportProblem: (id: number, message?: string) =>
     api.post(`/blacklist/${id}/report-problem/`, { message }).then(r => r.data),
 
-  check: (phone?: string, iin?: string) =>
-    api.post<BlacklistCheck>('/blacklist/check/', { phone, iin }).then(r => r.data),
+  check: (phone?: string, iin?: string, fullName?: string) =>
+    api.post<BlacklistCheck>('/blacklist/check/', { phone, iin, full_name: fullName }).then(r => r.data),
 }
 
 // ─── Leads ───────────────────────────────────────────────────────────────────

@@ -46,6 +46,6 @@ class GuestAdmin(admin.ModelAdmin):
     @admin.display(description='ЧС')
     def is_blacklisted_colored(self, obj):
         from apps.blacklist.models import BlacklistEntry
-        if obj.phone and BlacklistEntry.objects.filter(is_active=True, phone=obj.phone).exists():
+        if BlacklistEntry.check_guest(iin=obj.iin, phone=obj.phone, full_name=obj.full_name):
             return format_html('<span style="color:red;font-weight:bold">ЧС</span>')
         return '-'
