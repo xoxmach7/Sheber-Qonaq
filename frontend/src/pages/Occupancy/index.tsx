@@ -314,6 +314,7 @@ function FreePanel({ unit, onCheckIn, onBook, onChangeStatus, onClose }: {
         <p className="text-xs font-semibold text-gray-400 uppercase mb-4">{unit.room_name} — {unit.name}</p>
         {unit.has_booking && (
           <div className="space-y-1.5 mb-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase">Брони</p>
             {(unit.upcoming_bookings ?? []).map(b => (
               <div key={b.stay_id} className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
                 <Clock size={14} className="text-violet-500 shrink-0" />
