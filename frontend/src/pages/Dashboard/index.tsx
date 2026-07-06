@@ -72,7 +72,9 @@ export default function DashboardPage() {
   if (expiringSoon > 0) topAlerts.push({
     key: 'expiring', icon: AlertCircle,
     title: `${expiringSoon} ${plural(expiringSoon, 'заезд', 'заезда', 'заездов')} скоро заканчиваются`,
-    sub: 'В течение 3 дней', cls: ALERT_CLS, to: '/stays',
+    // sort=checkout — чтобы сразу показать гостя с ближайшей датой выезда сверху,
+    // а не просто открыть список Заездов без выделения нужного человека.
+    sub: 'В течение 3 дней', cls: ALERT_CLS, to: '/stays?sort=checkout',
   })
 
   return (
