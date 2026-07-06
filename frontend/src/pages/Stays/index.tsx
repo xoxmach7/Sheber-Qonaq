@@ -71,7 +71,10 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
     },
   })
   const { data: units = [] } = useQuery({ queryKey: ['units'], queryFn: propertiesApi.allUnits })
-  const availableUnits = units.filter(u => u.status === 'available')
+  // Бронь резервирует место на будущую дату — можно выбрать любое место, в
+  // том числе занятое сегодня (текущий гость освободит его к заезду брони).
+  // Заселение — только реально свободное сейчас место.
+  const selectableUnits = mode === 'booking' ? units : units.filter(u => u.status === 'available')
   const { mutate, isPending, error } = useMutation({
     mutationFn: (data: StayCreate) => staysApi.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); onClose() },
@@ -146,10 +149,10 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Место / комната *</label>
             <select className="input-field" value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
-              <option value="">— Выберите свободное место —</option>
+              <option value="">{mode === 'booking' ? '— Выберите место —' : '— Выберите свободное место —'}</option>
               {(() => {
-                const byRoom = new Map<string, typeof availableUnits>()
-                availableUnits.forEach(u => {
+                const byRoom = new Map<string, typeof selectableUnits>()
+                selectableUnits.forEach(u => {
                   const rn = u.room_name ?? `Комната ${u.room}`
                   if (!byRoom.has(rn)) byRoom.set(rn, [])
                   byRoom.get(rn)!.push(u)
@@ -158,13 +161,14 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
                   <optgroup key={roomName} label={roomName}>
                     {roomUnits.map(u => {
                       const shortName = u.name.includes('-') ? u.name.split('-')[1] : u.name
-                      return <option key={u.id} value={u.id}>{shortName}</option>
+                      const label = mode === 'booking' && u.status === 'occupied' ? `${shortName} (занято сейчас)` : shortName
+                      return <option key={u.id} value={u.id}>{label}</option>
                     })}
                   </optgroup>
                 ))
               })()}
             </select>
-            {availableUnits.length === 0 && <p className="text-xs text-orange-500 mt-1">Нет свободных мест</p>}
+            {selectableUnits.length === 0 && <p className="text-xs text-orange-500 mt-1">{mode === 'booking' ? 'Нет мест' : 'Нет свободных мест'}</p>}
           </div>
 
           {/* Guest */}

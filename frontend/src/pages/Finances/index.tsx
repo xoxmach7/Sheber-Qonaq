@@ -4,7 +4,7 @@ import { paymentsApi, propertiesApi } from '../../api'
 import { format, subMonths } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import {
-  ChevronLeft, ChevronRight, ChevronDown, TrendingUp, TrendingDown, Minus, Plus, X,
+  ChevronLeft, ChevronRight, ChevronDown, Minus, Plus, X,
   Zap, ShoppingCart, Wrench, Users, Megaphone, Receipt, Package,
   Banknote, Smartphone, Building2, CreditCard, Trash2, Lock,
 } from 'lucide-react'
@@ -198,22 +198,12 @@ export default function FinancesPage() {
           {/* P&L Cards */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-emerald-50 rounded-2xl p-4 ring-1 ring-emerald-100">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
-                  <TrendingUp size={16} className="text-white" />
-                </div>
-                <span className="text-xs text-emerald-600 font-semibold">Доход</span>
-              </div>
-              <p className="text-xl font-bold text-emerald-800">{fmt(data?.income ?? 0)}</p>
+              <span className="text-xs text-emerald-600 font-semibold">Доход</span>
+              <p className="text-xl font-bold text-emerald-800 mt-1">{fmt(data?.income ?? 0)}</p>
             </div>
             <div className="bg-red-50 rounded-2xl p-4 ring-1 ring-red-100">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
-                  <TrendingDown size={16} className="text-white" />
-                </div>
-                <span className="text-xs text-red-600 font-semibold">Расходы</span>
-              </div>
-              <p className="text-xl font-bold text-red-700">{fmt(data?.expenses ?? 0)}</p>
+              <span className="text-xs text-red-600 font-semibold">Расходы</span>
+              <p className="text-xl font-bold text-red-700 mt-1">{fmt(data?.expenses ?? 0)}</p>
             </div>
           </div>
 
@@ -235,7 +225,7 @@ export default function FinancesPage() {
           {monthPayments.length > 0 && (
             <div className="bg-white rounded-2xl shadow-card overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-50">
-                <h3 className="font-semibold text-gray-800 text-sm">История платежей · {displayMonth}</h3>
+                <h3 className="font-semibold text-gray-800 text-sm">История платежей</h3>
               </div>
               {(showAllPayments ? monthPayments : monthPayments.slice(0, 3)).map(pay => {
                 const cfg = METHOD_CONFIG[pay.method]
@@ -323,8 +313,8 @@ export default function FinancesPage() {
                   )
                 })
             ) : (
-              <div className="px-4 py-6 text-center text-gray-400 text-sm">
-                <p>Расходов за этот месяц нет</p>
+              <div className="px-4 py-6 text-center">
+                <p className="font-semibold text-gray-800 text-sm">Расходов за этот месяц нет</p>
               </div>
             )}
           </div>
