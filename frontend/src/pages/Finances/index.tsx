@@ -314,7 +314,7 @@ export default function FinancesPage() {
                 })
             ) : (
               <div className="px-4 py-6 text-center">
-                <p className="font-semibold text-gray-800 text-sm">Расходов за этот месяц нет</p>
+                <p className="font-normal text-gray-500 text-sm">Расходов за этот месяц нет</p>
               </div>
             )}
           </div>

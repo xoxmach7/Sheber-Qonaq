@@ -766,7 +766,12 @@ export default function OccupancyPage() {
                 <span className="font-semibold text-sm text-gray-800 truncate">{room.roomName}</span>
               </div>
               <div className="flex items-center gap-2 text-xs shrink-0">
-                {roomAvail > 0 && <span className="flex items-center gap-1 text-emerald-600 font-medium">{roomAvail} свободно</span>}
+                {roomAvail > 0 && (
+                  <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                    {roomAvail} свободно
+                  </span>
+                )}
               </div>
             </div>
 
