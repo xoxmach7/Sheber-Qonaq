@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from apps.core.mixins import OrganizationMixin
@@ -9,6 +10,21 @@ from .serializers import (
     PropertySerializer, RoomSerializer, UnitSerializer,
     UnitStatusSerializer, OccupancySerializer
 )
+
+
+class UnitPagination(PageNumberPagination):
+    """
+    Карта размещения (Occupancy) грузит все юниты одним запросом
+    (`propertiesApi.allUnits`) и группирует их по комнатам на фронте — это
+    не постраничный список для скролла, а карта целиком.
+
+    Why: глобальный DEFAULT_PAGINATION_CLASS/PAGE_SIZE=50 обрезал ответ
+    `/units/` на 50 записях. У аккаунтов с >50 местами (несколько комнат/
+    объектов) часть коек — обычно именно свободные, идущие после занятых
+    по id — просто не попадала в ответ и молча пропадала с карты
+    («свободные места не показываются в блоке комнаты»).
+    """
+    page_size = 1000
 
 
 class PropertyViewSet(OrganizationMixin, viewsets.ModelViewSet):
@@ -47,6 +63,7 @@ class UnitViewSet(OrganizationMixin, viewsets.ModelViewSet):
     serializer_class = UnitSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ['room', 'status', 'unit_type']
+    pagination_class = UnitPagination
 
     def get_permissions(self):
         if self.action in ('create', 'destroy'):

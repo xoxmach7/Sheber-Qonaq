@@ -402,6 +402,29 @@ function OccupiedPanel({ unit, onClose, onCheckout, onBook }: {
           </div>
         </div>
 
+        {/* Будущие брони на это же место — так же, как в панели свободного места */}
+        {unit.has_booking && (
+          <div className="space-y-1.5 mb-4">
+            <p className="text-xs font-semibold text-black">Брони</p>
+            {(unit.upcoming_bookings ?? []).map(b => (
+              <div key={b.stay_id} className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <Clock size={14} className="text-violet-500 shrink-0" />
+                <p className="text-xs text-violet-700 font-medium">
+                  {b.guest} · {fmt(b.check_in)} → {fmt(b.check_out)}
+                </p>
+              </div>
+            ))}
+            {!(unit.upcoming_bookings?.length) && (
+              <div className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <Clock size={14} className="text-violet-500 shrink-0" />
+                <p className="text-xs text-violet-700 font-medium">
+                  Есть бронь: {fmt(unit.next_check_in)} → {fmt(unit.next_check_out)}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-2">
           <button onClick={onBook}
             className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-violet-500 text-white rounded-2xl text-sm font-bold">
@@ -454,7 +477,10 @@ function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: (stay
     return `${day}.${m}.${y}`
   }
   const bookings = unit.upcoming_bookings ?? []
-  const statusLabelOf = (s?: string) => s === 'confirmed' ? 'Подтверждена (есть предоплата)' : 'Резерв (без предоплаты)'
+  // Для резерва без предоплаты подпись не нужна — просто «Бронь», без
+  // уточнения «Резерв (без предоплаты)». Подтверждённую бронь всё ещё
+  // помечаем — это полезно знать.
+  const statusLabelOf = (s?: string) => s === 'confirmed' ? 'Подтверждена (есть предоплата)' : ''
 
   // Несколько броней на юнит — показываем все, а не только ближайшую
   if (bookings.length > 1) {
@@ -470,7 +496,7 @@ function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: (stay
               <div key={b.stay_id} className="bg-violet-50 border border-violet-200 rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock size={15} className="text-violet-500 shrink-0" />
-                  <span className="text-sm font-bold text-violet-700">Бронь · {statusLabelOf(b.status)}</span>
+                  <span className="text-sm font-bold text-violet-700">Бронь{statusLabelOf(b.status) ? ` · ${statusLabelOf(b.status)}` : ''}</span>
                 </div>
                 <p className="text-base font-bold text-gray-900">{b.guest}</p>
                 <div className="flex items-center gap-1.5 mt-1.5 mb-3">
@@ -501,7 +527,7 @@ function BookingPanel({ unit, onCancel, onClose }: { unit: Unit; onCancel: (stay
         <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock size={15} className="text-violet-500 shrink-0" />
-            <span className="text-sm font-bold text-violet-700">Бронь · {statusLabel}</span>
+            <span className="text-sm font-bold text-violet-700">Бронь{statusLabel ? ` · ${statusLabel}` : ''}</span>
           </div>
           <p className="text-base font-bold text-gray-900">{guestName}</p>
           <div className="flex items-center gap-1.5 mt-1.5">
@@ -531,7 +557,6 @@ function BedCell({ unit, position, onClick }: { unit: Unit; position: 'lower' | 
     <button onClick={onClick}
       className={`relative flex flex-col w-full rounded-xl border p-2 text-left transition tap-card ${cfg.bg} ${cfg.border}`}
       style={{ minHeight: 72 }}>
-      <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
       <span className={`text-[9px] font-semibold ${posColor} leading-none mb-1`}>{posLabel}</span>
       <span className={`text-xs font-bold ${cfg.text} leading-none`}>{shortName}</span>
       <div className="mt-1">{cfg.icon}</div>
@@ -724,7 +749,10 @@ export default function OccupancyPage() {
 
       {displayRooms.map(room => {
         const isDorm = room.units.some(u => u.unit_type === 'bed')
-        const roomAvail = room.units.filter(u => u.status === 'available' && !u.has_booking).length
+        // Свободно НА СЕГОДНЯ: место может иметь бронь на будущее (не сегодня)
+        // и всё равно быть свободным прямо сейчас — считаем только те, что
+        // заняты бронью именно сегодня (isBookedToday), а не любой будущей.
+        const roomAvail = room.units.filter(u => u.status === 'available' && !isBookedToday(u)).length
         const bunks: Array<[Unit, Unit | undefined]> = []
         if (isDorm) for (let i = 0; i < room.units.length; i += 2) bunks.push([room.units[i], room.units[i + 1]])
 
@@ -738,7 +766,7 @@ export default function OccupancyPage() {
                 <span className="font-semibold text-sm text-gray-800 truncate">{room.roomName}</span>
               </div>
               <div className="flex items-center gap-2 text-xs shrink-0">
-                {roomAvail > 0 && <span className="flex items-center gap-1 text-emerald-600 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />{roomAvail} свободно</span>}
+                {roomAvail > 0 && <span className="flex items-center gap-1 text-emerald-600 font-medium">{roomAvail} свободно</span>}
               </div>
             </div>
 
@@ -763,7 +791,6 @@ export default function OccupancyPage() {
                     <button key={unit.id} onClick={() => handleUnitClick(unit)}
                       className={`relative flex flex-col items-center justify-center rounded-xl border p-2 transition tap-card ${cfg.bg} ${cfg.border}`}
                       style={{ minHeight: 72 }}>
-                      <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${cfg.dot}`} />
                       <p className={`text-xs font-bold ${cfg.text}`}>{shortName}</p>
                       <div className="mt-1">{cfg.icon}</div>
                       {guest && (
