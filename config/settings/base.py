@@ -186,6 +186,12 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 # Encryption key for sensitive fields (IIN)
 FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default='')
 
+# Resend — отправка email (подтверждение регистрации и т.п.)
+RESEND_API_KEY = config('RESEND_API_KEY', default='')
+
+# Базовый URL фронтенда — используется для ссылок в письмах (confirm_url и т.п.)
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
 # API docs
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Sheber Hospitality Platform API',
