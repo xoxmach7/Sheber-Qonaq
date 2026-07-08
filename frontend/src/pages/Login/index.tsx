@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth'
 import { Building2 } from 'lucide-react'
 
@@ -82,6 +82,10 @@ export default function LoginPage() {
           {isLoading ? 'Вход...' : 'Войти'}
         </button>
 
+        <p className="text-center text-[13px] text-gray-500 mt-4">
+          Нет аккаунта?{' '}
+          <Link to="/signup" className="text-primary-600 font-semibold">Зарегистрироваться</Link>
+        </p>
       </form>
     </div>
   )
