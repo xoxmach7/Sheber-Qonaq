@@ -1,5 +1,7 @@
+import uuid
 from decimal import Decimal
 from django.db import models
+from django.utils import timezone
 from apps.core.models import TimestampedModel
 
 
@@ -29,6 +31,10 @@ class Organization(TimestampedModel):
         verbose_name='Доля предоплаты',
         help_text='Минимальная доля от суммы брони для подтверждения (0.50 = 50%)',
     )
+    trial_ends_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='Триал до',
+        help_text='Если задано и дата прошла — организация в read-only режиме (нет активной подписки)',
+    )
 
     class Meta:
         verbose_name = 'Организация'
@@ -37,3 +43,33 @@ class Organization(TimestampedModel):
 
     def __str__(self):
         return self.name
+
+
+class SignupRequest(TimestampedModel):
+    """
+    Заявка на self-service регистрацию. Живёт до подтверждения по email-ссылке,
+    после чего материализуется в Organization + Property + User (owner).
+    """
+    email = models.EmailField(unique=True, verbose_name='Email')
+    org_name = models.CharField(max_length=255, verbose_name='Название объекта')
+    city = models.CharField(max_length=100, verbose_name='Город')
+    booking_mode = models.CharField(
+        max_length=20,
+        choices=[('hostel', 'Хостел / Отель'), ('cottage', 'Гостевой дом / Баня')],
+        default='hostel',
+    )
+    password_hash = models.CharField(max_length=255, verbose_name='Хэш пароля')
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name='Подтверждено')
+
+    class Meta:
+        verbose_name = 'Заявка на регистрацию'
+        verbose_name_plural = 'Заявки на регистрацию'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.email} ({"подтверждено" if self.confirmed_at else "ожидает"})'
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.created_at + timezone.timedelta(hours=24)
