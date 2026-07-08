@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from django.db import transaction
 from django.utils import timezone
 from apps.core.mixins import OrganizationMixin
-from apps.core.permissions import IsReception, IsOwnerOrManager, MANAGER_ROLES
+from apps.core.permissions import IsReception, IsOwnerOrManager, MANAGER_ROLES, TrialNotExpired
 from .models import Stay
 from .serializers import (
     StaySerializer, CheckOutSerializer, ExtendStaySerializer,
@@ -18,7 +18,7 @@ from .serializers import (
 class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
     queryset = Stay.objects.select_related('guest', 'unit__room__property').prefetch_related('payments').all()
     serializer_class = StaySerializer
-    permission_classes = [IsAuthenticated, IsReception]
+    permission_classes = [IsAuthenticated, IsReception, TrialNotExpired]
     filterset_fields = ['status', 'unit', 'guest', 'rate_type', 'source']
     search_fields = ['guest__first_name', 'guest__last_name', 'guest__phone', 'notes']
     ordering_fields = ['check_in_date', 'expected_check_out_date', 'created_at']
