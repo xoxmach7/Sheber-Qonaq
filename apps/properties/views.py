@@ -72,6 +72,17 @@ class UnitViewSet(OrganizationMixin, viewsets.ModelViewSet):
             return [IsAuthenticated(), CanUpdateUnitStatus()]
         return [IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        org = self.request.user.organization
+        MAX_UNITS_PER_ORG = 20
+        if Unit.objects.filter(organization=org).count() >= MAX_UNITS_PER_ORG:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                {'detail': f'Достигнут лимит {MAX_UNITS_PER_ORG} юнитов на объект. '
+                            f'Свяжитесь с нами для увеличения лимита.'}
+            )
+        super().perform_create(serializer)
+
     @action(detail=True, methods=['patch'])
     def set_status(self, request, pk=None):
         """Быстрое обновление статуса койки (ресепшн, горничная, техник и выше)."""

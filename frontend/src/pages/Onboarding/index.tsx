@@ -58,7 +58,7 @@ export default function OnboardingPage() {
   const [orgName, setOrgName] = useState('')
   const [city, setCity] = useState('Алматы')
   const [address, setAddress] = useState('')
-  const [plan, setPlan] = useState('free')
+  const plan = 'free'
   const [bookingMode, setBookingMode] = useState<'hostel' | 'cottage'>('hostel')
   const [rooms, setRooms] = useState<RoomInput[]>([{ name: 'Комната 1', type: 'private', beds: 1 }])
   const [firstName, setFirstName] = useState('')
@@ -192,14 +192,6 @@ export default function OnboardingPage() {
                 <span>Гостевой дом / Баня</span>
               </button>
             </div>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Тарифный план</label>
-            <select className="input-field" value={plan} onChange={e => setPlan(e.target.value)}>
-              <option value="free">Бесплатный</option>
-              <option value="basic">Базовый</option>
-              <option value="pro">Профессиональный</option>
-            </select>
           </div>
         </div>
       )}

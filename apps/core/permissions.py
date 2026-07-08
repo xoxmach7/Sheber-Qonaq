@@ -2,6 +2,7 @@
 RBAC — права доступа по ролям.
 Используются во всех ViewSet'ах.
 """
+from django.utils import timezone
 from rest_framework.permissions import BasePermission
 
 OWNER_ROLES = ('superadmin', 'owner')
@@ -50,3 +51,23 @@ class BelongsToOrganization(BasePermission):
             # для Stay проверяем через unit
             org_id = getattr(getattr(obj, 'stay', None), 'organization_id', None)
         return org_id == request.user.organization_id
+
+
+SAFE_METHODS_READONLY = ('GET', 'HEAD', 'OPTIONS')
+
+
+class TrialNotExpired(BasePermission):
+    """
+    Блокирует изменяющие запросы (POST/PUT/PATCH/DELETE), если у организации
+    истёк триал (trial_ends_at в прошлом) и нет активной оплаченной подписки.
+    Организации без trial_ends_at (созданные вручную через /onboarding/) не ограничены.
+    """
+    message = 'Пробный период закончился. Доступ только для просмотра. Свяжитесь с нами для подключения подписки.'
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS_READONLY:
+            return True
+        org = getattr(request.user, 'organization', None)
+        if org is None or org.trial_ends_at is None:
+            return True
+        return timezone.now() <= org.trial_ends_at
