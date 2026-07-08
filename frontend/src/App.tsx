@@ -14,6 +14,8 @@ import BlacklistPage from './pages/Blacklist'
 import NotificationsPage from './pages/Notifications'
 import CottagePage from './pages/Cottage'
 import StaffPage from './pages/Staff'
+import SignupPage from './pages/Signup'
+import SignupConfirmPage from './pages/SignupConfirm'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -41,6 +43,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/signup/confirm/:token" element={<SignupConfirmPage />} />
         <Route
           path="/"
           element={
