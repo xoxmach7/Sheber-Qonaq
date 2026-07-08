@@ -9,6 +9,18 @@ from rest_framework.throttling import AnonRateThrottle
 from apps.organizations.models import SignupRequest
 from apps.organizations.email import send_confirmation_email
 
+from datetime import timedelta
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from apps.organizations.models import Organization
+from apps.properties.models import Property
+
+User = get_user_model()
+
 
 class SignupRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -61,5 +73,70 @@ class SignupRequestView(APIView):
 
         return Response(
             {'detail': 'Письмо с подтверждением отправлено на указанный email.'},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SignupConfirmView(APIView):
+    """
+    POST /api/v1/organizations/signup/confirm/<token>/
+    Материализует Organization + Property + User (owner) из SignupRequest,
+    ставит trial_ends_at = now + 30 дней, возвращает JWT-токены как логин.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, token):
+        signup_request = get_object_or_404(SignupRequest, token=token)
+
+        if signup_request.confirmed_at is not None:
+            return Response({'detail': 'Заявка уже подтверждена.'}, status=status.HTTP_400_BAD_REQUEST)
+        if signup_request.is_expired:
+            return Response(
+                {'detail': 'Ссылка истекла. Зарегистрируйтесь заново.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            slug = signup_request.org_name.lower().replace(' ', '-')[:100]
+            base, counter = slug, 1
+            while Organization.objects.filter(slug=slug).exists():
+                slug = f'{base}-{counter}'
+                counter += 1
+
+            org = Organization.objects.create(
+                name=signup_request.org_name,
+                slug=slug,
+                plan='free',
+                trial_ends_at=timezone.now() + timedelta(days=30),
+                contact_email=signup_request.email,
+            )
+            Property.objects.create(
+                organization=org,
+                name=signup_request.org_name,
+                city=signup_request.city,
+                address='',
+                booking_mode=signup_request.booking_mode,
+            )
+            username_base = signup_request.email.split('@')[0]
+            username, counter = username_base, 1
+            while User.objects.filter(username=username).exists():
+                username = f'{username_base}{counter}'
+                counter += 1
+
+            user = User(
+                username=username,
+                email=signup_request.email,
+                role='owner',
+                organization=org,
+            )
+            user.password = signup_request.password_hash
+            user.save()
+
+            signup_request.confirmed_at = timezone.now()
+            signup_request.save(update_fields=['confirmed_at'])
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {'access': str(refresh.access_token), 'refresh': str(refresh)},
             status=status.HTTP_201_CREATED,
         )
