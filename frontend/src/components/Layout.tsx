@@ -4,6 +4,7 @@ import { Bell, Users } from 'lucide-react'
 import { notificationsApi } from '../api'
 import { useAuthStore } from '../store/auth'
 import BottomNav from './BottomNav'
+import TrialBanner from './TrialBanner'
 
 function TopBar() {
   const navigate = useNavigate()
@@ -54,6 +55,7 @@ export default function Layout() {
   return (
     <div className="flex flex-col min-h-screen min-h-dvh max-w-[430px] mx-auto bg-[#FAFAFA] shadow-[0_0_60px_rgba(0,0,0,0.08)] relative">
       <TopBar />
+      <TrialBanner />
       <main className="flex-1 overflow-y-auto pb-[68px]">
         <Outlet />
       </main>
