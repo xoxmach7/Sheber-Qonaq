@@ -5,7 +5,7 @@ import { format, differenceInDays, differenceInMonths, addMonths } from 'date-fn
 import { ru } from 'date-fns/locale'
 import {
   Plus, X, LogOut, User, Search, AlertTriangle, UserPlus,
-  ChevronLeft, ArrowUpDown, CreditCard, CalendarClock, Globe, Clock,
+  ChevronLeft, ChevronRight, ArrowUpDown, CreditCard, CalendarClock, Globe, Clock,
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader, SegmentControl, FilterPills } from '../../components/ui'
@@ -536,6 +536,7 @@ export default function StaysPage() {
                         {stay.manual_total_override != null && (
                           <span className="text-primary-500" title="Сумма скорректирована вручную">✎</span>
                         )}
+                        <ChevronRight size={14} className="text-gray-300" />
                       </span>
                     </button>
                   )}

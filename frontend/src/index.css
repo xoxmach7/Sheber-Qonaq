@@ -34,3 +34,10 @@
     @apply transition-transform active:scale-[0.97] touch-manipulation;
   }
 }
+
+input[type="date"] {
+  color-scheme: light;
+}
+input[type="date"]:invalid::-webkit-datetime-edit {
+  color: #9ca3af;
+}
