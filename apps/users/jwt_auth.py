@@ -4,10 +4,17 @@ admin2 == Admin2 == ADMIN2 — ищем пользователя по username__
 затем отдаём управление стандартному SimpleJWT.
 """
 from django.contrib.auth import get_user_model
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 User = get_user_model()
+
+
+class LoginThrottle(AnonRateThrottle):
+    # Ограничение по IP — защита от подбора пароля брутфорсом.
+    # Ставка задаётся в REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['login'].
+    scope = 'login'
 
 
 class CaseInsensitiveTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -27,3 +34,4 @@ class CaseInsensitiveTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CaseInsensitiveTokenObtainPairView(TokenObtainPairView):
     serializer_class = CaseInsensitiveTokenObtainPairSerializer
+    throttle_classes = [LoginThrottle]
