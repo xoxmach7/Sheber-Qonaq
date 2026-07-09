@@ -60,3 +60,6 @@ db_check.sqlite3
 *.docx
 *.xlsx
 *.pdf
+
+# Superpowers brainstorming artifacts
+.superpowers/
