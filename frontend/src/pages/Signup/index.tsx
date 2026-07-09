@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Check } from 'lucide-react'
+import { Check, AlertTriangle } from 'lucide-react'
 import api from '../../api/client'
 
 interface SignupPayload {
@@ -8,7 +8,10 @@ interface SignupPayload {
 }
 
 const signupApi = (payload: SignupPayload) =>
-  api.post('/organizations/signup/', payload).then(r => r.data)
+  api.post('/organizations/signup/', payload).then(r => ({ ...r.data, __status: r.status }))
+
+const resendApi = (email: string) =>
+  api.post('/organizations/signup/resend/', { email }).then(r => r.data)
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -18,13 +21,17 @@ export default function SignupPage() {
   const [bookingMode, setBookingMode] = useState<'hostel' | 'cottage'>('hostel')
 
   const mutation = useMutation({ mutationFn: signupApi })
+  const resendMutation = useMutation({ mutationFn: resendApi })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     mutation.mutate({ email, password, org_name: orgName, city, booking_mode: bookingMode })
   }
 
-  if (mutation.isSuccess) {
+  // 202 — заявка сохранена, но письмо отправить не удалось (сервис временно недоступен).
+  const emailFailedToSend = mutation.isSuccess && (mutation.data as any)?.__status === 202
+
+  if (mutation.isSuccess && !emailFailedToSend) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-sm w-full bg-white rounded-2xl border border-gray-100 shadow-card p-6 text-center space-y-3">
@@ -39,6 +46,35 @@ export default function SignupPage() {
       </div>
     )
   }
+
+  if (emailFailedToSend) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-sm w-full bg-white rounded-2xl border border-gray-100 shadow-card p-6 text-center space-y-3">
+          <div className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center mx-auto">
+            <AlertTriangle size={28} className="text-white" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">Заявка сохранена</h2>
+          <p className="text-sm text-gray-500">
+            Но письмо на {email} отправить не удалось. Попробуйте ещё раз через несколько минут.
+          </p>
+          <button
+            onClick={() => resendMutation.mutate(email)}
+            disabled={resendMutation.isPending}
+            className="w-full py-2.5 bg-primary-500 text-white rounded-xl text-sm font-semibold disabled:opacity-40"
+          >
+            {resendMutation.isPending ? 'Отправляем...' : 'Отправить письмо ещё раз'}
+          </button>
+          {resendMutation.isSuccess && (
+            <p className="text-xs text-emerald-600">Письмо отправлено повторно.</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const duplicateEmailError = (mutation.error as any)?.response?.data?.email?.[0]
+  const isDuplicateEmail = typeof duplicateEmailError === 'string' && duplicateEmailError.includes('уже отправлена')
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -75,8 +111,21 @@ export default function SignupPage() {
         </div>
 
         {mutation.isError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-600">
-            {(mutation.error as any)?.response?.data?.email?.[0] || 'Ошибка. Проверьте данные.'}
+          <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-600 space-y-2">
+            <p>{duplicateEmailError || 'Ошибка. Проверьте данные.'}</p>
+            {isDuplicateEmail && (
+              <button
+                type="button"
+                onClick={() => resendMutation.mutate(email)}
+                disabled={resendMutation.isPending}
+                className="text-sm font-semibold text-primary-600 underline disabled:opacity-40"
+              >
+                {resendMutation.isPending ? 'Отправляем...' : 'Отправить письмо ещё раз'}
+              </button>
+            )}
+            {resendMutation.isSuccess && (
+              <p className="text-xs text-emerald-600">Письмо отправлено повторно — проверьте почту.</p>
+            )}
           </div>
         )}
 

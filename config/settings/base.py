@@ -142,6 +142,7 @@ REST_FRAMEWORK = {
         'anon': '100/hour',
         'user': '1000/hour',
         'signup': '5/hour',
+        'signup_resend': '3/hour',
         'login': '10/hour',
     },
 }
