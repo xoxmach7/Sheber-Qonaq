@@ -38,6 +38,6 @@
 input[type="date"] {
   color-scheme: light;
 }
-input[type="date"]:invalid::-webkit-datetime-edit {
+input[type="date"].date-empty::-webkit-datetime-edit {
   color: #9ca3af;
 }

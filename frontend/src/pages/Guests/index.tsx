@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import type { Guest, GuestCreate, BlacklistCreate, BlacklistReason, BlacklistEntry } from '../../types'
 import type { LucideIcon } from 'lucide-react'
-import { Avatar, PageHeader, SegmentControl, SearchBar, EmptyState } from '../../components/ui'
+import { Avatar, PageHeader, SegmentControl, SearchBar, EmptyState, DateField } from '../../components/ui'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { useAuthStore } from '../../store/auth'
 
@@ -167,21 +167,21 @@ function GuestForm({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Дата рождения</label>
-                  <input type="date" className="input-field" value={form.date_of_birth ?? ''} onChange={e => set('date_of_birth', e.target.value)} />
+                  <DateField className="input-field" value={form.date_of_birth ?? ''} onChange={e => set('date_of_birth', e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Паспорт выдан</label>
-                  <input type="date" className="input-field" value={form.document_issue_date ?? ''} onChange={e => set('document_issue_date', e.target.value)} />
+                  <DateField className="input-field" value={form.document_issue_date ?? ''} onChange={e => set('document_issue_date', e.target.value)} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Действует до</label>
-                  <input type="date" className="input-field" value={form.document_expiry_date ?? ''} onChange={e => set('document_expiry_date', e.target.value)} />
+                  <DateField className="input-field" value={form.document_expiry_date ?? ''} onChange={e => set('document_expiry_date', e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Въезд в РК</label>
-                  <input type="date" className="input-field" value={form.entry_date ?? ''} onChange={e => set('entry_date', e.target.value)} />
+                  <DateField className="input-field" value={form.entry_date ?? ''} onChange={e => set('entry_date', e.target.value)} />
                 </div>
               </div>
               <div>

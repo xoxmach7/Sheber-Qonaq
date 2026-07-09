@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, ArrowUpDown, CreditCard, CalendarClock, Globe, Clock,
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
-import { Avatar, PageHeader, SegmentControl, FilterPills } from '../../components/ui'
+import { Avatar, PageHeader, SegmentControl, FilterPills, DateField } from '../../components/ui'
 import { MpisBadge, MpisPanel, ExtendForm, AdjustTotalForm, PaymentForm, TransferForm } from './_helpers'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { addPeriod, plural } from '../../lib/dates'
@@ -258,21 +258,21 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Дата рождения</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
                       </div>
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Паспорт выдан</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.document_issue_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_issue_date: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.document_issue_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_issue_date: e.target.value }))} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Действует до</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.document_expiry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_expiry_date: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.document_expiry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_expiry_date: e.target.value }))} />
                       </div>
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Въезд в РК</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
                       </div>
                     </div>
                     <div className="mt-2">
@@ -293,8 +293,8 @@ function CheckInForm({ onClose, initialMode = 'checkin' }: { onClose: () => void
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд *</label><input type="date" className="input-field" value={form.check_in_date} onChange={e => setForm(f => ({ ...f, check_in_date: e.target.value, expected_check_out_date: addPeriod(e.target.value, f.rate_type) }))} /></div>
-            <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Планируемый выезд</label><input type="date" className="input-field" value={form.expected_check_out_date} onChange={e => setForm(f => ({ ...f, expected_check_out_date: e.target.value }))} /></div>
+            <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд *</label><DateField className="input-field" value={form.check_in_date} onChange={e => setForm(f => ({ ...f, check_in_date: e.target.value, expected_check_out_date: addPeriod(e.target.value, f.rate_type) }))} /></div>
+            <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Планируемый выезд</label><DateField className="input-field" value={form.expected_check_out_date} onChange={e => setForm(f => ({ ...f, expected_check_out_date: e.target.value }))} /></div>
           </div>
           <p className="text-xs text-gray-400 -mt-2">Дату выезда всегда можно продлить</p>
 

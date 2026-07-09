@@ -8,7 +8,7 @@ import {
   Building2, Globe, Copy, ExternalLink, CheckCircle2, Clock,
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
-import { Avatar, PageHeader } from '../../components/ui'
+import { Avatar, PageHeader, DateField } from '../../components/ui'
 import { addPeriod } from '../../lib/dates'
 import type { StayCreate, Stay, PaymentCreate, PaymentMethod, RateType, GuestCreate, MpisStatus } from '../../types'
 import type { LucideIcon } from 'lucide-react'
@@ -137,7 +137,7 @@ function ExtendForm({ stay, onClose }: { stay: Stay; onClose: () => void }) {
           <span className="font-medium text-gray-700">{stay.expected_check_out_date}</span>
         </div>
         <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Новая дата выезда</label>
-        <input type="date" className="input-field mb-4" value={newDate} min={minDate} onChange={e => setNewDate(e.target.value)} />
+        <DateField className="input-field mb-4" value={newDate} min={minDate} onChange={e => setNewDate(e.target.value)} />
         <button onClick={() => mutate()} disabled={!newDate || isPending}
           className="w-full bg-primary-500 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 tap-card">
           {isPending ? 'Сохраняем...' : `Продлить до ${newDate}`}
@@ -176,7 +176,9 @@ function AdjustTotalForm({ stay, onClose }: { stay: Stay; onClose: () => void })
           <h3 className="font-bold text-lg">Сумма к оплате</h3>
           <button onClick={onClose} className="p-1"><X size={20} className="text-gray-400" /></button>
         </div>
-        <p className="text-sm text-gray-400 mb-4">{stay.guest_detail?.full_name} · {stay.unit_detail?.name}</p>
+        <p className="text-sm text-gray-400 mb-4">
+          {stay.guest_detail?.full_name} · {stay.unit_detail?.room_name ? `${stay.unit_detail.room_name} · ${stay.unit_detail.name}` : stay.unit_detail?.name}
+        </p>
         {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-3 py-2 mb-3">Не удалось сохранить</div>}
         <div className="bg-gray-50 rounded-xl p-3 mb-4 flex items-center justify-between text-sm">
           <span className="text-gray-500">Автоматический расчёт по тарифу</span>
@@ -271,8 +273,8 @@ function TransferForm({ stay, onClose }: { stay: Stay; onClose: () => void }) {
         <p className="text-sm text-gray-400 mb-4">{stay.guest_detail?.full_name} · {stay.unit_detail?.name}</p>
         {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-3 py-2 mb-3">{(error as any)?.response?.data?.non_field_errors?.[0] ?? 'Эти даты заняты или некорректны'}</div>}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд</label><input type="date" className="input-field" value={ci} onChange={e => { setCi(e.target.value); setCo(addPeriod(e.target.value, stay.rate_type)) }} /></div>
-          <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Выезд</label><input type="date" className="input-field" value={co} onChange={e => setCo(e.target.value)} /></div>
+          <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд</label><DateField className="input-field" value={ci} onChange={e => { setCi(e.target.value); setCo(addPeriod(e.target.value, stay.rate_type)) }} /></div>
+          <div><label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Выезд</label><DateField className="input-field" value={co} onChange={e => setCo(e.target.value)} /></div>
         </div>
         <p className="text-xs text-gray-400 -mt-2 mb-4">Дата выезда пересчитывается по тарифу ({stay.rate_type_display?.toLowerCase() ?? stay.rate_type}), но её можно поправить вручную</p>
         <button onClick={() => mutate()} disabled={!ci || !co || isPending}

@@ -7,7 +7,7 @@ import {
   Phone, CalendarDays, LogOut, Plus, X, Search,
   UserPlus, AlertTriangle, User,
 } from 'lucide-react'
-import { PageHeader, FilterPills, Avatar } from '../../components/ui'
+import { PageHeader, FilterPills, Avatar, DateField } from '../../components/ui'
 import MonthHeatmap from './MonthHeatmap'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { addPeriod } from '../../lib/dates'
@@ -214,21 +214,21 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Дата рождения</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.date_of_birth ?? ''} onChange={e => setNewGuest(g => ({ ...g, date_of_birth: e.target.value }))} />
                       </div>
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Паспорт выдан</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.document_issue_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_issue_date: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.document_issue_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_issue_date: e.target.value }))} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Действует до</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.document_expiry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_expiry_date: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.document_expiry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, document_expiry_date: e.target.value }))} />
                       </div>
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Въезд в РК</label>
-                        <input type="date" className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
+                        <DateField className="input-field text-sm" value={newGuest.entry_date ?? ''} onChange={e => setNewGuest(g => ({ ...g, entry_date: e.target.value }))} />
                       </div>
                     </div>
                     <div className="mt-2">
@@ -251,12 +251,12 @@ function CheckInSheet({ unit, onClose, initialMode = 'checkin' }: { unit: Unit; 
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Заезд *</label>
-              <input type="date" className="input-field text-sm" value={form.check_in_date}
+              <DateField className="input-field text-sm" value={form.check_in_date}
                 onChange={e => setForm(f => ({ ...f, check_in_date: e.target.value, expected_check_out_date: addPeriod(e.target.value, f.rate_type) }))} />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Выезд</label>
-              <input type="date" className="input-field text-sm" value={form.expected_check_out_date} onChange={e => setForm(f => ({ ...f, expected_check_out_date: e.target.value }))} />
+              <DateField className="input-field text-sm" value={form.expected_check_out_date} onChange={e => setForm(f => ({ ...f, expected_check_out_date: e.target.value }))} />
             </div>
           </div>
 
@@ -705,8 +705,8 @@ export default function OccupancyPage() {
           <span className="text-sm font-semibold text-gray-700">Свободно на даты</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <input type="date" className="input-field text-sm" value={pFrom} onChange={e => setPFrom(e.target.value)} />
-          <input type="date" className="input-field text-sm" value={pTo} onChange={e => setPTo(e.target.value)} />
+          <DateField className="input-field text-sm" value={pFrom} onChange={e => setPFrom(e.target.value)} />
+          <DateField className="input-field text-sm" value={pTo} onChange={e => setPTo(e.target.value)} />
         </div>
         <div className="flex gap-2">
           <button disabled={!pFrom || !pTo || pTo <= pFrom}

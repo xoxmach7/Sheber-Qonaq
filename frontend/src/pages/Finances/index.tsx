@@ -11,6 +11,7 @@ import {
 import type { Expense } from '../../types'
 import type { LucideIcon } from 'lucide-react'
 import { useAuthStore } from '../../store/auth'
+import { DateField } from '../../components/ui'
 
 function fmt(n: number | string) {
   return Number(n).toLocaleString('ru-KZ', { maximumFractionDigits: 0 }) + ' ₸'
@@ -88,7 +89,7 @@ function ExpenseForm({ defaultDate, onClose }: { defaultDate: string; onClose: (
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Дата *</label>
-              <input type="date" className="input-field" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              <DateField className="input-field" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </div>
           </div>
           <div>
