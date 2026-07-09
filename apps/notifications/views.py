@@ -12,7 +12,9 @@ class NotificationListView(generics.ListAPIView):
 
     def get_queryset(self):
         org = self.request.user.organization
-        qs  = Notification.objects.filter(organization=org)
+        qs  = Notification.objects.filter(
+            organization=org
+        ).exclude(type__in=Notification.HIDDEN_FROM_LIST_TYPES)
         unread_only = self.request.query_params.get('unread')
         if unread_only:
             qs = qs.filter(is_read=False)
@@ -21,7 +23,10 @@ class NotificationListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         qs       = self.get_queryset()
         org      = request.user.organization
-        unread   = Notification.objects.filter(organization=org, is_read=False).count()
+        # Тот же набор типов, что и в списке — иначе бейдж расходится с пустым списком.
+        unread   = Notification.objects.filter(
+            organization=org, is_read=False
+        ).exclude(type__in=Notification.HIDDEN_FROM_LIST_TYPES).count()
         data     = self.get_serializer(qs, many=True).data
         return Response({'results': data, 'unread_count': unread})
 

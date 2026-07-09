@@ -68,8 +68,10 @@ export default function NotificationsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
 
-  // Скрываем уведомления о выездах (expiring, overdue) — они дублируют дашборд и шумят
-  const notifications = (data?.results ?? []).filter(n => n.type !== 'expiring' && n.type !== 'overdue')
+  // Уведомления о выездах (expiring, overdue) уже отфильтрованы бэкендом
+  // (Notification.HIDDEN_FROM_LIST_TYPES) — тот же фильтр применяется к unread_count,
+  // так что бейдж в TopBar и этот список всегда согласованы.
+  const notifications = data?.results ?? []
   const unread = notifications.filter(n => !n.is_read).length
 
   return (

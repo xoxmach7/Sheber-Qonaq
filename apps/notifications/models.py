@@ -13,6 +13,11 @@ class Notification(models.Model):
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name='notifications'
     )
+    # Типы, которые дублируют дашборд и не показываются в списке уведомлений
+    # и в счётчике непрочитанных — должны совпадать в обоих местах (TopBar badge
+    # и страница /notifications), иначе бейдж расходится с пустым списком.
+    HIDDEN_FROM_LIST_TYPES = ['expiring', 'overdue']
+
     type        = models.CharField(max_length=20, choices=TYPES, default='info')
     title       = models.CharField(max_length=200)
     body        = models.TextField()
