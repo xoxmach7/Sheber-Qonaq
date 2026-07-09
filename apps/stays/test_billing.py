@@ -37,10 +37,20 @@ def test_monthly_exact_month_is_one():
     assert s.total_expected == Decimal('100000')
 
 
-def test_monthly_partial_rounds_up():
-    # 1 месяц 14 дней -> 2 месяца
+def test_monthly_partial_is_proportional():
+    # 1 месяц 14 дней -> 1 месяц + 14/30 месяца (пропорционально), НЕ 2 полных месяца.
+    # Регресс-тест: раньше остаток в днях округлялся вверх до целого месяца —
+    # 1 лишний день переплаты превращался в лишний полный месяц (100%+ переплата).
     s = make_stay('monthly', 100000, check_in=date(2026, 1, 1), check_out=date(2026, 2, 15))
-    assert s.total_expected == Decimal('200000')
+    assert s.total_expected == Decimal('147000')
+
+
+def test_monthly_one_extra_day_is_not_a_full_extra_month():
+    # Регресс-тест на конкретный баг из прода: продление до 09.06-10.08 (2 месяца
+    # и 1 день) при ставке 85000 не должно начислять как за 3 месяца (255000).
+    s = make_stay('monthly', 85000, check_in=date(2026, 6, 9), check_out=date(2026, 8, 10))
+    assert s.total_expected < Decimal('255000')  # старое (баговое) значение — 3 полных месяца
+    assert s.total_expected == Decimal('172550')
 
 
 def test_shift_day_is_flat_rate():

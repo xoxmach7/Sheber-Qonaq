@@ -8,11 +8,32 @@ from django.db import transaction
 from django.utils import timezone
 from apps.core.mixins import OrganizationMixin
 from apps.core.permissions import IsReception, IsOwnerOrManager, MANAGER_ROLES, TrialNotExpired
-from .models import Stay
+from .models import Stay, StayDateChange
 from .serializers import (
     StaySerializer, CheckOutSerializer, ExtendStaySerializer,
     MpisStatusSerializer, MpisPendingStaySerializer, QuoteSerializer,
+    StayDateChangeSerializer,
 )
+
+DATE_FIELDS = ('check_in_date', 'expected_check_out_date')
+
+
+def _log_date_changes(stay, old_values, user, reason=''):
+    """
+    Пишет запись в StayDateChange для каждого изменившегося поля из DATE_FIELDS.
+    old_values — dict {field: old_value}, снятый ДО сохранения новых значений.
+    """
+    changes = []
+    for field in DATE_FIELDS:
+        old = old_values.get(field)
+        new = getattr(stay, field)
+        if old != new:
+            changes.append(StayDateChange(
+                stay=stay, field=field, old_value=old, new_value=new,
+                changed_by=user, reason=reason,
+            ))
+    if changes:
+        StayDateChange.objects.bulk_create(changes)
 
 
 class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
@@ -28,6 +49,18 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
             organization=self.request.user.organization,
             created_by=self.request.user,
         )
+
+    def perform_update(self, serializer):
+        old_values = {f: getattr(serializer.instance, f) for f in DATE_FIELDS}
+        stay = serializer.save()
+        _log_date_changes(stay, old_values, self.request.user)
+
+    @action(detail=True, methods=['get'])
+    def date_changes(self, request, pk=None):
+        """История изменений дат заезда/выезда — для разбора спорных начислений."""
+        stay = self.get_object()
+        changes = stay.date_changes.select_related('changed_by').all()
+        return Response(StayDateChangeSerializer(changes, many=True).data)
 
     @action(detail=True, methods=['post'])
     @transaction.atomic
@@ -86,10 +119,17 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
                 {'error': 'Продление пересекается с другой бронью на этом юните.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        old_check_out = stay.expected_check_out_date
+        reason = serializer.validated_data.get('notes', '')
         stay.expected_check_out_date = new_date
-        if serializer.validated_data.get('notes'):
-            stay.notes = (stay.notes + '\nПродление: ' + serializer.validated_data['notes']).strip()
+        if reason:
+            stay.notes = (stay.notes + '\nПродление: ' + reason).strip()
         stay.save(update_fields=['expected_check_out_date', 'notes'])
+        StayDateChange.objects.create(
+            stay=stay, field='expected_check_out_date',
+            old_value=old_check_out, new_value=new_date,
+            changed_by=request.user, reason=reason,
+        )
 
         return Response(StaySerializer(stay, context={'request': request}).data)
 
@@ -223,7 +263,8 @@ class StayViewSet(OrganizationMixin, viewsets.ModelViewSet):
             d['rate_type'], d['check_in_date'], d['expected_check_out_date']
         )
         rate_dec = Decimal(str(rate)) if rate is not None else Decimal('0')
-        total = rate_dec * units
+        # Округляем до тенге — units для monthly дробный (пропорциональный остаток дней).
+        total = (rate_dec * units).quantize(Decimal('1'))
         available = not Stay.overlapping(
             unit, d['check_in_date'], d['expected_check_out_date']
         ).exists()

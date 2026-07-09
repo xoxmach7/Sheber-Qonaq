@@ -2,10 +2,25 @@ from datetime import timedelta
 from rest_framework import serializers
 from django.db import models, transaction
 from django.utils import timezone
-from .models import Stay
+from .models import Stay, StayDateChange
 from apps.guests.serializers import GuestShortSerializer
 from apps.properties.serializers import UnitSerializer
 from apps.properties.models import Unit
+
+
+class StayDateChangeSerializer(serializers.ModelSerializer):
+    field_display = serializers.CharField(source='get_field_display', read_only=True)
+    changed_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StayDateChange
+        fields = [
+            'id', 'field', 'field_display', 'old_value', 'new_value',
+            'changed_by_name', 'reason', 'changed_at',
+        ]
+
+    def get_changed_by_name(self, obj):
+        return obj.changed_by.get_full_name() or obj.changed_by.username if obj.changed_by else None
 
 
 class StaySerializer(serializers.ModelSerializer):

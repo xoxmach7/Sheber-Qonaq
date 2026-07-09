@@ -148,9 +148,12 @@ class Stay(OrganizationScopedModel):
     def duration_units(rate_type, check_in, check_out):
         """
         Кол-во расчётных единиц за интервал [check_in, check_out):
-          daily   — количество дней.
-          weekly  — ceil(дней / 7).
-          monthly — календарные месяцы через relativedelta, неполный -> вверх, мин 1.
+          daily   — количество дней (int).
+          weekly  — ceil(дней / 7) (int).
+          monthly — целые календарные месяцы через relativedelta + пропорциональный
+                    остаток дней (rate/30 за день), Decimal. Например 2 месяца и 1 день
+                    -> Decimal('2') + Decimal('1')/30, а не округление до 3 месяцев —
+                    иначе доплата за 1 лишний день превращается в полную месячную ставку.
         Единый источник логики для total_expected и котировки (quote).
         """
         import math as _math
@@ -166,9 +169,9 @@ class Stay(OrganizationScopedModel):
         if rate_type == 'monthly':
             diff = relativedelta(check_out, check_in)
             months = diff.years * 12 + diff.months
-            if diff.days > 0:
-                months += 1  # неполный месяц -> вверх
-            return max(months, 1)
+            units = Decimal(months) + (Decimal(diff.days) / Decimal(30))
+            units = units.quantize(Decimal('0.01'))
+            return units if units > 0 else Decimal('1')
         return 0
 
     @property
@@ -178,7 +181,9 @@ class Stay(OrganizationScopedModel):
             return self.rate_amount or Decimal('0')
         end_date = self.actual_check_out_date or self.expected_check_out_date
         units = self.duration_units(self.rate_type, self.check_in_date, end_date)
-        return (self.rate_amount or Decimal('0')) * units
+        total = (self.rate_amount or Decimal('0')) * units
+        # Округляем до тенге — units для monthly дробный (пропорциональный остаток дней).
+        return total.quantize(Decimal('1'))
 
     @property
     def balance(self) -> Decimal:
@@ -187,3 +192,36 @@ class Stay(OrganizationScopedModel):
     @property
     def has_debt(self) -> bool:
         return self.balance > Decimal('0')
+
+
+class StayDateChange(models.Model):
+    """
+    История изменений дат заезда/выезда — кто, когда и с какой даты на какую
+    поменял (продление, перенос заезда и т.п.). Только для аудита/разбора
+    спорных начислений, на расчёт долга не влияет.
+    """
+    FIELDS = [
+        ('check_in_date', 'Дата заселения'),
+        ('expected_check_out_date', 'Планируемая дата выселения'),
+    ]
+
+    stay = models.ForeignKey(
+        Stay, on_delete=models.CASCADE, related_name='date_changes', verbose_name='Проживание'
+    )
+    field = models.CharField(max_length=30, choices=FIELDS, verbose_name='Поле')
+    old_value = models.DateField(verbose_name='Было')
+    new_value = models.DateField(verbose_name='Стало')
+    changed_by = models.ForeignKey(
+        'users.User', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='stay_date_changes', verbose_name='Кто изменил'
+    )
+    reason = models.CharField(max_length=255, blank=True, verbose_name='Причина/комментарий')
+    changed_at = models.DateTimeField(auto_now_add=True, verbose_name='Когда')
+
+    class Meta:
+        verbose_name = 'Изменение даты проживания'
+        verbose_name_plural = 'Изменения дат проживания'
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f'Stay #{self.stay_id}: {self.field} {self.old_value} → {self.new_value}'
