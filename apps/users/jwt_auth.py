@@ -1,9 +1,13 @@
 """
-Регистронезависимый вход по логину.
+Регистронезависимый вход по логину или email.
 admin2 == Admin2 == ADMIN2 — ищем пользователя по username__iexact,
-затем отдаём управление стандартному SimpleJWT.
+и дополнительно по email__iexact (self-service регистрация создаёт
+username из части email до "@", так что пользователь часто пытается
+войти именно по email — раньше это давало "неверный логин или пароль").
+Найденное совпадение подставляется в username_field, дальше — стандартный SimpleJWT.
 """
 from django.contrib.auth import get_user_model
+from django.db import models
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -19,10 +23,13 @@ class LoginThrottle(AnonRateThrottle):
 
 class CaseInsensitiveTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        username = attrs.get(self.username_field, '')
-        if username:
+        login_value = attrs.get(self.username_field, '')
+        if login_value:
             match = (
-                User.objects.filter(**{f'{self.username_field}__iexact': username})
+                User.objects.filter(
+                    models.Q(**{f'{self.username_field}__iexact': login_value})
+                    | models.Q(email__iexact=login_value)
+                )
                 .order_by('id')
                 .first()
             )

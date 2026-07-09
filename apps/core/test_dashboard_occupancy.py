@@ -29,6 +29,29 @@ def test_occupied_from_bookings_not_unit_status(api, org, hostel_unit, guest):
 
 
 @pytest.mark.django_db
+def test_overdue_active_stay_still_counted_as_occupied(api, org, hostel_unit, guest):
+    # Regression: гость заселён (status='active'), но не выехал вовремя —
+    # expected_check_out_date уже в прошлом, а Stay всё ещё активен (нет явного
+    # check-out). Юнит физически занят и должен учитываться дашбордом так же,
+    # как это показывает карта размещения /occupancy (расхождение из прод-скрина:
+    # карта показывала "занято", дашборд — "свободно" для просроченного выезда).
+    from apps.stays.models import Stay
+    today = date.today()
+    Stay.objects.create(
+        organization=org, unit=hostel_unit, guest=guest,
+        check_in_date=today - timedelta(days=5),
+        expected_check_out_date=today - timedelta(days=1),  # просрочен, но не выселён
+        rate_type='daily', rate_amount=Decimal('5000'), status='active',
+    )
+
+    r = api.get('/api/v1/dashboard/')
+    assert r.status_code == 200, r.content
+    occ = r.data['occupancy']
+    assert occ['occupied'] == 1
+    assert occ['available'] == 0
+
+
+@pytest.mark.django_db
 def test_checked_out_not_counted_even_if_unit_status_stale(api, org, hostel_unit, guest):
     from apps.stays.models import Stay
     today = date.today()

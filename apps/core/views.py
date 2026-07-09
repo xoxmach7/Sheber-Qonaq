@@ -45,16 +45,29 @@ class DashboardView(APIView):
             available = max(0, total_units - occupied)
             reserved = dirty = maintenance = out_of_order = 0
         else:
-            # Хостел: занятость считаем ИЗ БРОНЕЙ, а не из unit.status (Шаг 6).
-            # Юнит занят сегодня, если есть блокирующая бронь (reserved/confirmed/active),
-            # покрывающая ночь [today, today+1). Согласовано с тепловой картой /occupancy.
+            # Хостел: занятость считаем ИЗ БРОНЕЙ, а не из unit.status (Шаг 6) —
+            # unit.status может «залипнуть» (например если чек-аут не обновил
+            # статус юнита по какой-то причине), а Stay.status — источник истины
+            # по факту, выехал гость или нет. Согласовано с тепловой картой /occupancy.
+            #
+            # 'active' (гость реально заселён) занимает юнит независимо от
+            # expected_check_out_date — гость мог просрочить выезд и физически
+            # ещё не уехал; юнит остаётся занят, пока не сделан явный check-out
+            # (Stay.status -> 'checked_out'). Раньше здесь было доп. условие
+            # expected_check_out_date__gt=today, которое ошибочно исключало
+            # такие просроченные-но-активные брони из подсчёта.
+            #
+            # 'reserved'/'confirmed' (гость ещё не заселился) — будущая бронь,
+            # занимает юнит только если её период покрывает сегодня.
             occupied = (
                 Stay.objects.filter(
+                    Q(status='active') | Q(
+                        status__in=('reserved', 'confirmed'),
+                        check_in_date__lte=today,
+                        expected_check_out_date__gt=today,
+                    ),
                     organization=org,
                     shift_type__isnull=True,
-                    status__in=Stay.BLOCKING_STATUSES,
-                    check_in_date__lte=today,
-                    expected_check_out_date__gt=today,
                 )
                 .values('unit_id').distinct().count()
             )

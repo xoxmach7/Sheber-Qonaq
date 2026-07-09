@@ -210,7 +210,7 @@ export default function FinancesPage() {
           {/* Profit + Debt */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className={`rounded-2xl p-4 ring-1 ${Number(data?.net_profit ?? 0) >= 0 ? 'bg-primary-50 ring-primary-100' : 'bg-orange-50 ring-orange-100'}`}>
-              <span className="text-xs text-primary-600 font-semibold">Прибыль</span>
+              <span className={`text-xs font-semibold ${Number(data?.net_profit ?? 0) >= 0 ? 'text-primary-600' : 'text-orange-600'}`}>Прибыль</span>
               <p className={`text-xl font-bold mt-1 ${Number(data?.net_profit ?? 0) >= 0 ? 'text-primary-800' : 'text-orange-700'}`}>
                 {fmt(data?.net_profit ?? 0)}
               </p>

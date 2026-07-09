@@ -760,16 +760,13 @@ export default function OccupancyPage() {
           <div key={room.roomId} className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center shrink-0" title={`${room.units.length} мест`}>
-                  <span className="text-[10px] font-bold text-gray-500">{room.units.length}</span>
-                </div>
                 <span className="font-semibold text-sm text-gray-800 truncate">{room.roomName}</span>
               </div>
               <div className="flex items-center gap-2 text-xs shrink-0">
                 {roomAvail > 0 && (
                   <span className="flex items-center gap-1 text-emerald-600 font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                    {roomAvail} свободно
+                    {roomAvail} из {room.units.length} свободно
                   </span>
                 )}
               </div>
