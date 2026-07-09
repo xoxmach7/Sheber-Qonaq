@@ -75,6 +75,11 @@ class Stay(OrganizationScopedModel):
         max_digits=10, decimal_places=2, default=Decimal('0'),
         verbose_name='Депозит (тенге)'
     )
+    manual_total_override = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name='Сумма к оплате (ручная корректировка)',
+        help_text='Если задано — используется вместо автоматического расчёта по тарифу.'
+    )
 
     status = models.CharField(
         max_length=20, choices=STATUSES, default='active', verbose_name='Статус'
@@ -144,6 +149,11 @@ class Stay(OrganizationScopedModel):
         result = self.payments.aggregate(total=Sum('amount'))['total']
         return result or Decimal('0')
 
+    # Остаток в днях сверх целых месяцев в пределах этого порога не начисляется
+    # (прощается) — многие хостелы считают "месяц = месяц" и не берут доплату
+    # за пару лишних дней. Дни свыше порога по-прежнему считаются пропорционально.
+    MONTHLY_GRACE_DAYS = 3
+
     @staticmethod
     def duration_units(rate_type, check_in, check_out):
         """
@@ -151,9 +161,15 @@ class Stay(OrganizationScopedModel):
           daily   — количество дней (int).
           weekly  — ceil(дней / 7) (int).
           monthly — целые календарные месяцы через relativedelta + пропорциональный
-                    остаток дней (rate/30 за день), Decimal. Например 2 месяца и 1 день
-                    -> Decimal('2') + Decimal('1')/30, а не округление до 3 месяцев —
-                    иначе доплата за 1 лишний день превращается в полную месячную ставку.
+                    остаток дней (rate/30 за день), Decimal. Остаток в пределах
+                    MONTHLY_GRACE_DAYS (по умолчанию 3) прощается — не добавляется
+                    к сумме вообще. Остаток свыше порога считается пропорционально
+                    целиком (не только превышение), т.е. это ступенька, а не плавный
+                    переход: 1-3 лишних дня -> 0 доплаты, 4+ дня -> доплата за все N
+                    дней. Раньше любой остаток либо округлялся до целого месяца
+                    (100%+ переплата за 1 день), либо всегда добавлялся пропорционально
+                    (доплата даже за 1 день) — оба варианта раздражали клиентов
+                    с фиксированной месячной ставкой.
         Единый источник логики для total_expected и котировки (quote).
         """
         import math as _math
@@ -169,13 +185,18 @@ class Stay(OrganizationScopedModel):
         if rate_type == 'monthly':
             diff = relativedelta(check_out, check_in)
             months = diff.years * 12 + diff.months
-            units = Decimal(months) + (Decimal(diff.days) / Decimal(30))
+            extra_days = diff.days if diff.days > Stay.MONTHLY_GRACE_DAYS else 0
+            units = Decimal(months) + (Decimal(extra_days) / Decimal(30))
             units = units.quantize(Decimal('0.01'))
             return units if units > 0 else Decimal('1')
         return 0
 
     @property
     def total_expected(self) -> Decimal:
+        # Ручная корректировка суммы (для нестандартных случаев/скидок) —
+        # если задана, используется как есть вместо автоматического расчёта.
+        if self.manual_total_override is not None:
+            return self.manual_total_override
         # Посменная аренда (cottage): цена фиксирована за смену, не зависит от дней.
         if self.shift_type:
             return self.rate_amount or Decimal('0')

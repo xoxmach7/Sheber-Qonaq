@@ -214,6 +214,7 @@ export interface Stay {
   rate_type_display?: string
   rate_amount: string
   deposit_amount: string
+  manual_total_override?: string | null
   status: StayStatus
   status_display?: string
   source: StaySource

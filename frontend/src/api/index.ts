@@ -121,6 +121,9 @@ export const staysApi = {
   updateDates: (id: number, check_in_date: string, expected_check_out_date: string) =>
     api.patch<Stay>(`/stays/${id}/`, { check_in_date, expected_check_out_date }).then(r => r.data),
 
+  updateTotalOverride: (id: number, manual_total_override: number | null) =>
+    api.patch<Stay>(`/stays/${id}/`, { manual_total_override }).then(r => r.data),
+
   checkout: (id: number, date?: string) =>
     api.post(`/stays/${id}/checkout/`, date ? { actual_check_out_date: date } : {}).then(r => r.data),
 

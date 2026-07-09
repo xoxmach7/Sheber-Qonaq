@@ -147,6 +147,57 @@ function ExtendForm({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   )
 }
 
+// ── Adjust Total Form — ручная корректировка суммы к оплате ──
+function AdjustTotalForm({ stay, onClose }: { stay: Stay; onClose: () => void }) {
+  const qc = useQueryClient()
+  const autoTotal = Number(stay.total_expected)
+  const [amount, setAmount] = useState(stay.manual_total_override ?? String(autoTotal))
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: () => staysApi.updateTotalOverride(stay.id, amount === '' ? null : Number(amount)),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); onClose() },
+  })
+
+  const resetToAuto = () => {
+    setAmount('')
+    staysApi.updateTotalOverride(stay.id, null).then(() => {
+      qc.invalidateQueries({ queryKey: ['stays'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      onClose()
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white rounded-t-[20px] p-5 shadow-sheet animate-slide-up">
+        <div className="flex justify-center mb-3"><div className="w-9 h-1 rounded-full bg-gray-300" /></div>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-bold text-lg">Сумма к оплате</h3>
+          <button onClick={onClose} className="p-1"><X size={20} className="text-gray-400" /></button>
+        </div>
+        <p className="text-sm text-gray-400 mb-4">{stay.guest_detail?.full_name} · {stay.unit_detail?.name}</p>
+        {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-3 py-2 mb-3">Не удалось сохранить</div>}
+        <div className="bg-gray-50 rounded-xl p-3 mb-4 flex items-center justify-between text-sm">
+          <span className="text-gray-500">Автоматический расчёт по тарифу</span>
+          <span className="font-medium text-gray-700">{autoTotal.toLocaleString('ru')} ₸</span>
+        </div>
+        <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Сумма вручную (₸)</label>
+        <input type="number" className="input-field mb-3" value={amount} onChange={e => setAmount(e.target.value)} placeholder={String(autoTotal)} />
+        {stay.manual_total_override != null && (
+          <button onClick={resetToAuto} className="text-sm text-primary-600 font-semibold mb-4">
+            Вернуть автоматический расчёт
+          </button>
+        )}
+        <button onClick={() => mutate()} disabled={amount === '' || isPending}
+          className="w-full bg-primary-500 text-white py-3.5 rounded-xl font-semibold disabled:bg-gray-200 disabled:text-gray-400 tap-card">
+          {isPending ? 'Сохраняем...' : 'Сохранить сумму'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Payment Form ──
 function PaymentForm({ stayId, onClose, confirmAfter = false }: { stayId: number; onClose: () => void; confirmAfter?: boolean }) {
   const qc = useQueryClient()
@@ -233,4 +284,4 @@ function TransferForm({ stay, onClose }: { stay: Stay; onClose: () => void }) {
   )
 }
 
-export { MpisBadge, MpisPanel, ExtendForm, PaymentForm, TransferForm }
+export { MpisBadge, MpisPanel, ExtendForm, AdjustTotalForm, PaymentForm, TransferForm }

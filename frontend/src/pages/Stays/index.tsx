@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import { Avatar, PageHeader, SegmentControl, FilterPills } from '../../components/ui'
-import { MpisBadge, MpisPanel, ExtendForm, PaymentForm, TransferForm } from './_helpers'
+import { MpisBadge, MpisPanel, ExtendForm, AdjustTotalForm, PaymentForm, TransferForm } from './_helpers'
 import { formatPhoneKZ, PHONE_PLACEHOLDER } from '../../lib/phone'
 import { addPeriod, plural } from '../../lib/dates'
 import type { StayCreate, Stay, RateType, GuestCreate } from '../../types'
@@ -382,6 +382,7 @@ export default function StaysPage() {
   const [extendStay, setExtendStay] = useState<Stay | null>(null)
   const [transferStay, setTransferStay] = useState<Stay | null>(null)
   const [mpisStay, setMpisStay] = useState<Stay | null>(null)
+  const [adjustTotalStay, setAdjustTotalStay] = useState<Stay | null>(null)
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['stays'] }); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['dashboard'] })
@@ -522,12 +523,21 @@ export default function StaysPage() {
                       <span className="text-gray-400 text-xs">из {fmt(expected)}</span>
                     </div>
                   ) : (
-                    <div className={`mt-2 flex items-center justify-between text-sm rounded-xl px-3 py-2 ${isDebt ? 'bg-red-50' : 'bg-emerald-50'}`}>
+                    <button
+                      onClick={() => setAdjustTotalStay(stay)}
+                      className={`mt-2 w-full flex items-center justify-between text-sm rounded-xl px-3 py-2 tap-card ${isDebt ? 'bg-red-50' : 'bg-emerald-50'}`}
+                      title="Изменить сумму к оплате вручную"
+                    >
                       <span className={`font-semibold ${isDebt ? 'text-red-700' : 'text-emerald-700'}`}>
                         {isDebt ? `Долг: ${fmt(balance)}` : 'Оплачено'}
                       </span>
-                      <span className="text-gray-400 text-xs">{fmt(paid)} / {fmt(expected)}</span>
-                    </div>
+                      <span className="text-gray-400 text-xs flex items-center gap-1">
+                        {fmt(paid)} / {fmt(expected)}
+                        {stay.manual_total_override != null && (
+                          <span className="text-primary-500" title="Сумма скорректирована вручную">✎</span>
+                        )}
+                      </span>
+                    </button>
                   )}
                 </div>
 
@@ -581,6 +591,7 @@ export default function StaysPage() {
       {extendStay !== null && <ExtendForm stay={extendStay} onClose={() => setExtendStay(null)} />}
       {transferStay !== null && <TransferForm stay={transferStay} onClose={() => setTransferStay(null)} />}
       {mpisStay !== null && <MpisPanel stay={mpisStay} onClose={() => setMpisStay(null)} />}
+      {adjustTotalStay !== null && <AdjustTotalForm stay={adjustTotalStay} onClose={() => setAdjustTotalStay(null)} />}
     </div>
   )
 }

@@ -32,9 +32,12 @@ export default function RoomsSetupPage() {
         .map(r => ({ name: r.name.trim(), type: r.type, beds: r.type === 'dorm' ? r.beds : undefined }))
     ),
     onSuccess: async () => {
-      // Иначе ProtectedRoute снова редиректнет на /setup-rooms по кэшированному
-      // dashboard.occupancy.total === 0 (staleTime 60s).
-      await qc.invalidateQueries({ queryKey: ['dashboard'] })
+      // refetchQueries (не invalidateQueries) — дожидаемся СВЕЖИХ данных перед
+      // навигацией. invalidateQueries только помечает кэш устаревшим и планирует
+      // фоновый рефетч, не дожидаясь его: ProtectedRoute успевал отрендериться
+      // со старым closure dashboard.occupancy.total === 0 и снова редиректить
+      // на /setup-rooms — пользователь видел форму добавления комнат повторно.
+      await qc.refetchQueries({ queryKey: ['dashboard'] })
       navigate('/dashboard')
     },
   })

@@ -43,7 +43,7 @@ class StaySerializer(serializers.ModelSerializer):
             'id', 'unit', 'unit_detail', 'guest', 'guest_detail',
             'check_in_date', 'expected_check_out_date', 'actual_check_out_date',
             'rate_type', 'rate_type_display', 'rate_amount',
-            'deposit_amount', 'status', 'status_display',
+            'deposit_amount', 'manual_total_override', 'status', 'status_display',
             'source', 'source_display', 'notes',
             'mpis_status', 'mpis_status_display',
             'shift_type', 'shift_type_display',
