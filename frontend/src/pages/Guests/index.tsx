@@ -443,7 +443,7 @@ function BlacklistTab({ search }: { search: string }) {
             <p className="font-semibold text-gray-900 truncate">{name}</p>
             <p className="text-xs text-gray-400">{list[0].phone || '—'}</p>
           </div>
-          <span className="text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-lg font-bold shrink-0 ring-1 ring-red-200">
+          <span className="text-xs text-red-600 font-bold shrink-0">
             {list.length} наруш.
           </span>
         </div>
