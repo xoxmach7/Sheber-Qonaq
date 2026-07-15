@@ -30,6 +30,8 @@ export default function SignupPage() {
 
   // 202 — заявка сохранена, но письмо отправить не удалось (сервис временно недоступен).
   const emailFailedToSend = mutation.isSuccess && (mutation.data as any)?.__status === 202
+  const confirmUrl = (mutation.data as any)?.confirm_url as string | undefined
+  const resendConfirmUrl = (resendMutation.data as any)?.confirm_url as string | undefined
 
   if (mutation.isSuccess && !emailFailedToSend) {
     return (
@@ -56,16 +58,24 @@ export default function SignupPage() {
           </div>
           <h2 className="text-lg font-bold text-gray-900">Заявка сохранена</h2>
           <p className="text-sm text-gray-500">
-            Но письмо на {email} отправить не удалось. Попробуйте ещё раз через несколько минут.
+            Но письмо на {email} отправить не удалось.
           </p>
+          {(resendConfirmUrl || confirmUrl) && (
+            <a
+              href={resendConfirmUrl || confirmUrl}
+              className="block w-full py-2.5 bg-primary-500 text-white rounded-xl text-sm font-semibold text-center"
+            >
+              Подтвердить регистрацию
+            </a>
+          )}
           <button
             onClick={() => resendMutation.mutate(email)}
             disabled={resendMutation.isPending}
-            className="w-full py-2.5 bg-primary-500 text-white rounded-xl text-sm font-semibold disabled:opacity-40"
+            className="w-full py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold disabled:opacity-40"
           >
             {resendMutation.isPending ? 'Отправляем...' : 'Отправить письмо ещё раз'}
           </button>
-          {resendMutation.isSuccess && (
+          {resendMutation.isSuccess && !resendConfirmUrl && (
             <p className="text-xs text-emerald-600">Письмо отправлено повторно.</p>
           )}
         </div>
@@ -123,8 +133,13 @@ export default function SignupPage() {
                 {resendMutation.isPending ? 'Отправляем...' : 'Отправить письмо ещё раз'}
               </button>
             )}
-            {resendMutation.isSuccess && (
+            {resendMutation.isSuccess && !resendConfirmUrl && (
               <p className="text-xs text-emerald-600">Письмо отправлено повторно — проверьте почту.</p>
+            )}
+            {resendConfirmUrl && (
+              <a href={resendConfirmUrl} className="block text-sm font-semibold text-primary-600 underline">
+                Подтвердить регистрацию
+              </a>
             )}
           </div>
         )}

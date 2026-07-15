@@ -102,13 +102,19 @@ class SignupRequestView(APIView):
         sent = send_confirmation_email(signup_request.email, confirm_url)
 
         if not sent:
-            # Заявка сохранена (данные не теряются) — пользователь может повторить
-            # попытку через resend-эндпоинт, когда почтовый сервис снова доступен.
+            # Заявка сохранена (данные не теряются). Почтовый сервис пока не может
+            # слать письма произвольным адресатам (нет верифицированного домена в
+            # Resend — только тестовый onboarding@resend.dev, ограниченный адресом
+            # владельца аккаунта) — поэтому дублируем ссылку подтверждения в самом
+            # ответе API, чтобы пользователь мог подтвердиться без письма.
             return Response(
-                {'detail': (
-                    'Заявка сохранена, но письмо отправить не удалось. '
-                    'Попробуйте ещё раз через несколько минут или напишите нам в поддержку.'
-                )},
+                {
+                    'detail': (
+                        'Заявка сохранена, но письмо отправить не удалось. '
+                        'Подтвердите регистрацию по ссылке ниже.'
+                    ),
+                    'confirm_url': confirm_url,
+                },
                 status=status.HTTP_202_ACCEPTED,
             )
 
@@ -150,8 +156,14 @@ class SignupResendView(APIView):
         signup_request.save(update_fields=['token', 'created_at'])
 
         confirm_url = f'{settings.FRONTEND_URL}/signup/confirm/{signup_request.token}'
-        send_confirmation_email(signup_request.email, confirm_url)
+        sent = send_confirmation_email(signup_request.email, confirm_url)
 
+        if not sent:
+            return Response(
+                {'detail': 'Письмо отправить не удалось. Подтвердите регистрацию по ссылке ниже.',
+                 'confirm_url': confirm_url},
+                status=status.HTTP_200_OK,
+            )
         return generic_response
 
 
