@@ -13,8 +13,8 @@ interface RoomDraft {
 }
 
 const ROOM_TYPE_LABEL: Record<RoomType, string> = {
-  dorm: 'Дорм (несколько коек)',
-  private: 'Отдельная комната',
+  dorm: 'Двухъярусные кровати',
+  private: 'Одноместная комната',
   family: 'Семейный номер',
 }
 
@@ -106,7 +106,7 @@ export default function RoomsSetupPage() {
 
               {room.type === 'dorm' && (
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-gray-500">Количество коек</label>
+                  <label className="text-xs text-gray-500">Количество кроватей</label>
                   <input
                     type="number"
                     min={1}
