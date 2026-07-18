@@ -90,7 +90,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <form onSubmit={handleSubmit} className="max-w-sm w-full bg-white rounded-2xl border border-gray-100 shadow-card p-6 space-y-3">
         <h1 className="text-xl font-extrabold text-gray-900">Регистрация</h1>
-        <p className="text-sm text-gray-400">Бесплатно на 30 дней, без карты</p>
+        <p className="text-sm text-gray-400">Бесплатно на 30 дней</p>
 
         <div>
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Email *</label>
@@ -116,7 +116,7 @@ export default function SignupPage() {
           </button>
           <button type="button" onClick={() => setBookingMode('cottage')}
             className={`py-2.5 rounded-xl border-2 text-sm font-semibold ${bookingMode === 'cottage' ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 bg-white text-gray-500'}`}>
-            Гостевой дом
+            Гостевой дом / Апартаменты
           </button>
         </div>
 

@@ -23,6 +23,19 @@ class TestRoomsSetup:
         assert Room.objects.filter(property=hostel_property, name='Комната 1').exists()
         assert Unit.objects.filter(room__property=hostel_property, unit_type='private_room').count() == 1
 
+    def test_creates_private_room_with_multiple_places(self, api, hostel_property):
+        # "Спальные места" (rtype='private') с beds > 1 — как дорм, но без
+        # двухъярусных коек: несколько юнитов private_room в одной комнате.
+        response = api.post(SETUP_URL, {
+            'rooms': [{'name': 'Общий номер 1', 'type': 'private', 'beds': 3}],
+        }, format='json')
+
+        assert response.status_code == 201, response.data
+        assert response.data['unit_count'] == 3
+        room = Room.objects.get(property=hostel_property, name='Общий номер 1')
+        assert room.units.count() == 3
+        assert all(u.unit_type == 'private_room' for u in room.units.all())
+
     def test_creates_dorm_with_multiple_beds(self, api, hostel_property):
         response = api.post(SETUP_URL, {
             'rooms': [{'name': 'Дорм 1', 'type': 'dorm', 'beds': 6}],

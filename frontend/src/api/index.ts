@@ -66,7 +66,7 @@ export const propertiesApi = {
   updateUnitStatus: (id: number, status: Unit['status']) =>
     api.patch<Unit>(`/units/${id}/set_status/`, { status }).then(r => r.data),
 
-  setupRooms: (rooms: Array<{ name: string; type: 'dorm' | 'private' | 'family'; beds?: number }>) =>
+  setupRooms: (rooms: Array<{ name: string; type: 'dorm' | 'private'; beds?: number }>) =>
     api.post<{ property_id: number; unit_count: number }>('/setup-rooms/', { rooms }).then(r => r.data),
 }
 

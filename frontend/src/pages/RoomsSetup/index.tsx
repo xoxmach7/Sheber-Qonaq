@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, Building2 } from 'lucide-react'
+import { Plus, Trash2, Building2, HelpCircle } from 'lucide-react'
 import { propertiesApi } from '../../api'
 
-type RoomType = 'dorm' | 'private' | 'family'
+type RoomType = 'dorm' | 'private'
 
 interface RoomDraft {
   name: string
@@ -14,8 +14,12 @@ interface RoomDraft {
 
 const ROOM_TYPE_LABEL: Record<RoomType, string> = {
   dorm: 'Двухъярусные кровати',
-  private: 'Одноместная комната',
-  family: 'Семейный номер',
+  private: 'Спальные места',
+}
+
+const BEDS_LABEL: Record<RoomType, string> = {
+  dorm: 'Количество кроватей',
+  private: 'Количество мест',
 }
 
 export default function RoomsSetupPage() {
@@ -25,11 +29,13 @@ export default function RoomsSetupPage() {
     { name: '', type: 'private', beds: 1 },
   ])
 
+  const [showHint, setShowHint] = useState(false)
+
   const mutation = useMutation({
     mutationFn: () => propertiesApi.setupRooms(
       rooms
         .filter(r => r.name.trim())
-        .map(r => ({ name: r.name.trim(), type: r.type, beds: r.type === 'dorm' ? r.beds : undefined }))
+        .map(r => ({ name: r.name.trim(), type: r.type, beds: r.beds }))
     ),
     onSuccess: async () => {
       // refetchQueries (не invalidateQueries) — дожидаемся СВЕЖИХ данных перед
@@ -63,9 +69,21 @@ export default function RoomsSetupPage() {
           </div>
           <div>
             <h1 className="text-lg font-extrabold text-gray-900">Добавьте первые комнаты</h1>
-            <p className="text-xs text-gray-400">Их можно будет изменить в любой момент</p>
+            <button
+              type="button"
+              onClick={() => setShowHint(h => !h)}
+              className="text-xs text-gray-400 flex items-center gap-1 hover:text-primary-600"
+            >
+              Их можно будет изменить в любой момент
+              <HelpCircle size={12} className="shrink-0" />
+            </button>
           </div>
         </div>
+        {showHint && (
+          <div className="mt-2 bg-primary-50 border border-primary-100 rounded-xl px-3 py-2 text-xs text-primary-700">
+            Пока изменить состав комнат можно, написав нам в поддержку — мы поправим вручную. Самостоятельное редактирование появится позже.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-3">
           {rooms.map((room, i) => (
@@ -89,7 +107,7 @@ export default function RoomsSetupPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
                 {(Object.keys(ROOM_TYPE_LABEL) as RoomType[]).map(t => (
                   <button
                     key={t}
@@ -104,19 +122,17 @@ export default function RoomsSetupPage() {
                 ))}
               </div>
 
-              {room.type === 'dorm' && (
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-gray-500">Количество кроватей</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    className="input-field w-20 py-1.5 text-sm"
-                    value={room.beds}
-                    onChange={e => updateRoom(i, { beds: Math.max(1, Number(e.target.value) || 1) })}
-                  />
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500">{BEDS_LABEL[room.type]}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  className="input-field w-20 py-1.5 text-sm"
+                  value={room.beds}
+                  onChange={e => updateRoom(i, { beds: Math.max(1, Number(e.target.value) || 1) })}
+                />
+              </div>
             </div>
           ))}
 
