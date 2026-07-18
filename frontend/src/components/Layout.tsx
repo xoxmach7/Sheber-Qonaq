@@ -9,7 +9,11 @@ import TrialBanner from './TrialBanner'
 function TopBar() {
   const navigate = useNavigate()
   const role = useAuthStore(s => s.user?.role)
-  const canManageStaff = ['superadmin', 'owner', 'manager'].includes(role ?? '')
+  // Временно скрыто по просьбе владельца — функционал добавления сотрудников
+  // ещё не готов к показу клиентам. Раскомментировать строку ниже, когда
+  // будет готово вернуть иконку в топбар.
+  // const canManageStaff = ['superadmin', 'owner', 'manager'].includes(role ?? '')
+  const canManageStaff = false
   const { data } = useQuery({
     queryKey: ['notifications'],
     queryFn: notificationsApi.list,
