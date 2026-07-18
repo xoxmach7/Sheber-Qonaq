@@ -41,6 +41,14 @@ function refreshAccessToken(refresh: string): Promise<string> {
         : '/api/v1/auth/refresh/'
       const { data } = await axios.post(refreshURL, { refresh })
       localStorage.setItem('access_token', data.access)
+      // ROTATE_REFRESH_TOKENS + BLACKLIST_AFTER_ROTATION на бэке (SIMPLE_JWT):
+      // каждый /auth/refresh/ мгновенно блэклистит переданный refresh и выдаёт
+      // новый. Без сохранения нового refresh здесь следующее обновление токена
+      // (~30 мин спустя) использовало бы уже заблэклистенный старый — и
+      // разлогинивало пользователя.
+      if (data.refresh) {
+        localStorage.setItem('refresh_token', data.refresh)
+      }
       return data.access
     })().finally(() => { refreshPromise = null })
   }
